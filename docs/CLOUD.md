@@ -1,6 +1,6 @@
 # GitHub, Vercel und Supabase
 
-Stand: 03.10.2026. Die laufende Produkttestumgebung verwendet weiterhin lokale SQLite-Daten. Es wurden keine Kundendaten zu Supabase übertragen und noch keine vollständige Live-Anwendung bereitgestellt.
+Stand: 03.10.2026. Die laufende Produkttestumgebung verwendet weiterhin lokale SQLite-Daten. Es wurden keine Kundendaten zu Supabase übertragen und noch keine vollständige Live-Anwendung mit gemeinsamem Backend bereitgestellt. Für den vorläufigen Vercel-Produkttest ist jetzt eine interaktive Browser-Demo eingerichtet, siehe [BROWSER_DEMO.md](BROWSER_DEMO.md).
 
 ## Zuordnung
 
@@ -14,7 +14,7 @@ Stand: 03.10.2026. Die laufende Produkttestumgebung verwendet weiterhin lokale S
 
 ## Aufbau für den Livebetrieb
 
-Die bestehende Anwendung besteht aus einer Vite-Oberfläche, einem Django-Webdienst, einem Celery-Worker mit OR-Tools, Redis und dauerhaft gespeicherten Grundrissdateien. Für diese Architektur kann Vercel die Oberfläche bereitstellen; der langlebige Webdienst und der Planungsworker benötigen zusätzlich einen Backend-Host. Supabase übernimmt dann PostgreSQL. Dieser Host ist bisher nicht angegeben oder eingerichtet.
+Die bestehende Anwendung besteht aus einer Vite-Oberfläche, einem Django-Webdienst, einem Celery-Worker mit OR-Tools und Redis. Für diese Architektur kann Vercel die Oberfläche bereitstellen; der langlebige Webdienst und der Planungsworker benötigen zusätzlich einen Backend-Host. Supabase übernimmt dann PostgreSQL. Dieser Host ist bisher nicht angegeben oder eingerichtet.
 
 Als konkreter Vorschlag liegt jetzt `render.yaml` für einen Pilot auf Render
 vor: Webdienst, Planungsworker und private Warteschlange in Frankfurt sowie
@@ -22,15 +22,18 @@ persistent gespeicherte Grundrisse. Kosten, Einrichtung und verbliebene
 Schritte stehen in [RENDER.md](RENDER.md). Noch kein Render-Deployment gestartet.
 
 Die aktuelle Vercel-Domain ist `https://campustime-flame.vercel.app`.
-Am 03.10.2026 bestätigte die Prüfung: `/api/auth/me/` liefert dort HTTP 404,
-während die lokale Entwicklungsadresse eine gültige JSON-Antwort liefert.
-Ein Vercel-Status `READY` bestätigt daher bisher nur die Oberfläche.
-Mit `npm run deployment:check -- <Live-Adresse>` werden Anmeldungserkennung
-und Backend-Health geprüft; ein anschließender Funktionstest bleibt nötig.
+Vor der Umstellung bestätigte die Prüfung am 03.10.2026: `/api/auth/me/`
+lieferte dort HTTP 404. Vercel baut jetzt ausdrücklich `npm run build:demo`.
+Diese Variante verwendet generierte Beispieldaten und Browser-Speicher statt
+Backend-Anfragen. Raumverwaltung, Kalender und feste Tagesanzeigen sind damit
+online testbar. Es gibt keine geräteübergreifende Speicherung oder Anmeldung;
+Automatik, Importe und die vollständige Planprüfung bleiben im lokalen Backend.
+`npm run deployment:check` prüft den späteren Backendbetrieb und ist kein
+Abnahmetest für diese reine Browser-Demo.
 
 Nach Bereitstellung des Backend-Hosts:
 
-1. Die Oberfläche über Vercel mit dem GitHub-Repository verbinden. `vercel.json` legt Framework Vite, Build `npm run build`, Ausgabe `dist` und die SPA-Route für Anzeigen fest. Damit wird zunächst nur die Oberfläche gebaut; Anmeldung und Datenzugriffe benötigen noch das Backend.
+1. Die Oberfläche über Vercel mit dem GitHub-Repository verbinden. `vercel.json` legt Framework Vite, vorläufigen Demo-Build `npm run build:demo`, Ausgabe `dist` und die SPA-Route für Anzeigen fest. Die Demo benötigt kein Backend. Für den echten Betrieb muss wieder `npm run build` mit den Backend-Rewrites verwendet werden.
 2. Sobald die Backend-Domain bereitsteht, `deploy/vercel.example.json` als `vercel.json` ins Projekt kopieren und alle Backend-Platzhalter ersetzen. Die Regeln für API, Admin und Backend-Styles müssen vor der SPA-Regel bleiben. Das Beispiel enthält Platzhalter und ist noch keine aktive Backend-Anbindung.
 3. Die Django-Umgebung mit den Werten aus `.env.supabase.example` konfigurieren. Diese Datei enthält ausschließlich Platzhalter; Django lädt sie nicht automatisch. Webdienst und Worker bekommen dieselben Datenbank-/Redisvariablen über die Laufzeitumgebung des Hosts.
 4. `ALLOWED_HOSTS` auf die Backend-Domain setzen, `CSRF_TRUSTED_ORIGINS` auf die tatsächliche Vercel-/eigene Frontend-Domain. Session- und CSRF-Cookies benötigen HTTPS. Keine pauschale Freigabe aller Preview-Domains.

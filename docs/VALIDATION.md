@@ -22,14 +22,14 @@ Die Browserprüfung deckt Anmeldung, Wochenkalender, Datenpflege mit Anlegen/Lö
 
 Temporäre PostgreSQL-, Redis-, Worker- und Backupcontainer sowie deren Testvolumes wurden nach der Prüfung entfernt. Die lokale Demoeinrichtung bleibt in SQLite verfügbar.
 
-Die Kartenbibliothek wird erst beim Öffnen des Karteneditors geladen. Der Build meldet für diesen Bibliotheksblock eine Größenwarnung; die allgemeine Verwaltungsansicht lädt ihn nicht beim Einstieg. Außenkartendarstellung und Anbieter-Verfügbarkeit sind nicht durch die automatischen Browsertests abgedeckt; die eigene Etagenansicht ist davon unabhängig.
+Die frühere Kartenoberfläche wurde inzwischen durch Raumkacheln ersetzt; die Kartenbibliothek ist entfernt. Die zugehörige frühere Größenwarnung entfällt.
 
 ## Ergänzung: Tagesanzeigen und Produkttestdaten
 
 Ebenfalls am 03.10.2026 geprüft:
 
 - 29 Backendtests mit SQLite und dieselben 29 Tests mit PostgreSQL 17 bestanden.
-- Tagesanzeigen prüfen gespeicherte Vorgaben und Besucherwechsel, Mitternacht, leere Tage, Einrichtungszeitzone, Zeitumstellung und Jahreswechsel.
+- Tagesanzeigen prüfen gespeicherte Vorgaben und feste Anzeigezeiträume, Mitternacht, leere Tage, Einrichtungszeitzone, Zeitumstellung und Jahreswechsel.
 - Die Erweiterung enthält 8 veröffentlichte Pläne, 7 Jahrgänge, 262 Lernende, 18 Lehrende, 52 Veranstaltungen, 16 Prüfungen und 246 Termine. Alle Pläne wurden nach Veröffentlichung gemeinsam erneut auf Konflikte und Soll geprüft.
 - Der Zusatzdatenbefehl ist idempotent; bestehende Daten werden nicht überschrieben. Mehrraumklausur und Nachschreibeklausuren sind enthalten.
 - PostgreSQL-Migrationen mit privatem Schema erzeugten 42 Tabellen in `campustime` und keine in `public`. Dieser Test nutzte einen eigenen temporären lokalen Container, keine Cloud-Datenbank. Der Container wurde anschließend entfernt.
@@ -37,3 +37,24 @@ Ebenfalls am 03.10.2026 geprüft:
 - Die gemeinsame Wochenanzeige wurde zusätzlich mit 76 sichtbaren Terminen geprüft; bei vielen parallelen Veranstaltungen verwendet sie lesbare Terminkarten.
 
 Die zugehörigen Testwege stehen in `PRODUCT_TEST.md`. Der Quellcode wird über `imannsv/campusTIME` auf `main` bereitgestellt; die lokale Vercel-Zuordnung und die Vite-Buildkonfiguration sind eingerichtet. Eine vollständige Cloud-Bereitstellung einschließlich Backend und eine echte Supabase-Datenbankverbindung wurden noch nicht ausgeführt, siehe `CLOUD.md`. Docker-/Worker-/Backupmessungen oben beziehen sich auf die zuvor geprüfte erste Version.
+
+## Ergänzung: Raumkacheln und Browser-Demo
+
+Am 03.10.2026 nach dem Umbau geprüft:
+
+- 29 Backendtests mit SQLite bestanden, einschließlich fester Anzeigezeiträume,
+  Mitternachtswechsel, Zeitzone und Zeitumstellung. Besucherparameter können
+  den gespeicherten Zeitraum nicht ändern. PostgreSQL wurde bei diesem Umbau
+  nicht erneut getestet; die früheren Ergebnisse stehen oben.
+- Vier lokale Playwrighttests bestanden: Datenpflege, Bereiche/Stockwerke/Räume,
+  Kapazität, Suche, mobile Darstellung sowie gespeicherte Anzeigen, deren
+  Zeitraum ausschließlich die Verwaltung ändert.
+- Zwei Playwrighttests gegen den Demo-Build bestanden: keine Backend-Anfragen,
+  Raumänderungen nach Neuladen, Zurücksetzen, Stockwerkfilter, mobile Breite und
+  feste Woche-/Heute-/Morgen-Anzeigen.
+- TypeScript, regulärer Vite-Build, Demo-Build, Ruff und `git diff --check`
+  bestanden. Die entfernte Kartenbibliothek wird nicht mehr ausgeliefert.
+
+Die Browser-Demo ist kein Nachweis für produktiven Mehrbenutzerbetrieb,
+Anmeldung, automatische Planung oder vollständige Freigabeprüfung. Diese
+Funktionen benötigen weiterhin das Django-Backend; siehe `BROWSER_DEMO.md`.

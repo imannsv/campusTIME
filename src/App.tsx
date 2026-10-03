@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState, FormEvent, lazy, Suspense } from "react";
+import { useEffect, useRef, useState, FormEvent } from "react";
 import { DateTime } from "luxon";
 import {
   CalendarDays,
   Layers,
   GraduationCap,
-  Map,
   Monitor,
   Settings,
   Search,
@@ -35,10 +34,10 @@ import {
   X,
   ClipboardList,
 } from "lucide-react";
-import { api, all, Row, Field, labels, fmt } from "./api";
+import { api, all, Row, Field, labels, fmt, DEMO_MODE } from "./api";
 import { Modal, RecordForm, ImportModal, Relation } from "./components";
 import Timetable from "./Timetable";
-const MapEditor = lazy(() => import("./MapEditor"));
+import RoomOverview from "./RoomOverview";
 
 type SessionState = {
   authenticated: boolean;
@@ -51,7 +50,7 @@ const nav = [
   { id: "schedule", label: "Stundenplanung", icon: CalendarDays },
   { id: "data", label: "Stammdaten", icon: Layers },
   { id: "exams", label: "Prüfungen", icon: GraduationCap },
-  { id: "map", label: "Campus & Räume", icon: Map },
+  { id: "map", label: "Räume", icon: Building2 },
   { id: "displays", label: "Öffentliche Anzeige", icon: Monitor },
 ];
 const descriptions: Record<string, string> = {
@@ -61,9 +60,9 @@ const descriptions: Record<string, string> = {
   groups: "Klassen und Teilgruppen mit ihren Teilnehmerzahlen.",
   people: "Lernende, Lehrende und ihre Verfügbarkeiten.",
   periods: "Semester, Schuljahre und der Unterrichtskalender.",
-  buildings: "Gebäude und ihre Position auf dem Campus.",
-  floors: "Etagen und hochgeladene Grundrisse.",
-  rooms: "Kapazitäten, Ausstattung und Raumflächen.",
+  buildings: "Bereiche, Gebäude oder Trakte.",
+  floors: "Stockwerke innerhalb eines Bereichs.",
+  rooms: "Raumbezeichnungen, Kapazitäten und Ausstattung.",
   curricula: "Wiederverwendbare Vorgaben für den Unterrichtsumfang.",
   plans: "Planbereiche und Zeiträume zusammenführen.",
   courses: "Pflichtkurse, Wahlpflichtangebote und Lehrendenteams.",
@@ -97,6 +96,31 @@ function Brand() {
       <span>
         campuszeit<span className="brand-dot">.</span>
       </span>
+    </div>
+  );
+}
+function DemoNotice() {
+  const [error, setError] = useState("");
+  if (!DEMO_MODE) return null;
+  return (
+    <div className="demo-notice" role="note">
+      <p>
+        <strong>Demo mit Beispieldaten</strong> · Änderungen bleiben in diesem
+        Browser. Automatische Planung und Dateiimporte sind hier nicht
+        verfügbar. Keine echten Personendaten eingeben.
+      </p>
+      <button
+        onClick={async () => {
+          try {
+            (await import("./demo")).resetDemo();
+          } catch (err) {
+            setError((err as Error).message);
+          }
+        }}
+      >
+        Demo zurücksetzen
+      </button>
+      {error && <span role="alert">{error}</span>}
     </div>
   );
 }
@@ -188,7 +212,6 @@ function Login({ onLogin }: { onLogin: (s: SessionState) => void }) {
 
 function PublicDisplay({ token }: { token: string }) {
   const [data, setData] = useState<Row | null>(null),
-    [view, setView] = useState<string | null>(null),
     [error, setError] = useState(""),
     [paused, setPaused] = useState(false),
     [week, setWeek] = useState(DateTime.now().startOf("week").toISODate()!),
@@ -201,7 +224,7 @@ function PublicDisplay({ token }: { token: string }) {
       try {
         const start = DateTime.fromISO(week, { zone });
         const result = await api(
-          `public/${token}/?since=${encodeURIComponent(start.toISO()!)}&until=${encodeURIComponent(start.plus({ weeks: 1 }).toISO()!)}${view ? "&view=" + view : ""}`,
+          `public/${token}/?since=${encodeURIComponent(start.toISO()!)}&until=${encodeURIComponent(start.plus({ weeks: 1 }).toISO()!)}`,
         );
         if (!active) return;
         setData(result);
@@ -242,7 +265,7 @@ function PublicDisplay({ token }: { token: string }) {
       active = false;
       clearInterval(timer);
     };
-  }, [token, initial, week, view, zone]);
+  }, [token, initial, week, zone]);
   useEffect(() => {
     if (
       !data?.auto_scroll ||
@@ -272,6 +295,7 @@ function PublicDisplay({ token }: { token: string }) {
       : DateTime.fromISO(data.window_start, { zone }).toISODate()!;
   return (
     <main className="public-display">
+      <DemoNotice />
       <header>
         <Brand />
         <div>
@@ -280,7 +304,11 @@ function PublicDisplay({ token }: { token: string }) {
         </div>
         <div className="public-status">
           <span className={error ? "status-dot error-dot" : "status-dot"} />
-          {error ? "Verbindung unterbrochen" : "Live aktualisiert"}
+          {error
+            ? "Verbindung unterbrochen"
+            : DEMO_MODE
+              ? "Demodaten im Browser"
+              : "Live aktualisiert"}
           <small>
             Stand{" "}
             {data.updated
@@ -293,23 +321,6 @@ function PublicDisplay({ token }: { token: string }) {
         <div className="error-box">Letzter geladener Stand. {error}</div>
       )}
       <div className="public-toolbar">
-        <div className="display-view-switch" aria-label="Anzeigezeitraum">
-          {(
-            [
-              ["week", "Woche"],
-              ["today", "Heute"],
-              ["tomorrow", "Morgen"],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              aria-pressed={data.view_mode === value}
-              onClick={() => setView(value)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
         <div className="week-nav">
           {data.view_mode === "week" && (
             <button
@@ -372,7 +383,11 @@ function PublicDisplay({ token }: { token: string }) {
         />
       </div>
       <footer>
-        <span>Änderungen erscheinen nach Freigabe automatisch.</span>
+        <span>
+          {DEMO_MODE
+            ? "Diese Anzeige verwendet die Demodaten dieses Browsers."
+            : "Änderungen erscheinen nach Freigabe automatisch."}
+        </span>
         <span>campuszeit.</span>
       </footer>
     </main>
@@ -429,7 +444,9 @@ function DataTable({
     .filter(
       (f) =>
         !["json", "many", "file"].includes(f.type) &&
-        !["geometry", "polygon", "color"].includes(f.name),
+        !["geometry", "polygon", "color", "longitude", "latitude"].includes(
+          f.name,
+        ),
     )
     .slice(0, 6);
   const cell = (field: Field, row: Row) => {
@@ -462,7 +479,16 @@ function DataTable({
           <span>{count} Einträge</span>
         </div>
         <div>
-          <button className="button secondary" onClick={onImport}>
+          <button
+            className="button secondary"
+            onClick={onImport}
+            disabled={DEMO_MODE}
+            title={
+              DEMO_MODE
+                ? "Dateiimporte benötigen das echte Backend."
+                : undefined
+            }
+          >
             <Upload size={15} />
             Importieren
           </button>
@@ -979,14 +1005,17 @@ function Workspace() {
   );
   if (!session)
     return (
-      <div className="loading-screen">
-        {error || (
-          <>
-            <LoaderCircle className="spin" size={24} />
-            Campuszeit wird geladen …
-          </>
-        )}
-      </div>
+      <>
+        <DemoNotice />
+        <div className="loading-screen">
+          {error || (
+            <>
+              <LoaderCircle className="spin" size={24} />
+              Campuszeit wird geladen …
+            </>
+          )}
+        </div>
+      </>
     );
   if (!session.authenticated)
     return (
@@ -1061,6 +1090,8 @@ function Workspace() {
           <button
             className="icon-button"
             aria-label="Abmelden"
+            disabled={DEMO_MODE}
+            title={DEMO_MODE ? "Die Demo benötigt keine Anmeldung." : undefined}
             onClick={() =>
               api("auth/logout/", "POST", {})
                 .then(() => {
@@ -1113,6 +1144,7 @@ function Workspace() {
           </span>
         </header>
         <main className="main-content">
+          <DemoNotice />
           {error && (
             <div className="error-box global-error" role="alert">
               {error}
@@ -1134,7 +1166,12 @@ function Workspace() {
               <div className="page-actions">
                 <button
                   className="button primary"
-                  disabled={!plan}
+                  disabled={!plan || DEMO_MODE}
+                  title={
+                    DEMO_MODE
+                      ? "Die automatische Planung ist lokal verfügbar und benötigt das echte Backend."
+                      : undefined
+                  }
                   onClick={() => setModal({ type: "solver", kind: "teaching" })}
                 >
                   <Sparkles size={17} />
@@ -1183,12 +1220,16 @@ function Workspace() {
                     <strong>
                       {conflicts.length
                         ? `${conflicts.length} Hinweise`
-                        : "Konfliktfrei"}
+                        : DEMO_MODE
+                          ? "Demo geprüft"
+                          : "Konfliktfrei"}
                     </strong>
                     <span>
                       {conflicts.length
                         ? "Vor Veröffentlichung prüfen"
-                        : "Alle Regeln erfüllt"}
+                        : DEMO_MODE
+                          ? "Überschneidungen & Kapazitäten"
+                          : "Alle Regeln erfüllt"}
                     </span>
                   </div>
                 </div>
@@ -1213,7 +1254,12 @@ function Workspace() {
                     <button
                       className="button ghost"
                       onClick={() => setModal({ type: "template", groups: [] })}
-                      disabled={!plan}
+                      disabled={!plan || DEMO_MODE}
+                      title={
+                        DEMO_MODE
+                          ? "Lehrplanübernahme benötigt das echte Backend."
+                          : undefined
+                      }
                     >
                       <FileText size={15} />
                       Lehrplan übernehmen
@@ -1242,7 +1288,9 @@ function Workspace() {
                       onClick={() => setModal({ type: "publish" })}
                     >
                       <ArrowUpRight size={16} />
-                      Veröffentlichen
+                      {DEMO_MODE
+                        ? "Demoanzeige aktualisieren"
+                        : "Veröffentlichen"}
                     </button>
                   </div>
                 </div>
@@ -1406,8 +1454,9 @@ function Workspace() {
                     </ul>
                   ) : (
                     <p>
-                      Keine Überschneidungen. Unterrichtssoll und Kapazitäten
-                      sind geprüft.
+                      {DEMO_MODE
+                        ? "Die Demo prüft Überschneidungen und Raumkapazitäten. Die vollständige Soll- und Regelprüfung erfolgt im echten Backend."
+                        : "Keine Überschneidungen. Unterrichtssoll und Kapazitäten sind geprüft."}
                     </p>
                   )}
                 </div>
@@ -1426,19 +1475,12 @@ function Workspace() {
               </div>
             </>
           ) : page === "map" ? (
-            <Suspense
-              fallback={
-                <div className="loading-screen">Karteneditor laden …</div>
-              }
-            >
-              <MapEditor
-                data={data}
-                styleUrl={session.map_style}
-                zone={zone}
-                reload={reload}
-                notify={notify}
-              />
-            </Suspense>
+            <RoomOverview
+              data={data}
+              zone={zone}
+              query={search}
+              onEdit={edit}
+            />
           ) : page === "settings" ? (
             <>
               <div className="section-heading">
@@ -1493,10 +1535,12 @@ function Workspace() {
                   Einrichtungen, Verwaltungszugänge und Lizenzlaufzeiten werden
                   im gesonderten Betriebsbereich eingerichtet.
                 </p>
-                <a href="/admin/" target="_blank" rel="noreferrer">
-                  Betriebsbereich öffnen
-                  <ExternalLink size={14} />
-                </a>
+                {!DEMO_MODE && (
+                  <a href="/admin/" target="_blank" rel="noreferrer">
+                    Betriebsbereich öffnen
+                    <ExternalLink size={14} />
+                  </a>
+                )}
               </div>
             </>
           ) : (
@@ -1625,7 +1669,9 @@ function Workspace() {
           <span>campuszeit.</span>
           <span>
             <span className="status-dot" />
-            Mit deiner Einrichtung verbunden
+            {DEMO_MODE
+              ? "Demodaten in diesem Browser"
+              : "Mit deiner Einrichtung verbunden"}
           </span>
         </footer>
       </div>
@@ -1665,7 +1711,11 @@ function Workspace() {
       )}{" "}
       {modal?.type === "publish" && (
         <Modal
-          title="Stundenplan veröffentlichen"
+          title={
+            DEMO_MODE
+              ? "Demoanzeige aktualisieren"
+              : "Stundenplan veröffentlichen"
+          }
           subtitle={plan?.name}
           onClose={() => setModal(null)}
         >
@@ -1687,13 +1737,16 @@ function Workspace() {
                 <div className="publish-summary">
                   <CheckCircle2 size={30} />
                   <p>
-                    {rows.length} Termine werden als neue Version freigegeben.
-                    Verbundene Anzeigen aktualisieren sich automatisch.
+                    {rows.length} Termine{" "}
+                    {DEMO_MODE
+                      ? "werden in die Demoanzeige dieses Browsers übernommen."
+                      : "werden als neue Version freigegeben. Verbundene Anzeigen aktualisieren sich automatisch."}
                   </p>
                 </div>
                 <p>
-                  Vor der Freigabe prüfen wir Ressourcen und Unterrichtssoll
-                  erneut.
+                  {DEMO_MODE
+                    ? "In dieser Demo werden nur Überschneidungen und Raumkapazitäten geprüft. Die vollständige Freigabe benötigt das echte Backend."
+                    : "Vor der Freigabe prüfen wir Ressourcen und Unterrichtssoll erneut."}
                 </p>
               </>
             )}
@@ -1708,7 +1761,9 @@ function Workspace() {
               onClick={publish}
             >
               <ArrowUpRight size={16} />
-              Jetzt veröffentlichen
+              {DEMO_MODE
+                ? "Demoanzeige aktualisieren"
+                : "Jetzt veröffentlichen"}
             </button>
           </footer>
         </Modal>

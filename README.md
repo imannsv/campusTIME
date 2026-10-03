@@ -2,6 +2,14 @@
 
 Ausführbare Stundenplanplattform für Schulen und Hochschulen. React/TypeScript im Browser, Django REST Framework als Backend, PostgreSQL für den Betrieb, OR-Tools CP-SAT für Unterrichts- und Prüfungsplanung.
 
+## Vorläufige Vercel-Demo
+
+Auf [campustime-flame.vercel.app](https://campustime-flame.vercel.app) ist eine
+interaktive Browser-Demo mit fiktiven Produkttestdaten verfügbar.
+`vercel.json` baut dafür mit `npm run build:demo`. Änderungen bleiben nur im
+jeweiligen Browser; automatische Planung und Dateiimporte benötigen weiterhin
+das lokale Backend. Umfang, Grenzen und Testbefehle: [Browser-Demo](docs/BROWSER_DEMO.md).
+
 ## Lokal starten (Windows)
 
 Voraussetzungen: Python 3.12+ und Node.js 24. Im Projektverzeichnis:
@@ -30,7 +38,7 @@ Alternativ `npm.cmd run build` ausführen und die vollständige Anwendung über 
 
 ## Bedienung
 
-1. Unter **Stammdaten** Zeiträume, Planbereiche, Studien-/Bildungsgänge, Jahrgänge und Gruppen anlegen. Für Räume zuerst Gebäude und Etage anlegen.
+1. Unter **Stammdaten** Zeiträume, Planbereiche, Studien-/Bildungsgänge, Jahrgänge und Gruppen anlegen. Für Räume zuerst einen Raumbereich und ein Stockwerk anlegen.
 2. Personen mit Gruppen und Kursen verbinden. Lehrende als solche kennzeichnen und Verfügbarkeiten hinterlegen. Bei vollständigen Klassenlisten werden Teilnehmerzahlen aus eindeutigen Personen berechnet; noch fehlende Klassenmitglieder werden über die Gruppengröße berücksichtigt.
 3. Einen Stundenplan für Planbereich und Zeitraum anlegen. Veranstaltungen manuell pflegen oder eine Lehrplanvorlage übernehmen. Vorlagen werden kopiert, nicht nachträglich mit bestehenden Plänen synchronisiert.
 4. Soll als Unterrichtseinheiten je Woche oder im gesamten Zeitraum definieren. Die Einrichtung bestimmt die Minutenzahl einer Einheit. `Termindauer` bestimmt die Aufteilung des Solls. Für Mehrtagesblöcke Gesamtumfang und Blocktage einstellen; jeder vollständige Block findet an aufeinanderfolgenden Tagen zur gleichen Uhrzeit statt.
@@ -38,8 +46,8 @@ Alternativ `npm.cmd run build` ausführen und die vollständige Anwendung über 
 6. **Automatisch planen** erzeugt einen prüfbaren Vorschlag. **Übernehmen** ersetzt den Entwurf. Fixierte Termine bleiben erhalten. Datenänderungen während einer Berechnung verhindern die Übernahme veralteter Ergebnisse.
 7. **Veröffentlichen** prüft den gesamten Plan einschließlich Soll und anderer veröffentlichter Planbereiche erneut. Öffentliche Anzeigen zeigen ausschließlich freigegebene Versionen. Neue Raumblockierungen markieren betroffene veröffentlichte Termine als gesperrt; Terminänderungen benötigen eine neue Freigabe.
 8. Prüfungen erhalten einen eigenen Zeitraum, Teilnehmer und Aufsichten. Nachschreibeklausuren erhalten ihre eigene Liste. Mehrraumprüfungen teilen die Teilnehmer deterministisch nach Raumkapazität auf; je Raum wird eine Aufsicht zugeordnet. Die Raumaufteilung liegt im internen Planungsergebnis unter `room_allocations`.
-9. Unter **Campus & Räume** Etagen auswählen, Grundrisse hochladen und Raumecken zeichnen. Eine Fläche einem bestehenden Raum zuordnen und speichern. Die Geländeansicht ermöglicht Gebäudeumrisse auf der Außenkarte. Raumdetails zeigen freigegebene Belegungen.
-10. Unter **Öffentliche Anzeige** Anzeigen mit ausgewählten Plänen und **Anzeigezeitraum: Woche, Heute oder Morgen** anlegen. Der Link funktioniert ohne Anmeldung; Aktualisierung erfolgt alle zehn Sekunden. Tagesanzeigen wechseln automatisch in der Einrichtungszeitzone das Datum. Im Anzeigelink lässt sich die aktuelle Ansicht wechseln. Scrollen lässt sich konfigurieren und pausieren. Namen/IDs einzelner Lernender werden nie ausgeliefert.
+9. Unter **Räume** Bereiche und Stockwerke anlegen und vorhandene Raumbezeichnungen verwenden. Raumkacheln zeigen Kapazität und Ausstattung; Raumdetails zeigen freigegebene Belegungen. Bereiche, Stockwerke und Räume lassen sich direkt dort bearbeiten. Geografische Positionen und Grundrisse werden für die Raumplanung nicht benötigt.
+10. Unter **Öffentliche Anzeige** Anzeigen mit ausgewählten Plänen und **Anzeigezeitraum: Woche, Heute oder Morgen** anlegen. Der Link funktioniert ohne Anmeldung; Aktualisierung erfolgt alle zehn Sekunden. Tagesanzeigen wechseln automatisch in der Einrichtungszeitzone das Datum. Jeder Anzeigelink bleibt bei seinem fest eingestellten Zeitraum; nur die Verwaltung kann diesen ändern. Scrollen lässt sich konfigurieren und pausieren. Namen/IDs einzelner Lernender werden nie ausgeliefert.
 
 ## Dateiimporte
 
@@ -83,6 +91,6 @@ Die Zuordnung zu `imannsv/campusTIME`, `imanabi/campustime` und Supabase sowie d
 - Konkrete Fremdsystemanbindungen, individuelle Lernendenzugänge, persönliche Filteransichten, Handy-App, Regelbaukasten und automatische Online-Abrechnung sind wie vereinbart spätere Erweiterungen.
 - Die Automatik besitzt ein zehnminütiges Standardbudget und eine Begrenzung auf 500.000 mögliche Startpositionen. Größere Aufgaben müssen in Teilbereiche aufgeteilt werden. Die Oberfläche zeigt Arbeitsstatus statt eines erfundenen Fortschrittsprozentsatzes.
 - Fehlerberichte benennen Eingabefehler, Konflikte und offensichtlich fehlende Ressourcen. Bei komplexer Unlösbarkeit gibt es noch keine minimale mathematische Konfliktursache.
-- Der Karteneditor erstellt zweidimensionale Gebäude- und Raumflächen; er ist kein CAD- oder Navigationssystem. Eigene Innenpläne benötigen keinen externen Kartenservice. OpenFreeMap liefert nur die Außenkarte und garantiert keine Verfügbarkeit.
+- Die Raumverwaltung verwendet Bereiche → Stockwerke → Räume. Bestehende Gebäude-/Etagenzuordnungen bleiben erhalten; alte Geometriefelder sind nur noch zur Datenkompatibilität vorhanden.
 - Jede Anmeldung arbeitet zunächst mit der ersten zugeordneten Einrichtung; beim betreuten Start werden separate Konten pro Einrichtung angelegt.
 - Ein realer Pilot mit repräsentativen Daten und Abnahme der Betriebsumgebung ist vor einem kommerziellen Rollout erforderlich. Hosting, Domains und externe Überwachung werden durch den Betreiber bereitgestellt.

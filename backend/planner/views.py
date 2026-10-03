@@ -583,9 +583,8 @@ def public_display(request, token):
     ]
     rows = []
     selected = list(display.plans.select_related("period").all())
-    view_mode = request.query_params.get("view", display.view_mode)
-    if view_mode not in {"week", "today", "tomorrow"}:
-        raise serializers.ValidationError("Anzeigeart: week, today oder tomorrow.")
+    # Display links always use the mode chosen by the administration.
+    view_mode = display.view_mode
     zone = ZoneInfo(display.institution.timezone)
     if view_mode in {"today", "tomorrow"}:
         # Local midnights keep 23/25-hour days correct at daylight saving changes.

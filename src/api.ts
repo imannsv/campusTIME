@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+export const DEMO_MODE = import.meta.env.MODE === "demo";
 export type Row = Record<string, any>;
 export type Field = {
   name: string;
@@ -15,8 +16,8 @@ export const labels: Record<string, string> = {
   groups: "Gruppen & Klassen",
   people: "Personen",
   periods: "Planungszeiträume",
-  buildings: "Gebäude",
-  floors: "Etagen",
+  buildings: "Raumbereiche",
+  floors: "Stockwerke",
   rooms: "Räume",
   curricula: "Lehrplanvorlagen",
   plans: "Stundenpläne",
@@ -42,10 +43,10 @@ export const labels: Record<string, string> = {
   longitude: "Längengrad",
   latitude: "Breitengrad",
   geometry: "Gebäudeumriss",
-  building: "Gebäude",
-  level: "Etage",
+  building: "Bereich",
+  level: "Stockwerknummer",
   background: "Grundriss",
-  floor: "Etage",
+  floor: "Stockwerk",
   capacity: "Kapazität",
   equipment: "Ausstattung",
   polygon: "Raumfläche",
@@ -84,6 +85,10 @@ export async function api(
   method = "GET",
   body?: any,
 ): Promise<any> {
+  if (DEMO_MODE) {
+    const { demoApi } = await import("./demo");
+    return demoApi(path, method, body);
+  }
   const csrf =
     document.cookie
       .split("; ")

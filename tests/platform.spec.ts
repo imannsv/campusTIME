@@ -1,5 +1,89 @@
 import { test, expect } from "@playwright/test";
-test("Verwaltung: Kalender, Pflege, Raumkarte und öffentliche Anzeige", async ({
+test("Raumverwaltung: Bereich, Stockwerk und Raum pflegen", async ({
+  page,
+}) => {
+  const code = `ROOM-E2E-${Date.now()}`;
+  await page.goto("/");
+  await page.getByLabel("Passwort", { exact: true }).fill("Campuszeit2026!");
+  await page.getByRole("button", { name: "Anmelden", exact: true }).click();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "Räume", exact: true })
+    .click();
+  try {
+    await page
+      .getByRole("button", { name: "Bereich hinzufügen", exact: true })
+      .click();
+    await expect(page.getByRole("dialog").getByText("Längengrad")).toHaveCount(
+      0,
+    );
+    await page.getByRole("dialog").getByLabel("Kennung").fill(code);
+    await page.getByRole("dialog").getByLabel(/^Name/).fill(code);
+    await page.getByRole("button", { name: "Speichern", exact: true }).click();
+    await page.getByRole("button", { name: code, exact: true }).click();
+    await page
+      .getByRole("button", { name: "Stockwerk hinzufügen", exact: true })
+      .click();
+    await page.getByRole("dialog").getByLabel("Kennung").fill(code);
+    await page.getByRole("dialog").getByLabel(/^Name/).fill("Teststockwerk");
+    await page.getByRole("button", { name: "Speichern", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Teststockwerk", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Raum hinzufügen", exact: true })
+      .click();
+    await page.getByRole("dialog").getByLabel("Kennung").fill(code);
+    await page.getByRole("dialog").getByLabel(/^Name/).fill("Testräumchen 101");
+    await page.getByRole("dialog").getByLabel("Kapazität").fill("36");
+    await page.getByRole("button", { name: "Speichern", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Testräumchen 101", exact: true })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Testräumchen 101", exact: true }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Raum bearbeiten", exact: true })
+      .click();
+    await page.getByRole("dialog").getByLabel("Kapazität").fill("40");
+    await page.getByRole("button", { name: "Speichern", exact: true }).click();
+    await expect(page.locator(".room-tile-capacity")).toHaveText("40 Plätze");
+    await page.getByLabel("Raum suchen", { exact: true }).fill("Kein Treffer");
+    await expect(page.locator(".room-tile")).toHaveCount(0);
+    await page.getByLabel("Raum suchen", { exact: true }).fill("101");
+    await expect(page.locator(".room-tile")).toHaveCount(1);
+    await page.screenshot({
+      path: "test-results/rooms-desktop.png",
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(390);
+    await page.screenshot({
+      path: "test-results/rooms-mobile.png",
+      fullPage: true,
+    });
+  } finally {
+    const csrf =
+      (await page.context().cookies()).find(
+        (cookie) => cookie.name === "csrftoken",
+      )?.value || "";
+    for (const resource of ["rooms", "floors", "buildings"]) {
+      const response = await page.request.get(
+        `/api/${resource}/?search=${code}`,
+      );
+      for (const record of (await response.json()).results || []) {
+        if (record.code === code)
+          await page.request.delete(`/api/${resource}/${record.id}/`, {
+            headers: { "X-CSRFToken": csrf },
+          });
+      }
+    }
+  }
+});
+test("Verwaltung: Kalender, Pflege, Raumkacheln und öffentliche Anzeige", async ({
   page,
 }) => {
   await page.goto("/");
@@ -37,7 +121,8 @@ test("Verwaltung: Kalender, Pflege, Raumkarte und öffentliche Anzeige", async (
   await page.getByRole("button", { name: "Löschen", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page
-    .getByRole("button", { name: "Campus & Räume", exact: true })
+    .getByRole("navigation")
+    .getByRole("button", { name: "Räume", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Hörsaal H.101", exact: true })
@@ -84,7 +169,7 @@ test("Mobiler Einstieg bleibt bedienbar", async ({ page }) => {
   });
 });
 
-test("Tagesanzeigen lassen sich speichern und zwischen Heute, Morgen und Woche wechseln", async ({
+test("Anzeigen haben einen festen Zeitraum, den nur die Verwaltung ändert", async ({
   page,
 }) => {
   await page.goto("/");
@@ -118,43 +203,62 @@ test("Tagesanzeigen lassen sich speichern und zwischen Heute, Morgen und Woche w
     .getAttribute("href");
   try {
     await page.goto(href!);
-    await expect(
-      page.getByRole("button", { name: "Morgen", exact: true }),
-    ).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".week-nav strong")).toContainText("Morgen");
+    for (const label of ["Woche", "Heute", "Morgen"])
+      await expect(
+        page.getByRole("button", { name: label, exact: true }),
+      ).toHaveCount(0);
     await expect(page.locator(".calendar-heading > div")).toHaveCount(2);
     const token = href!.split("/").pop();
     const payload = await (
-      await page.request.get(`/api/public/${token}/`)
+      await page.request.get(`/api/public/${token}/?view=today`)
     ).json();
+    expect(payload.view_mode).toBe("tomorrow");
     await expect(page.locator(".calendar-event")).toHaveCount(
       payload.rows.length,
     );
-    await page.getByRole("button", { name: "Heute", exact: true }).click();
-    await expect(
-      page.getByRole("button", { name: "Heute", exact: true }),
-    ).toHaveAttribute("aria-pressed", "true");
-    await expect(page.locator(".calendar-heading > div")).toHaveCount(2);
+    await page.reload();
+    await expect(page.locator(".week-nav strong")).toContainText("Morgen");
     await page.setViewportSize({ width: 390, height: 844 });
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(390);
     await page.screenshot({
-      path: "test-results/anzeige-heute-mobil.png",
+      path: "test-results/anzeige-morgen-mobil.png",
       fullPage: true,
       animations: "disabled",
     });
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.getByRole("button", { name: "Morgen", exact: true }).click();
-    await expect(
-      page.getByRole("button", { name: "Morgen", exact: true }),
-    ).toHaveAttribute("aria-pressed", "true");
-    await page.screenshot({
-      path: "test-results/anzeige-morgen.png",
-      fullPage: true,
-      animations: "disabled",
-    });
-    await page.getByRole("button", { name: "Woche", exact: true }).click();
-    await expect(page.locator(".calendar-heading > div")).toHaveCount(8);
+    // Only administration can change the configured mode for this link.
+    for (const [mode, label, columns] of [
+      ["today", "Heute", 2],
+      ["week", "", 8],
+    ] as const) {
+      await page.goto("/");
+      await page
+        .getByRole("navigation")
+        .getByRole("button", { name: "Öffentliche Anzeige", exact: true })
+        .click();
+      await page.getByRole("cell", { name: code, exact: true }).click();
+      await page
+        .getByRole("dialog")
+        .getByLabel("Anzeigezeitraum", { exact: true })
+        .selectOption(mode);
+      await page
+        .getByRole("button", { name: "Speichern", exact: true })
+        .click();
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await page.goto(href!);
+      await expect(page.locator(".calendar-heading > div")).toHaveCount(
+        columns,
+      );
+      if (label)
+        await expect(page.locator(".week-nav strong")).toContainText(label);
+      for (const label of ["Woche", "Heute", "Morgen"])
+        await expect(
+          page.getByRole("button", { name: label, exact: true }),
+        ).toHaveCount(0);
+    }
   } finally {
     await page.goto("/");
     await page

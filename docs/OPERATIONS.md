@@ -45,6 +45,6 @@ Wiederherstellung zuerst in einer **separaten leeren Testumgebung** prüfen:
 - `docker compose logs web worker backup` für Fehler, Planungsaufträge und Backups verwenden. Wiederholte `failed`-Jobs und lange `queued`-Zeiten überwachen.
 - Planungsjobs sind zeitlich begrenzt. Ein gestoppter Worker kann einen Auftrag im Status `running` hinterlassen; nach Prüfung durch den Betrieb abbrechen und erneut starten.
 - Vor Updates ein zusätzliches Backup erstellen, neue Version bauen, Migrationen ausführen und Container ersetzen. Veröffentlichung und Solver dürfen während einer Migration keine Daten schreiben.
-- Die Kartenquelle wird über `MAP_STYLE_URL` ausgetauscht. OpenFreeMap benötigt keinen API-Schlüssel; vorgeschriebene Kartenzuschreibungen bleiben sichtbar. Bei einem Ausfall bleiben eigene Etagen und Raumflächen nutzbar.
+- Die Raumverwaltung verwendet Bereiche, Stockwerke und Raumkacheln ohne externe Kartenquelle. Alte Grundrissdateien und Geometrien bleiben zur Datenkompatibilität erhalten.
 
 Vor dem Verkaufsstart einen repräsentativen Pilot mit echten Planungsregeln, Datensätzen und parallelen Verwaltungszugriffen abnehmen. Die dokumentierten synthetischen Lasttests ersetzen diese Abnahme nicht.

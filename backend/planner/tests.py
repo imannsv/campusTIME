@@ -376,7 +376,7 @@ class PlatformTests(TestCase):
         self.assertEqual(response.data["weekdays"], [0, 1, 2, 3, 4])
         self.assertEqual(APIClient().get("/api/health/").status_code, 200)
 
-    def test_saved_daily_display_and_visitor_override(self):
+    def test_display_mode_is_fixed_for_visitors(self):
         display = m.Display.objects.first()
         display.view_mode = "today"
         display.save()
@@ -388,17 +388,40 @@ class PlatformTests(TestCase):
             today = APIClient().get(
                 url, {"since": "2027-01-01T00:00:00Z", "until": "2027-02-01T00:00:00Z"}
             )
-            tomorrow = APIClient().get(url, {"view": "tomorrow"})
+            for attempted_mode in ["week", "tomorrow", "invalid"]:
+                override = APIClient().get(url, {"view": attempted_mode})
+                self.assertEqual(override.status_code, 200)
+                self.assertEqual(override.data["view_mode"], "today")
+                self.assertEqual(override.data["rows"], today.data["rows"])
+            display.view_mode = "tomorrow"
+            display.save()
+            tomorrow = APIClient().get(url, {"view": "today"})
         self.assertEqual(today.data["view_mode"], "today")
         self.assertEqual(len(today.data["rows"]), 3)
         self.assertEqual(len(tomorrow.data["rows"]), 2)
         self.assertEqual(tomorrow.data["window_start"].date(), date(2026, 10, 6))
         display.refresh_from_db()
-        self.assertEqual(display.view_mode, "today")
+        self.assertEqual(display.view_mode, "tomorrow")
         self.assertNotIn("learner_ids", today.data["rows"][0])
+        display.view_mode = "week"
+        display.save()
+        for attempted_mode in ["today", "tomorrow"]:
+            response = APIClient().get(
+                url,
+                {
+                    "view": attempted_mode,
+                    "since": "2026-10-05T00:00:00+02:00",
+                    "until": "2026-10-12T00:00:00+02:00",
+                },
+            )
+            self.assertEqual(response.data["view_mode"], "week")
+            self.assertEqual(len(response.data["rows"]), 10)
 
     def test_daily_display_rollover_empty_days_and_timezone(self):
-        url = f"/api/public/{m.Display.objects.first().token}/"
+        display = m.Display.objects.first()
+        display.view_mode = "today"
+        display.save()
+        url = f"/api/public/{display.token}/"
         with patch(
             "planner.views.timezone.now",
             return_value=datetime.fromisoformat("2026-10-05T21:59:00+00:00"),
@@ -428,7 +451,10 @@ class PlatformTests(TestCase):
         self.assertEqual(remote_zone.data["window_start"].date(), date(2026, 10, 6))
 
     def test_daily_display_dst_and_year_boundary(self):
-        url = f"/api/public/{m.Display.objects.first().token}/"
+        display = m.Display.objects.first()
+        display.view_mode = "tomorrow"
+        display.save()
+        url = f"/api/public/{display.token}/"
         with patch(
             "planner.views.timezone.now",
             return_value=datetime.fromisoformat("2026-10-24T12:00:00+00:00"),
@@ -445,7 +471,9 @@ class PlatformTests(TestCase):
         ):
             result = APIClient().get(url, {"view": "tomorrow"}).data
         self.assertEqual(result["window_start"].date(), date(2027, 1, 1))
-        self.assertEqual(APIClient().get(url, {"view": "invalid"}).status_code, 400)
+        self.assertEqual(APIClient().get(url, {"view": "invalid"}).status_code, 200)
+        display.view_mode = "week"
+        display.save()
         self.assertEqual(
             APIClient()
             .get(

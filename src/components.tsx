@@ -517,9 +517,13 @@ export function RecordForm({
           {fields
             .filter(
               (f) =>
-                !["file", "geometry", "polygon"].includes(
-                  f.type === "file" ? "file" : f.name,
-                ),
+                ![
+                  "file",
+                  "geometry",
+                  "polygon",
+                  "longitude",
+                  "latitude",
+                ].includes(f.type === "file" ? "file" : f.name),
             )
             .map((f) => (
               <label
