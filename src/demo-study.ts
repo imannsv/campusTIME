@@ -1,5 +1,6 @@
 import type { Store } from "./demo";
 import type { Row } from "./api";
+import { cohortProgression, effectiveSemester } from "./demo-progression";
 
 const get = (state: Store, resource: string, id: number) => {
   const row = state.data[resource].find((item) => item.id === id);
@@ -68,6 +69,10 @@ export function validateStudy(
     );
   if (resource === "studyversions") row.status = "draft";
   if (resource === "modules") {
+    if (![1, 2, 3].includes(Number(row.difficulty ?? 2)))
+      throw new Error(
+        "Schwierigkeit: leicht, mittel oder anspruchsvoll wählen.",
+      );
     if (old && old.study_version !== row.study_version)
       throw new Error("Module bleiben in ihrer Lehrplanversion.");
     if (row.credits < 0 || row.credits > 10000)
@@ -123,6 +128,11 @@ export function validateStudy(
       );
   }
   if (resource === "cohorts") {
+    if (
+      row.study_version &&
+      get(state, "studyversions", row.study_version).status === "approved"
+    )
+      cohortProgression(state, row);
     const version = row.study_version
       ? get(state, "studyversions", row.study_version)
       : null;
@@ -177,7 +187,8 @@ export function validateStudy(
       !plan.cohort ||
       get(state, "cohorts", plan.cohort).study_version !==
         versionFor(state, "teachingunits", unit)!.id ||
-      plan.semester !== unit.semester
+      plan.semester !==
+        effectiveSemester(get(state, "cohorts", plan.cohort), unit)
     )
       throw new Error("Lehrveranstaltung passt nicht zum Semesterplan.");
     if (
@@ -418,15 +429,19 @@ export function prepareSemester(state: Store, plan: Row, body: Row): Row {
   const units = state.data.teachingunits.filter(
     (unit) =>
       versionFor(state, "teachingunits", unit)!.id === version.id &&
-      unit.semester === plan.semester,
+      effectiveSemester(cohort, unit) === plan.semester,
   );
   if (!units.length)
     throw new Error(
       "Für dieses Fachsemester sind keine Lehrveranstaltungen hinterlegt.",
     );
+  const progression = cohortProgression(state, cohort);
+  if (progression.errors.length) throw new Error(progression.errors.join("\n"));
   let created = 0,
     total = 0;
-  const warnings: string[] = [];
+  const warnings: string[] = progression.warnings.filter((warning: string) =>
+    warning.startsWith(`Semester ${plan.semester}:`),
+  );
   for (const unit of units) {
     const deliveries =
       unit.group_mode === "per_group"

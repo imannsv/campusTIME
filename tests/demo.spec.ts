@@ -1,6 +1,15 @@
 import { test, expect } from "@playwright/test";
 import { studyFlow } from "./study-flow";
+import { progressionFlow } from "./progression-flow";
 test.use({ actionTimeout: 10000 });
+
+test("Jahrgangsverlauf verschieben, Voraussetzungen und Ausgleich prüfen", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  await page.goto("/");
+  await progressionFlow(page, "BAL-DEMO-2028");
+});
 
 test("Geführte Einrichtung: Studienstruktur, Jahrgang und Semester übernehmen", async ({
   page,
@@ -35,6 +44,41 @@ test("Bestehende Browser-Demo wird ohne Verlust von Raumänderungen ergänzt", a
   );
   expect(saved.data.rooms[0].capacity).toBe(777);
   expect(saved.data.modules).toHaveLength(37);
+  await page.evaluate(() => {
+    const key = "campustime-browser-demo-v1";
+    const saved = JSON.parse(localStorage.getItem(key)!);
+    saved.schema.modules = saved.schema.modules.filter(
+      (field: any) => field.name !== "difficulty",
+    );
+    for (const module of saved.data.modules) delete module.difficulty;
+    for (const cohort of saved.data.cohorts) {
+      delete cohort.study_schedule;
+      for (const key of [
+        "semester_credit_limit",
+        "semester_weekly_limit",
+        "semester_difficulty_limit",
+      ])
+        delete cohort[key];
+    }
+    localStorage.setItem(key, JSON.stringify(saved));
+  });
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Automatisch planen", exact: true }),
+  ).toBeVisible();
+  const upgraded = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("campustime-browser-demo-v1")!),
+  );
+  expect(upgraded.data.rooms[0].capacity).toBe(777);
+  expect(
+    upgraded.data.modules.every((module: any) => module.difficulty === 2),
+  ).toBeTruthy();
+  expect(
+    upgraded.data.cohorts.every(
+      (cohort: any) =>
+        cohort.study_schedule && cohort.semester_credit_limit === 0,
+    ),
+  ).toBeTruthy();
   expect(
     saved.data.cohorts.filter((row: any) => row.code === "STUDY-JG27"),
   ).toHaveLength(1);

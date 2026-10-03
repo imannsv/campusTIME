@@ -74,3 +74,36 @@ wenn `windows` fehlt. Unterricht und Prüfungsplanung verwenden dieselbe Prüfun
 Zusätzliche Listenfilter: `study_version`, `module`, `semester`, `status`,
 bei Personen `groups` und `kind`. Die CSV-Importe verwenden die dynamischen
 Ressourcenschemata; Freigabe einer Lehrplanversion erfolgt separat.
+
+## Jahrgangsverlauf und Belastung
+
+`modules.difficulty` ist 1, 2 oder 3, vorbelegt mit 2. Jahrgänge speichern
+`semester_credit_limit`, `semester_weekly_limit`, `semester_difficulty_limit`
+und `study_schedule`. Letzteres ist über CRUD/Import schreibgeschützt; das
+dynamische Formularschema zeigt kein JSON-Eingabefeld dafür.
+
+`GET /api/cohorts/<id>/progression/` liefert effektive und Standardsemester,
+Fixierungen, bereits übernommene Veranstaltungen, Belastung je Semester,
+Fehler, Hinweise, Grenzen und die aktuelle Einrichtungsrevision.
+
+`POST` auf denselben Endpunkt verlangt die aktuelle `revision` und akzeptiert `operation`: `preview`, `propose`
+oder `save`. Beispiel:
+
+```json
+{
+  "operation": "preview",
+  "revision": 12,
+  "schedule": {"42": {"semester": 4, "pinned": true}},
+  "limits": {"semester_credit_limit": 30, "semester_weekly_limit": 24, "semester_difficulty_limit": 60}
+}
+```
+
+Die Schlüssel sind IDs der Lehrveranstaltungen derselben Lehrplanversion.
+Nur abweichende oder fixierte Zuordnungen werden gespeichert. `propose` liefert
+zusätzlich `moves` und eine Erklärung, ohne zu speichern. `save` verlangt
+zusätzlich `revision` aus der aktuellen Vorschau und keine Voraussetzungskonflikte.
+Es verändert ausschließlich den Jahrgang, nicht die Lehrplanversion.
+Semesterübernahme und Validierung der Veranstaltung verwenden die effektive
+Semesterzuordnung. Bereits übernommene Veranstaltungen können durch den
+Jahrgangsverlauf nicht verschoben werden. Grenzen sind weich; Verletzungen
+der Voraussetzungen, ungültige Zuordnungen und veraltete Stände sind Fehler.

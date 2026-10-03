@@ -142,6 +142,8 @@ class StudyWorkflowTests(TestCase):
         )
 
     def test_cloning_preserves_hierarchy_and_old_cohort_binding(self):
+        self.second.difficulty = 3
+        self.second.save()
         self.approve()
         cohort = m.Cohort.objects.create(
             institution=self.institution,
@@ -159,6 +161,7 @@ class StudyWorkflowTests(TestCase):
         new = m.StudyVersion.objects.get(id=response.data["id"])
         self.assertEqual(new.status, "draft")
         copied = new.modules.get(name="Datenbanken")
+        self.assertEqual(copied.difficulty, 3)
         self.assertEqual(copied.parent.study_version_id, new.id)
         self.assertEqual(copied.prerequisites.get().study_version_id, new.id)
         self.assertEqual(structure_report(new)["errors"], [])

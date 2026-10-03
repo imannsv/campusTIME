@@ -1,4 +1,30 @@
 import { test, expect } from "@playwright/test";
+import { progressionFlow } from "./progression-flow";
+test.use({ actionTimeout: 10000 });
+
+test("Jahrgangsverlauf wird geprüft, balanciert und separat gespeichert", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  const code = `BAL-E2E-${Date.now()}`;
+  await page.goto("/");
+  await page.getByLabel("Passwort", { exact: true }).fill("Campuszeit2026!");
+  await page.getByRole("button", { name: "Anmelden", exact: true }).click();
+  try {
+    await progressionFlow(page, code);
+  } finally {
+    const csrf =
+      (await page.context().cookies()).find(
+        (cookie) => cookie.name === "csrftoken",
+      )?.value || "";
+    const response = await page.request.get(`/api/cohorts/?search=${code}`);
+    for (const record of (await response.json()).results || [])
+      if (record.code === code)
+        await page.request.delete(`/api/cohorts/${record.id}/`, {
+          headers: { "X-CSRFToken": csrf },
+        });
+  }
+});
 test("Studienverwaltung pflegt Lehrende mit mehreren Zeitfenstern", async ({
   page,
 }) => {

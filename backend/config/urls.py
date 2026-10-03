@@ -21,6 +21,7 @@ urlpatterns = [
     path("api/preferences/", views.preferences),
     path("api/plans/<int:pk>/<str:operation>/", views.plan_action),
     path("api/studyversions/<int:pk>/<str:operation>/", views.study_action),
+    path("api/cohorts/<int:pk>/progression/", views.cohort_progression),
     path("api/jobs/<uuid:pk>/", views.job_detail),
     path("api/jobs/", views.jobs),
     path("api/public/<uuid:token>/", views.public_display),

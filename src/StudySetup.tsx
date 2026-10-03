@@ -2,6 +2,7 @@ import { useEffect, useState, FormEvent, ReactNode } from "react";
 import { DateTime } from "luxon";
 import { all, api, Row } from "./api";
 import { Modal } from "./components";
+import CohortProgression from "./CohortProgression";
 
 type Props = {
   data: Record<string, Row[]>;
@@ -574,6 +575,7 @@ export default function StudySetup({
               <label className="study-select">
                 Jahrgang
                 <select
+                  aria-label="Jahrgang"
                   value={cohort?.id || ""}
                   onChange={(e) => setCohortId(Number(e.target.value))}
                 >
@@ -587,6 +589,11 @@ export default function StudySetup({
               </label>
               {cohort && (
                 <>
+                  <CohortProgression
+                    cohort={cohort}
+                    modules={modules}
+                    onChanged={onChanged}
+                  />
                   <div className="study-inline-actions">
                     <button
                       className="button secondary"
@@ -669,6 +676,7 @@ export default function StudySetup({
           <label className="study-select">
             Jahrgang
             <select
+              aria-label="Jahrgang"
               value={cohort?.id || ""}
               onChange={(e) => setCohortId(Number(e.target.value))}
             >

@@ -6,6 +6,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from . import models as m
+from .progression import effective_semester
 
 
 def owner_version(instance):
@@ -38,6 +39,10 @@ def validate_study(model, instance, attrs, institution):
                 "Regelstudienzeit: 1–24 Semester; Credit Points: 0–10.000."
             )
     if model == m.Module:
+        if value("difficulty", 2) not in [1, 2, 3]:
+            raise serializers.ValidationError(
+                "Schwierigkeit: leicht, mittel oder anspruchsvoll wählen."
+            )
         version = value("study_version")
         version.refresh_from_db()
         if version.status == "approved":
@@ -111,6 +116,9 @@ def validate_study(model, instance, attrs, institution):
         if any(person.kind != "teacher" for person in attrs.get("teachers", [])):
             raise serializers.ValidationError("Nur Lehrende auswählen.")
     if model == m.Cohort:
+        from .progression import limits_for
+
+        limits_for(instance or m.Cohort(), attrs)
         version = value("study_version")
         if version:
             version.refresh_from_db()
@@ -178,7 +186,7 @@ def validate_study(model, instance, attrs, institution):
         if (
             not plan.cohort_id
             or plan.cohort.study_version_id != unit.module.study_version_id
-            or plan.semester != unit.semester
+            or plan.semester != effective_semester(plan.cohort, unit)
         ):
             raise serializers.ValidationError(
                 "Lehrveranstaltung passt nicht zur Lehrplanversion und zum Fachsemester des Plans."
@@ -298,6 +306,7 @@ def clone_version(source, code, name, version):
             code=f"SV{target.id}-M{module.id}",
             name=module.name,
             credits=module.credits,
+            difficulty=module.difficulty,
         )
     for module in modules:
         copy = mapping[module.id]
@@ -356,16 +365,31 @@ def prepare_semester(plan, group_ids=None):
         raise serializers.ValidationError(
             "Zuerst mindestens eine Gruppe für den Jahrgang anlegen."
         )
-    units = list(
-        m.TeachingUnit.objects.filter(
-            module__study_version=version, semester=plan.semester
+    from .progression import progression
+
+    report = progression(plan.cohort)
+    if report["errors"]:
+        raise serializers.ValidationError(report["errors"])
+    units = [
+        unit
+        for unit in m.TeachingUnit.objects.filter(
+            module__study_version=version
         ).prefetch_related("teachers")
-    )
+        if effective_semester(plan.cohort, unit) == plan.semester
+    ]
     if not units:
         raise serializers.ValidationError(
             "Für dieses Fachsemester sind keine Lehrveranstaltungen hinterlegt."
         )
-    created, warnings, total = 0, [], 0
+    created, warnings, total = (
+        0,
+        [
+            warning
+            for warning in report["warnings"]
+            if warning.startswith(f"Semester {plan.semester}:")
+        ],
+        0,
+    )
     for unit in units:
         deliveries = (
             [[group] for group in groups]

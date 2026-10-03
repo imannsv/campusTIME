@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 import example from "./demo-data.json";
 import type { Field, Row } from "./api";
+import { cohortProgression, limitFields } from "./demo-progression";
 import {
   checkStructure,
   validateStudy,
@@ -102,6 +103,19 @@ function read(): Store {
         for (const unit of value.data.teachingunits)
           unit.group_mode ??= "combined";
         for (const course of value.data.courses) course.study_group ??= null;
+        localStorage.setItem(KEY, JSON.stringify(value));
+      }
+      if (
+        !value.schema.modules.some(
+          (field: Field) => field.name === "difficulty",
+        )
+      ) {
+        value.schema = initial().schema;
+        for (const module of value.data.modules) module.difficulty ??= 2;
+        for (const cohort of value.data.cohorts) {
+          cohort.study_schedule ??= {};
+          for (const field of limitFields) cohort[field] ??= 0;
+        }
         localStorage.setItem(KEY, JSON.stringify(value));
       }
       return value;
@@ -378,6 +392,33 @@ export async function demoApi(
     };
   if (resource === "jobs" && !key) return [];
   if (resource === "public") return displayFor(state, key, query);
+  if (resource === "cohorts" && operation === "progression") {
+    const cohort = get(state, resource, id);
+    if (method !== "GET" && method !== "POST")
+      throw new Error("GET oder POST erforderlich.");
+    if (
+      method === "POST" &&
+      !["preview", "propose", "save"].includes(body?.operation || "preview")
+    )
+      throw new Error("Ungültige Aktion.");
+    if (method === "POST" && body?.revision !== state.institution.revision)
+      throw new Error(
+        "Daten wurden inzwischen geändert. Gespeicherten Verlauf neu laden und Änderungen prüfen.",
+      );
+    const result = cohortProgression(
+      state,
+      cohort,
+      method === "GET" ? {} : body || {},
+    );
+    if (method === "POST" && body?.operation === "save") {
+      if (result.errors.length) throw new Error(result.errors.join("\n"));
+      cohort.study_schedule = result.schedule;
+      Object.assign(cohort, result.limits);
+      save(state, `${cohort.name}: Jahrgangsverlauf angepasst`);
+      result.revision = state.institution.revision;
+    }
+    return result;
+  }
   if (resource === "studyversions" && operation) {
     const version = get(state, resource, id);
     if (operation === "check" && method === "GET")
@@ -588,6 +629,10 @@ export async function demoApi(
       );
   }
   if (resource === "displays" && !key) record.token = crypto.randomUUID();
+  if (resource === "cohorts")
+    record.study_schedule = key
+      ? get(state, resource, id).study_schedule || {}
+      : {};
   validateStudy(state, resource, record, key ? get(state, resource, id) : null);
   if (resource === "blocks" && record.repeat_weekly && !record.repeat_until)
     throw new Error("Wiederholungsende auswählen.");

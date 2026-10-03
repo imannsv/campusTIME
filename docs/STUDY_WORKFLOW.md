@@ -89,3 +89,57 @@ bestandene Prüfungen. Prüfungsleistungen, persönliche CP-Konten, komplexe
 Wahlpflicht-Katalogregeln und fachliche Genehmigung einer Studienordnung sind
 nicht Bestandteil dieser Erweiterung. Die Beispieldaten sind keine echte
 Studienordnung.
+
+## Studienverlauf eines Jahrgangs anpassen
+
+Unter **Jahrgänge → Studienverlauf und Semesterbelastung** erscheint zunächst
+der Standardverlauf. Einzelne Lehrveranstaltungen können in ein anderes
+Fachsemester verschoben werden. **Modul verschieben** verschiebt alle
+Veranstaltungen eines Ober- oder Teilmoduls gemeinsam; bei mehrsemestrigen
+Modulen bleiben die relativen Abstände erhalten. Der Standardlehrplan und
+andere Jahrgänge behalten ihre Verteilung.
+
+Manuelle Verschiebungen sind zunächst fixiert. Die Fixierung kann gelöst
+werden, damit **Ausgleich vorschlagen** diese Veranstaltung ebenfalls bewegen
+darf. Ein Vorschlag wird separat mit seinen Verschiebungen und verbleibenden
+Belastungshinweisen angezeigt. Erst **Vorschlag in Vorschau übernehmen** und
+**Studienverlauf speichern** ändern den Jahrgang dauerhaft. Vorschläge können
+verworfen und unverplante Veranstaltungen auf den Standard zurückgesetzt werden.
+
+Die Belastungsprüfung verwendet:
+
+- **CP-Anteile:** CP eines Obermoduls werden nach den CP seiner Teilmodule
+  verteilt. Teilmodule ohne CP erhalten gleiche Anteile. Innerhalb eines
+  Moduls wird der Anteil gleichmäßig auf seine Veranstaltungen verteilt.
+  Beispiel: 10 CP mit zwei Teilmodulen zu je 5 CP in Semester 1 und 2 ergeben
+  jeweils 5 Planungs-CP. Das ist keine Verbuchung bestandener Prüfungen.
+- **Wöchentliche UE:** Wöchentliche Unterrichtsvolumina pro Studierendengruppe;
+  A/B-Wochen zählen im Mittel zur Hälfte. Separate Gruppendurchführungen werden
+  für die individuelle Lernbelastung nicht mehrfach gezählt. Gesamtumfänge
+  werden zusätzlich angezeigt und ohne Semesterwochen nicht in Wochenwerte
+  umgerechnet.
+- **Belastungspunkte:** CP-Anteil × administrativ gepflegte Modulschwierigkeit
+  (1 = leicht, 2 = mittel, 3 = anspruchsvoll). Bestehende und neue Module sind
+  mit 2 vorbelegt. Die Software erschließt keine fachliche Schwierigkeit aus
+  Namen oder bewertet Inhalte selbstständig.
+
+Grenzen sind pro Jahrgang einstellbar. Bei CP und Belastungspunkten verwendet
+0 den Mittelwert über die Regelstudienzeit, bei UE deaktiviert 0 die Grenze.
+Überschreitungen sind Planungshinweise und können bewusst gespeichert werden.
+Verletzte Voraussetzungen sperren das Speichern. Ein vorausgesetztes Modul
+muss mit sämtlichen zugehörigen Veranstaltungen früher abgeschlossen sein.
+
+Der begrenzte heuristische Ausgleich prüft einzelne Verschiebungen,
+zusammenhängende Voraussetzungsketten und Tausche. Er verbessert die
+Lastverteilung unter Berücksichtigung der Grenzen und bevorzugt kleine
+Änderungen. Er garantiert keine optimale Lösung. Wenn Fixierungen die
+Voraussetzungen unmöglich machen, meldet er den Konflikt; verbleibende
+Überschreitungen werden sichtbar ausgewiesen. Fachliche Vorgaben ohne erfasste
+Voraussetzung, saisonale Angebote und personelle/raumbezogene Kapazitäten
+lassen sich daraus nicht ableiten. Letztere prüft die konkrete Stundenplanung.
+
+Die Semesterübernahme verwendet den gespeicherten Jahrgangsverlauf.
+Bereits übernommene Veranstaltungen sind gegen Semesterwechsel geschützt;
+sie müssen zuerst aus ihrem bestehenden Semesterplan entfernt werden.
+Speichern prüft zusätzlich den Stand der Einrichtungsdaten und lehnt eine
+veraltete Vorschau ab. Bestehende Jahrgänge starten ohne Abweichungen.

@@ -85,3 +85,28 @@ Die Vercel-Ausführung bleibt eine Browser-Demo. Studienstruktur und
 Semesterübernahme funktionieren dort mit Browser-Speicherung; Solver und
 Dateiimporte benötigen das Backend. Siehe `STUDY_WORKFLOW.md` für den Ablauf
 und dessen fachliche Grenzen.
+
+## Ergänzung: Jahrgangsverlauf und Ausgleich
+
+Am 03.10.2026 geprüft:
+
+- 41 Backendtests mit SQLite bestanden. Die fünf neuen Tests prüfen
+  Standardverteilung, nur für einen Jahrgang gespeicherte Abweichungen,
+  Vorschläge ohne automatische Speicherung, Fixierungen, Voraussetzungsketten
+  einschließlich unmöglicher Konstellationen, CP-Anteile ohne Doppelzählung,
+  Schwierigkeit, A/B-Wochen, Gesamtumfänge, Grenzen und Mandantentrennung.
+- Die Semesterübernahme verwendet die angepassten Semester. Bereits übernommene
+  Veranstaltungen sind gegen weitere Semesterwechsel geschützt. Veraltete
+  Vorschauen werden bei Prüfung, Vorschlag und Speicherung zurückgewiesen.
+- Sechs lokale und fünf Demo-Browsertests prüfen unter anderem das Verschieben
+  eines zweisemestrigen Obermoduls auf Semester 4 und 5, anschließenden Ausgleich,
+  unmögliche Voraussetzungen, Speichern und Neuladen sowie mobile Breite.
+  Alte Browserprofile erhalten die neuen Felder unter Erhalt ihrer Raumänderungen.
+- TypeScript, regulärer Build, Demo-Build, Ruff, Django-System- und
+  Migrationsprüfung sowie `git diff --check` bestanden. Migration 0007 wurde
+  lokal angewendet. PostgreSQL wurde für diese Erweiterung nicht erneut geprüft.
+
+Der Ausgleich ist eine begrenzte Heuristik mit höchstens 10.000 bewerteten
+Kandidaten und zwölf Verbesserungsrunden. Er ist kein Nachweis einer optimalen
+Verteilung und ersetzt keine fachliche Prüfung. CP-Anteile sind Planungswerte,
+keine erreichten Leistungen; Schwierigkeit ist administrativ gepflegt.

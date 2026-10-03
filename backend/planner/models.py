@@ -101,6 +101,9 @@ class StudyVersion(TenantModel):
 
 
 class Module(TenantModel):
+    difficulty = models.PositiveIntegerField(
+        choices=[(1, "Leicht"), (2, "Mittel"), (3, "Anspruchsvoll")], default=2
+    )
     study_version = models.ForeignKey(
         StudyVersion, on_delete=models.PROTECT, related_name="modules"
     )
@@ -158,6 +161,12 @@ class Cohort(TenantModel):
         StudyVersion, null=True, blank=True, on_delete=models.PROTECT
     )
     entry_year = models.PositiveIntegerField(null=True, blank=True)
+    study_schedule = models.JSONField(default=dict, blank=True)
+    semester_credit_limit = models.DecimalField(
+        max_digits=6, decimal_places=1, default=0
+    )
+    semester_weekly_limit = models.PositiveIntegerField(default=0)
+    semester_difficulty_limit = models.PositiveIntegerField(default=0)
 
 
 class Group(TenantModel):

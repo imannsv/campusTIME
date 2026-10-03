@@ -44,6 +44,10 @@ Module, Teilmodule, Credit Points und semesterbezogene Lehrveranstaltungen.
 Die Studienverwaltung pflegt mehrere Verfügbarkeitsfenster je Lehrendem.
 Details und Grenzen: [Studienstruktur](docs/STUDY_WORKFLOW.md).
 
+Jahrgänge können eigene Semesterverteilungen erhalten. **Studienverlauf und
+Semesterbelastung** prüft Voraussetzungen und Lastgrenzen, erlaubt fixierte
+Verschiebungen und zeigt Ausgleichsvorschläge vor der Übernahme.
+
 Das zusätzliche fiktive Beispiel wird lokal mit
 `.\.venv\Scripts\python.exe backend/manage.py seed_study` nach den Migrationen
 angelegt. Es enthält sechs Semester, 180 CP und Jahrgang dWI27.

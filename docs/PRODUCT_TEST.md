@@ -50,3 +50,13 @@ Voraussetzungen ansehen, eine neue Version kopieren und einen Semesterplan
 für dWI27 vorbereiten. Lehrende werden durch die Studienverwaltung gepflegt.
 Der Befehl verändert die oben beschriebenen 8 veröffentlichten Pläne nicht.
 Die Vercel-Demo enthält dieses zusätzliche Beispiel bereits.
+
+Unter **Jahrgänge → Studienverlauf und Semesterbelastung** einen neuen
+Testjahrgang zur Beispielversion anlegen. **Grundlagen Informatik** auf
+Startsemester 4 verschieben: Programmierung liegt danach in Semester 4,
+Datenbanken in Semester 5. Die Belastung steigt dort zunächst auf 35 CP-Anteile.
+**Ausgleich vorschlagen** zeigt passende Verschiebungen der übrigen
+Veranstaltungen. Vorschlag prüfen, in die Vorschau übernehmen und speichern.
+Wird Programmierung stattdessen auf Semester 6 fixiert, passt Datenbanken
+mit seiner Voraussetzung nicht mehr in die Regelstudienzeit; Speichern ist
+gesperrt und der Vorschlag erklärt den Konflikt.

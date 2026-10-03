@@ -422,6 +422,48 @@ def preferences(request):
 
 
 @api_view(["GET", "POST"])
+def cohort_progression(request, pk):
+    from .progression import LIMIT_FIELDS, progression
+
+    institution = tenant(request)
+    cohort = get_object_or_404(
+        m.Cohort.objects.select_related("study_version", "institution"),
+        institution=institution,
+        pk=pk,
+    )
+    if request.method == "GET":
+        return Response(progression(cohort))
+    with transaction.atomic():
+        institution = lock_tenant(request)
+        cohort = m.Cohort.objects.select_related("study_version", "institution").get(
+            pk=cohort.pk
+        )
+        operation = request.data.get("operation", "preview")
+        if operation not in ["preview", "propose", "save"]:
+            raise serializers.ValidationError("Ungültige Aktion.")
+        if request.data.get("revision") != institution.revision:
+            raise serializers.ValidationError(
+                "Daten wurden inzwischen geändert. Gespeicherten Verlauf neu laden und Änderungen prüfen."
+            )
+        result = progression(
+            cohort,
+            request.data.get("schedule"),
+            request.data.get("limits"),
+            propose=operation == "propose",
+        )
+        if operation == "save":
+            if result["errors"]:
+                raise serializers.ValidationError(result["errors"])
+            cohort.study_schedule = result["schedule"]
+            for field in LIMIT_FIELDS:
+                setattr(cohort, field, result["limits"][field])
+            cohort.save(update_fields=["study_schedule", *LIMIT_FIELDS])
+            bump(request, institution, f"{cohort.name}: Jahrgangsverlauf angepasst")
+            result["revision"] = institution.revision + 1
+        return Response(result)
+
+
+@api_view(["GET", "POST"])
 def study_action(request, pk, operation):
     institution = tenant(request)
     version = get_object_or_404(m.StudyVersion, institution=institution, pk=pk)

@@ -16,6 +16,7 @@ damit die Kalenderansicht zur aktuellen Woche passt.
 
 - Geführte Einrichtung, versionierte Studienstrukturen, Module/Teilmodule und Credit Points pflegen.
 - Lehrplanversionen prüfen, freigeben, kopieren und passende Semesterveranstaltungen übernehmen.
+- Jahrgangsverläufe separat verschieben, Semesterbelastung prüfen und Ausgleichsvorschläge mit Voraussetzungen und Fixierungen testen.
 - Lehrende mit mehreren Zeitfenstern pro Wochentag und datierten Sperrzeiten pflegen.
 - Stundenpläne, Jahrgänge, Gruppen, Kurse und Prüfungen ansehen.
 - Bereiche, Stockwerke, Raumkacheln, Kapazitäten und Ausstattung pflegen.

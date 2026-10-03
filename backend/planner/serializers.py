@@ -313,6 +313,8 @@ def serializer_for(model):
     read_only = ["id", "institution", "token"]
     if model == m.StudyVersion:
         read_only.append("status")
+    if model == m.Cohort:
+        read_only.append("study_schedule")
     meta = type(
         "Meta",
         (),
@@ -331,8 +333,10 @@ def schema():
     for resource, model in RESOURCES.items():
         fields = []
         for field in list(model._meta.fields) + list(model._meta.many_to_many):
-            if field.name in ["id", "institution", "token"] or (
-                model == m.StudyVersion and field.name == "status"
+            if (
+                field.name in ["id", "institution", "token"]
+                or (model == m.StudyVersion and field.name == "status")
+                or (model == m.Cohort and field.name == "study_schedule")
             ):
                 continue
             kind = "text"
