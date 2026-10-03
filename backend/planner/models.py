@@ -101,6 +101,24 @@ class StudyVersion(TenantModel):
 
 
 class Module(TenantModel):
+    assessment_type = models.CharField(
+        max_length=20,
+        choices=[
+            ("unspecified", "Noch nicht festgelegt"),
+            ("none", "Keine eigene Prüfung"),
+            ("exam", "Klausur"),
+            ("term_paper", "Hausarbeit"),
+            ("submission", "Abgabe"),
+            ("oral", "Mündliche Prüfung"),
+            ("presentation", "Präsentation"),
+            ("practical", "Praktische Prüfung"),
+            ("portfolio", "Portfolio"),
+            ("other", "Sonstige Prüfungsleistung"),
+        ],
+        default="unspecified",
+    )
+    assessment_duration_minutes = models.PositiveIntegerField(null=True, blank=True)
+    assessment_notes = models.CharField(max_length=2000, blank=True, default="")
     difficulty = models.PositiveIntegerField(
         choices=[(1, "Leicht"), (2, "Mittel"), (3, "Anspruchsvoll")], default=2
     )

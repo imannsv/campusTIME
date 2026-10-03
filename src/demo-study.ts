@@ -1,6 +1,7 @@
 import type { Store } from "./demo";
 import type { Row } from "./api";
 import { cohortProgression, effectiveSemester } from "./demo-progression";
+import { assessmentTypes, timedAssessment } from "./assessment";
 
 const get = (state: Store, resource: string, id: number) => {
   const row = state.data[resource].find((item) => item.id === id);
@@ -69,6 +70,23 @@ export function validateStudy(
     );
   if (resource === "studyversions") row.status = "draft";
   if (resource === "modules") {
+    const assessment = row.assessment_type ?? "unspecified";
+    const duration = row.assessment_duration_minutes ?? null;
+    if (!assessmentTypes.some(([type]) => type === assessment))
+      throw new Error("Gültige Prüfungsart auswählen.");
+    if (timedAssessment(assessment)) {
+      if (!Number.isInteger(duration) || duration < 1 || duration > 1440)
+        throw new Error("Prüfungsdauer von 1 bis 1.440 Minuten angeben.");
+    } else if (duration !== null) {
+      throw new Error("Für diese Prüfungsart keine Minutendauer angeben.");
+    }
+    if (
+      typeof row.assessment_notes !== "string" ||
+      row.assessment_notes.length > 2000
+    )
+      throw new Error(
+        "Prüfungsanforderungen mit höchstens 2.000 Zeichen angeben.",
+      );
     if (![1, 2, 3].includes(Number(row.difficulty ?? 2)))
       throw new Error(
         "Schwierigkeit: leicht, mittel oder anspruchsvoll wählen.",

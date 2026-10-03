@@ -23,6 +23,20 @@ automatisch an eine erfundene Studienstruktur gebunden.
    in verschiedenen Semestern liegen. Voraussetzungen beziehen sich auf andere
    Module derselben Version.
 
+Module und Teilmodule erhalten direkt eine Prüfungsart: Klausur, Hausarbeit,
+Abgabe, mündliche oder praktische Prüfung, Präsentation, Portfolio oder eine
+sonstige Prüfungsleistung. „Noch nicht festgelegt“ unterscheidet sich von
+„Keine eigene Prüfung“. Die Vorgabe gilt ausschließlich für das gewählte Modul;
+eine Prüfung am Obermodul wird nicht automatisch auf seine Teilmodule kopiert.
+Zeitgebundene Prüfungsarten benötigen eine Dauer von 1 bis 1.440 Minuten.
+Für Klausuren bietet das Formular 60, 90 und 120 Minuten als Vorschläge.
+Hausarbeiten und Abgaben haben keine Minutendauer; Umfang und relative
+Abgabehinweise stehen in einem eigenen Textfeld. Konkrete Termine, Abgabedaten,
+Räume und Aufsichten werden weiterhin separat für den jeweiligen Jahrgang
+geplant. Aus diesen Vorgaben entstehen noch keine automatischen Prüfungsbuchungen.
+Neue Lehrplanversionen als Kopie übernehmen die Prüfungsanforderungen.
+Bestehende Module bleiben bei der Migration zunächst „Noch nicht festgelegt“.
+
 Je Lehrveranstaltung wird außerdem festgelegt, ob sie gemeinsam für den
 Jahrgang oder separat je Gruppe durchgeführt wird. Bei der Semesterübernahme
 entsteht entsprechend eine gemeinsame Veranstaltung oder eine Veranstaltung
@@ -85,7 +99,7 @@ und Dateiimporte benötigen weiterhin das echte Backend. Ein bestehender
 Demo-Speicher wird um die neue Struktur ergänzt; Raumänderungen bleiben erhalten.
 
 Die Voraussetzungen prüfen die hinterlegte Studienfolge, nicht individuell
-bestandene Prüfungen. Prüfungsleistungen, persönliche CP-Konten, komplexe
+bestandene Prüfungen. Prüfungsergebnisse, persönliche CP-Konten, komplexe
 Wahlpflicht-Katalogregeln und fachliche Genehmigung einer Studienordnung sind
 nicht Bestandteil dieser Erweiterung. Die Beispieldaten sind keine echte
 Studienordnung.

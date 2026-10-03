@@ -94,6 +94,57 @@ class StudyWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 200, response.data)
         self.version.refresh_from_db()
 
+    def test_assessment_requirements_on_parent_and_child_modules(self):
+        for duration in [60, 90, 120]:
+            response = self.client.patch(
+                f"/api/modules/{self.first.id}/",
+                {"assessment_type": "exam", "assessment_duration_minutes": duration},
+                format="json",
+            )
+            self.assertEqual(response.status_code, 200, response.data)
+            self.assertEqual(response.data["assessment_duration_minutes"], duration)
+        response = self.client.patch(
+            f"/api/modules/{self.root.id}/",
+            {"assessment_type": "term_paper", "assessment_notes": "15 Seiten; vier Wochen nach Themenausgabe."},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertIsNone(response.data["assessment_duration_minutes"])
+        self.first.refresh_from_db()
+        self.assertEqual(self.first.assessment_type, "exam")
+        self.assertEqual(self.first.assessment_duration_minutes, 120)
+        response = self.client.patch(
+            f"/api/modules/{self.first.id}/",
+            {"assessment_type": "submission", "assessment_duration_minutes": None,
+             "assessment_notes": "Abgabe zum Semesterende."},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertIsNone(response.data["assessment_duration_minutes"])
+        self.approve()
+        self.assertEqual(self.client.patch(
+            f"/api/modules/{self.first.id}/", {"assessment_type": "none"}, format="json"
+        ).status_code, 400)
+
+    def test_assessment_validation_rejects_missing_or_invalid_duration(self):
+        for body in [
+            {"assessment_type": "invalid"},
+            {"assessment_type": "exam"},
+            {"assessment_type": "exam", "assessment_duration_minutes": 0},
+            {"assessment_type": "exam", "assessment_duration_minutes": -1},
+            {"assessment_type": "exam", "assessment_duration_minutes": 1441},
+            {"assessment_type": "exam", "assessment_duration_minutes": 90.5},
+            {"assessment_type": "term_paper", "assessment_duration_minutes": 90},
+            {"assessment_type": "none", "assessment_duration_minutes": 90},
+            {"assessment_notes": "x" * 2001},
+        ]:
+            with self.subTest(body=body):
+                response = self.client.patch(f"/api/modules/{self.root.id}/", body, format="json")
+                self.assertEqual(response.status_code, 400, response.data)
+        self.root.refresh_from_db()
+        self.assertEqual(self.root.assessment_type, "unspecified")
+        self.assertIsNone(self.root.assessment_duration_minutes)
+
     def test_credits_count_once_and_approved_versions_are_immutable(self):
         report = structure_report(self.version)
         self.assertEqual(report["credits"], "10.0")
@@ -143,7 +194,12 @@ class StudyWorkflowTests(TestCase):
 
     def test_cloning_preserves_hierarchy_and_old_cohort_binding(self):
         self.second.difficulty = 3
+        self.second.assessment_type = "term_paper"
+        self.second.assessment_notes = "Abgabe vier Wochen nach Themenausgabe."
         self.second.save()
+        self.first.assessment_type = "exam"
+        self.first.assessment_duration_minutes = 120
+        self.first.save()
         self.approve()
         cohort = m.Cohort.objects.create(
             institution=self.institution,
@@ -162,6 +218,10 @@ class StudyWorkflowTests(TestCase):
         self.assertEqual(new.status, "draft")
         copied = new.modules.get(name="Datenbanken")
         self.assertEqual(copied.difficulty, 3)
+        self.assertEqual(copied.assessment_type, "term_paper")
+        self.assertEqual(copied.assessment_notes, self.second.assessment_notes)
+        self.assertIsNone(copied.assessment_duration_minutes)
+        self.assertEqual(new.modules.get(name="Programmierung").assessment_duration_minutes, 120)
         self.assertEqual(copied.parent.study_version_id, new.id)
         self.assertEqual(copied.prerequisites.get().study_version_id, new.id)
         self.assertEqual(structure_report(new)["errors"], [])

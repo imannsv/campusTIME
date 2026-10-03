@@ -44,6 +44,7 @@ export async function studyFlow(page: Page) {
   dialog = page.getByRole("dialog");
   await dialog.getByLabel(/^Name/).fill("Informatik-Grundlagen");
   await dialog.getByLabel("Credit Points", { exact: true }).fill("10");
+  await dialog.getByLabel("Prüfungsart", { exact: true }).selectOption("none");
   await dialog.getByRole("button", { name: "Speichern", exact: true }).click();
   await expect(dialog).toHaveCount(0);
   for (const [name, semester] of [
@@ -57,6 +58,26 @@ export async function studyFlow(page: Page) {
     dialog = page.getByRole("dialog");
     await dialog.getByLabel(/^Name/).fill(name);
     await dialog.getByLabel("Credit Points", { exact: true }).fill("5");
+    await dialog
+      .getByLabel("Prüfungsart", { exact: true })
+      .selectOption("exam");
+    await expect(
+      dialog.getByLabel("Prüfungsdauer (Minuten)", { exact: true }),
+    ).toHaveValue("90");
+    if (semester === 2) {
+      await dialog
+        .getByLabel("Prüfungsdauer (Minuten)", { exact: true })
+        .fill("60");
+      await dialog
+        .getByLabel("Prüfungsart", { exact: true })
+        .selectOption("term_paper");
+      await expect(
+        dialog.getByLabel("Prüfungsdauer (Minuten)", { exact: true }),
+      ).toHaveCount(0);
+      await dialog
+        .getByLabel("Prüfungsanforderungen / Abgabehinweise", { exact: true })
+        .fill("Hausarbeit: Abgabe vier Wochen nach Themenausgabe.");
+    }
     await dialog
       .getByRole("button", { name: "Speichern", exact: true })
       .click();
@@ -89,6 +110,36 @@ export async function studyFlow(page: Page) {
       .click();
     await expect(dialog).toHaveCount(0);
   }
+  const programming = page
+    .locator(".study-module-heading")
+    .filter({ has: page.getByText("Programmierung", { exact: true }) });
+  await expect(programming).toContainText("Klausur · 90 Min.");
+  await programming
+    .getByRole("button", { name: "Modul bearbeiten", exact: true })
+    .click();
+  dialog = page.getByRole("dialog");
+  await dialog
+    .getByLabel("Prüfungsdauer (Minuten)", { exact: true })
+    .fill("120");
+  await page.screenshot({
+    path: "test-results/study-assessment-form.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
+  await page.screenshot({
+    path: "test-results/study-assessment-mobile.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await dialog.getByRole("button", { name: "Speichern", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(programming).toContainText("Klausur · 120 Min.");
+  await expect(page.locator(".study-assessment-notes")).toContainText(
+    "Abgabe vier Wochen nach Themenausgabe",
+  );
   await expect(page.locator(".study-facts")).toContainText("10 / 10 CP");
   await expect(
     page.getByRole("button", { name: "Lehrplan freigeben", exact: true }),

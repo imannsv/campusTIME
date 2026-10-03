@@ -39,6 +39,25 @@ def validate_study(model, instance, attrs, institution):
                 "Regelstudienzeit: 1–24 Semester; Credit Points: 0–10.000."
             )
     if model == m.Module:
+        assessment = value("assessment_type", "unspecified")
+        duration = value("assessment_duration_minutes")
+        if assessment not in dict(m.Module._meta.get_field("assessment_type").choices):
+            raise serializers.ValidationError(
+                {"assessment_type": "Gültige Prüfungsart auswählen."}
+            )
+        if assessment in ["exam", "oral", "presentation", "practical"]:
+            if type(duration) is not int or not 1 <= duration <= 1440:
+                raise serializers.ValidationError(
+                    {
+                        "assessment_duration_minutes": "Prüfungsdauer von 1 bis 1.440 Minuten angeben."
+                    }
+                )
+        elif duration is not None:
+            raise serializers.ValidationError(
+                {
+                    "assessment_duration_minutes": "Für diese Prüfungsart keine Minutendauer angeben."
+                }
+            )
         if value("difficulty", 2) not in [1, 2, 3]:
             raise serializers.ValidationError(
                 "Schwierigkeit: leicht, mittel oder anspruchsvoll wählen."
@@ -307,6 +326,9 @@ def clone_version(source, code, name, version):
             name=module.name,
             credits=module.credits,
             difficulty=module.difficulty,
+            assessment_type=module.assessment_type,
+            assessment_duration_minutes=module.assessment_duration_minutes,
+            assessment_notes=module.assessment_notes,
         )
     for module in modules:
         copy = mapping[module.id]

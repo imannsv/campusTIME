@@ -85,6 +85,7 @@ class Command(BaseCommand):
             code="STUDY-INF-GRUND",
             name="Grundlagen Informatik",
             credits=10,
+            assessment_type="none",
         )
         programming = None
         teachers = list(
@@ -94,6 +95,24 @@ class Command(BaseCommand):
         )
         for semester, subjects in enumerate(names, 1):
             for index, name in enumerate(subjects):
+                assessment = (
+                    {
+                        "assessment_type": "submission",
+                        "assessment_notes": "Projektabgabe zum Semesterende; Umfang nach Aufgabenstellung.",
+                    }
+                    if "projekt" in name.lower()
+                    else {
+                        "assessment_type": "term_paper",
+                        "assessment_notes": "Hausarbeit nach Themenausgabe; Abgabehinweise werden je Jahrgang ergänzt.",
+                    }
+                    if name in ["Wissenschaftliches Arbeiten", "Forschungsmethoden", "IT-Recht"]
+                    else {"assessment_type": "presentation", "assessment_duration_minutes": 30}
+                    if name == "Abschlussseminar"
+                    else {
+                        "assessment_type": "exam",
+                        "assessment_duration_minutes": [60, 90, 120][index % 3],
+                    }
+                )
                 module = m.Module.objects.create(
                     institution=institution,
                     study_version=version,
@@ -101,6 +120,7 @@ class Command(BaseCommand):
                     name=name,
                     credits=5,
                     parent=root if index == 0 and semester <= 2 else None,
+                    **assessment,
                 )
                 if semester == 1 and index == 0:
                     programming = module

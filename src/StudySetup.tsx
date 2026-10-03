@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 import { all, api, Row } from "./api";
 import { Modal } from "./components";
 import CohortProgression from "./CohortProgression";
+import { assessmentSummary } from "./assessment";
 
 type Props = {
   data: Record<string, Row[]>;
@@ -118,6 +119,7 @@ export default function StudySetup({
               <strong>{module.name}</strong>
               <span>
                 {module.credits} CP
+                {` · Prüfung: ${assessmentSummary(module)}`}
                 {module.prerequisites.length > 0 &&
                   ` · Voraussetzung: ${module.prerequisites.map((id: number) => modules.find((item) => item.id === id)?.name).join(", ")}`}
               </span>
@@ -157,6 +159,9 @@ export default function StudySetup({
               </button>
             </div>
           </div>
+          {module.assessment_notes && (
+            <p className="study-assessment-notes">{module.assessment_notes}</p>
+          )}
           {units
             .filter((unit) => unit.module === module.id)
             .map((unit) => (

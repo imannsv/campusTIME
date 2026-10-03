@@ -118,6 +118,27 @@ function read(): Store {
         }
         localStorage.setItem(KEY, JSON.stringify(value));
       }
+      if (
+        !value.schema.modules.some(
+          (field: Field) => field.name === "assessment_type",
+        ) ||
+        value.data.modules.some((module: Row) =>
+          [
+            "assessment_type",
+            "assessment_duration_minutes",
+            "assessment_notes",
+          ].some((field) => module[field] === undefined),
+        )
+      ) {
+        const fresh = initial();
+        value.schema.modules = fresh.schema.modules;
+        for (const module of value.data.modules) {
+          module.assessment_type ??= "unspecified";
+          module.assessment_duration_minutes ??= null;
+          module.assessment_notes ??= "";
+        }
+        localStorage.setItem(KEY, JSON.stringify(value));
+      }
       return value;
     }
     const value = initial();

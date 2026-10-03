@@ -10,6 +10,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import { api, Field, Row, labels, localInput } from "./api";
+import { timedAssessment } from "./assessment";
 
 export function Modal({
   title,
@@ -649,6 +650,13 @@ export function RecordForm({
       ...(key === "program" && resource === "cohorts"
         ? { study_version: null }
         : {}),
+      ...(key === "assessment_type" && resource === "modules"
+        ? {
+            assessment_duration_minutes: timedAssessment(value)
+              ? v.assessment_duration_minutes || 90
+              : null,
+          }
+        : {}),
     }));
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -665,7 +673,8 @@ export function RecordForm({
           value = value ? DateTime.fromISO(value, { zone }).toISO() : null;
           if (!value && f.required) throw new Error("Zeitpunkt ist ungültig.");
         }
-        if (f.type === "number") value = value === "" ? null : Number(value);
+        if (f.type === "number")
+          value = value === "" || value == null ? null : Number(value);
         if (value === "" && ["relation", "date"].includes(f.type)) value = null;
         body[f.name] = value;
       }
@@ -713,16 +722,25 @@ export function RecordForm({
                   "latitude",
                   "teaching_unit",
                   "study_group",
-                ].includes(f.type === "file" ? "file" : f.name),
+                ].includes(f.type === "file" ? "file" : f.name) &&
+                (f.name !== "assessment_duration_minutes" ||
+                  timedAssessment(values.assessment_type)),
             )
             .map((f) => (
               <label
                 key={f.name}
-                className={["json", "many"].includes(f.type) ? "full" : ""}
+                className={
+                  ["json", "many"].includes(f.type) ||
+                  f.name === "assessment_notes"
+                    ? "full"
+                    : ""
+                }
               >
                 <span>
                   {labels[f.name] || f.name}
-                  {f.required && <b className="required"> *</b>}
+                  {(f.required || f.name === "assessment_duration_minutes") && (
+                    <b className="required"> *</b>
+                  )}
                 </span>
                 {f.type === "relation" || f.type === "many" ? (
                   <Relation
@@ -772,6 +790,42 @@ export function RecordForm({
                     value={JSON.parse(values.equipment || "[]")}
                     onChange={(v) => change("equipment", JSON.stringify(v))}
                   />
+                ) : f.name === "assessment_notes" ? (
+                  <>
+                    <textarea
+                      aria-label={labels[f.name]}
+                      value={values.assessment_notes || ""}
+                      onChange={(e) => change(f.name, e.target.value)}
+                      maxLength={2000}
+                      rows={3}
+                      placeholder="Zum Beispiel Umfang, Hilfsmittel oder Abgabe vier Wochen nach Themenausgabe"
+                    />
+                    <small>
+                      Die Vorgabe gilt für dieses Modul. Konkrete
+                      Prüfungstermine und Abgabedaten werden für den jeweiligen
+                      Jahrgang festgelegt.
+                    </small>
+                  </>
+                ) : f.name === "assessment_duration_minutes" ? (
+                  <>
+                    <input
+                      aria-label={labels[f.name]}
+                      type="number"
+                      min="1"
+                      max="1440"
+                      step="1"
+                      required
+                      list="assessment-duration-options"
+                      value={values[f.name] ?? ""}
+                      onChange={(e) => change(f.name, e.target.value)}
+                    />
+                    <datalist id="assessment-duration-options">
+                      {[60, 90, 120].map((duration) => (
+                        <option key={duration} value={duration} />
+                      ))}
+                    </datalist>
+                    <small>60, 90, 120 Minuten oder eine andere Dauer.</small>
+                  </>
                 ) : f.type === "boolean" ? (
                   <div className="switch-row">
                     <input

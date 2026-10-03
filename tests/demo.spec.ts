@@ -82,6 +82,35 @@ test("Bestehende Browser-Demo wird ohne Verlust von Raumänderungen ergänzt", a
   expect(
     saved.data.cohorts.filter((row: any) => row.code === "STUDY-JG27"),
   ).toHaveLength(1);
+  await page.evaluate(() => {
+    const key = "campustime-browser-demo-v1";
+    const state = JSON.parse(localStorage.getItem(key)!);
+    state.schema.modules = state.schema.modules.filter(
+      (field: any) => !field.name.startsWith("assessment_"),
+    );
+    for (const module of state.data.modules) {
+      delete module.assessment_type;
+      delete module.assessment_duration_minutes;
+      delete module.assessment_notes;
+    }
+    localStorage.setItem(key, JSON.stringify(state));
+  });
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Automatisch planen", exact: true }),
+  ).toBeVisible();
+  const withAssessments = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("campustime-browser-demo-v1")!),
+  );
+  expect(withAssessments.data.rooms[0].capacity).toBe(777);
+  expect(
+    withAssessments.data.modules.every(
+      (module: any) =>
+        module.assessment_type === "unspecified" &&
+        module.assessment_duration_minutes === null &&
+        module.assessment_notes === "",
+    ),
+  ).toBeTruthy();
 });
 
 test("Demo funktioniert ohne Backend, Raumänderungen bleiben im Browser", async ({

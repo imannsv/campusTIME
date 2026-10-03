@@ -2556,6 +2556,14 @@ button.study-card {
   font-size: 12px;
   color: var(--muted);
 }
+
+.study-assessment-notes {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .study-unit {
   display: flex;
   flex-wrap: wrap;
