@@ -1,0 +1,12 @@
+.venv
+node_modules
+dist
+**/*.sqlite3
+backend/media
+**/__pycache__
+.git
+.env
+.env.*
+.vercel
+test-results
+playwright-report

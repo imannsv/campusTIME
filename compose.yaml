@@ -1,0 +1,75 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: campuszeit
+      POSTGRES_USER: campuszeit
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD setzen}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campuszeit"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  web:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment: &environment
+      DEBUG: ${DEBUG:-0}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY setzen}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-https://localhost}
+      SECURE_SSL_REDIRECT: ${SECURE_SSL_REDIRECT:-1}
+      TRUST_PROXY: ${TRUST_PROXY:-0}
+      POSTGRES_HOST: db
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_URL: redis://redis:6379/0
+      LOCAL_WORKER: "0"
+      MAP_STYLE_URL: ${MAP_STYLE_URL:-https://tiles.openfreemap.org/styles/liberty}
+    volumes:
+      - media:/app/backend/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  worker:
+    build: .
+    command: ["celery", "-A", "config", "worker", "--loglevel=info", "--concurrency=2"]
+    environment: *environment
+    volumes:
+      - media:/app/backend/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  backup:
+    image: postgres:17-alpine
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    command: ["sh", "-c", "while true; do sh /scripts/backup.sh; sleep 86400; done"]
+    volumes:
+      - ./scripts:/scripts:ro
+      - media:/media:ro
+      - backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  postgres:
+  redis:
+  media:
+  backups:
