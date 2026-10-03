@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from django.db.models import Max
@@ -191,6 +191,19 @@ def resource_keys(row):
 def available(person, start, end, institution):
     a = person.availability or {}
     s, e = local(start, institution), local(end, institution)
+    if s.date() != e.date():
+        return False
+    if "windows" in a:
+        if not any(
+            s.weekday() == window["weekday"]
+            and time.fromisoformat(window["from"]) <= s.time().replace(tzinfo=None)
+            and e.time().replace(tzinfo=None) <= time.fromisoformat(window["to"])
+            for window in a["windows"]
+        ):
+            return False
+        return not any(
+            s < dt(x["end"]) and dt(x["start"]) < e for x in a.get("exclusions", [])
+        )
     if s.weekday() not in a.get("weekdays", [0, 1, 2, 3, 4]):
         return False
     if s.strftime("%H:%M") < a.get("from", "00:00") or e.strftime("%H:%M") > a.get(

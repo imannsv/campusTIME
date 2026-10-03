@@ -38,6 +38,7 @@ import { api, all, Row, Field, labels, fmt, DEMO_MODE } from "./api";
 import { Modal, RecordForm, ImportModal, Relation } from "./components";
 import Timetable from "./Timetable";
 import RoomOverview from "./RoomOverview";
+import StudySetup from "./StudySetup";
 
 type SessionState = {
   authenticated: boolean;
@@ -47,6 +48,7 @@ type SessionState = {
   map_style: string;
 };
 const nav = [
+  { id: "setup", label: "Einrichtung & Studienstruktur", icon: ClipboardList },
   { id: "schedule", label: "Stundenplanung", icon: CalendarDays },
   { id: "data", label: "Stammdaten", icon: Layers },
   { id: "exams", label: "Prüfungen", icon: GraduationCap },
@@ -75,6 +77,9 @@ const compactResources = [
   "periods",
   "areas",
   "programs",
+  "studyversions",
+  "modules",
+  "teachingunits",
   "cohorts",
   "groups",
   "buildings",
@@ -402,6 +407,7 @@ function DataTable({
   onImport,
   refresh,
   query = "",
+  filters = {},
   data,
 }: {
   resource: string;
@@ -411,6 +417,7 @@ function DataTable({
   onImport: () => void;
   refresh: number;
   query?: string;
+  filters?: Row;
   data: Record<string, Row[]>;
 }) {
   const [rows, setRows] = useState<Row[]>([]),
@@ -418,11 +425,14 @@ function DataTable({
     [page, setPage] = useState(1),
     [busy, setBusy] = useState(true),
     [error, setError] = useState("");
-  useEffect(() => setPage(1), [resource, query]);
+  const filterQuery = new URLSearchParams(filters).toString();
+  useEffect(() => setPage(1), [resource, query, filterQuery]);
   useEffect(() => {
     let active = true;
     setBusy(true);
-    api(`${resource}/?page=${page}&search=${encodeURIComponent(query)}`)
+    api(
+      `${resource}/?page=${page}&search=${encodeURIComponent(query)}&${filterQuery}`,
+    )
       .then((result) => {
         if (active) {
           setRows(result.results);
@@ -439,7 +449,7 @@ function DataTable({
     return () => {
       active = false;
     };
-  }, [resource, page, query, refresh]);
+  }, [resource, page, query, refresh, filterQuery]);
   const columns = schema
     .filter(
       (f) =>
@@ -842,6 +852,7 @@ function Workspace() {
     [data, setData] = useState<Record<string, Row[]>>({}),
     [page, setPage] = useState("schedule"),
     [resource, setResource] = useState("courses"),
+    [dataFilters, setDataFilters] = useState<Row>({}),
     [planId, setPlanId] = useState<number | null>(null),
     [week, setWeek] = useState(DateTime.now().startOf("week").toISODate()!),
     [rows, setRows] = useState<Row[]>([]),
@@ -898,6 +909,7 @@ function Workspace() {
         const d: Record<string, Row[]> = {};
         compactResources.forEach((name, i) => (d[name] = collections[i]));
         setData(d);
+        if (initial && !d.plans.length) setPage("setup");
         if (!planId && d.plans[0]) {
           setPlanId(d.plans[0].id);
           const p = d.periods.find((r) => r.id === d.plans[0].period);
@@ -940,6 +952,7 @@ function Workspace() {
   const edit = (res: string, row?: Row, defaults: Row = {}) =>
     setModal({ type: "record", resource: res, record: row, defaults });
   const go = (id: string) => {
+    setDataFilters({});
     setPage(id);
     setSearch("");
     setMenu(false);
@@ -1161,6 +1174,34 @@ function Workspace() {
               <LoaderCircle className="spin" />
               Arbeitsbereich laden …
             </div>
+          ) : page === "setup" ? (
+            <StudySetup
+              data={data}
+              zone={zone}
+              query={search}
+              onEdit={edit}
+              onChanged={reload}
+              onOpenRooms={() => go("map")}
+              onOpenStudents={(groupId) => {
+                go("data");
+                setResource("people");
+                setDataFilters({ groups: String(groupId), kind: "learner" });
+              }}
+              onOpenPlan={(id) => {
+                setPlanId(id);
+                go("schedule");
+                const selected = data.plans.find((item) => item.id === id);
+                const p = data.periods.find(
+                  (item) => item.id === selected?.period,
+                );
+                if (p)
+                  setWeek(
+                    DateTime.fromISO(p.start, { zone })
+                      .startOf("week")
+                      .toISODate()!,
+                  );
+              }}
+            />
           ) : page === "schedule" ? (
             <>
               <div className="page-actions">
@@ -1569,6 +1610,9 @@ function Workspace() {
                     "blocks",
                     "periods",
                     "programs",
+                    "studyversions",
+                    "modules",
+                    "teachingunits",
                     "cohorts",
                     "areas",
                     "buildings",
@@ -1579,12 +1623,33 @@ function Workspace() {
                       className={resource === res ? "active" : ""}
                       onClick={() => {
                         setResource(res);
+                        setDataFilters({});
                         setSearch("");
                       }}
                     >
                       {labels[res]}
                     </button>
                   ))}
+                </div>
+              )}
+              {page === "data" && dataFilters.groups && (
+                <div className="info-note">
+                  <p>
+                    Studierendenliste:{" "}
+                    {
+                      data.groups.find(
+                        (item) => String(item.id) === dataFilters.groups,
+                      )?.name
+                    }
+                    . Neue Personen werden dieser Gruppe zugeordnet. CSV-Importe
+                    verwenden die Gruppenkennung in der Spalte „groups“.
+                  </p>
+                  <button
+                    className="button secondary"
+                    onClick={() => setDataFilters({})}
+                  >
+                    Alle Personen anzeigen
+                  </button>
                 </div>
               )}
               {page === "exams" && (
@@ -1652,13 +1717,19 @@ function Workspace() {
                       undefined,
                       ["courses", "exams"].includes(resource)
                         ? { plan: planId }
-                        : {},
+                        : resource === "people" && dataFilters.groups
+                          ? {
+                              groups: [Number(dataFilters.groups)],
+                              kind: "learner",
+                            }
+                          : {},
                     )
                   }
                   onEdit={(r) => edit(resource, r)}
                   onImport={() => setModal({ type: "import", resource })}
                   refresh={refresh}
                   query={search}
+                  filters={dataFilters}
                   data={data}
                 />
               )}

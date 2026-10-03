@@ -1,4 +1,44 @@
 import { test, expect } from "@playwright/test";
+import { studyFlow } from "./study-flow";
+test.use({ actionTimeout: 10000 });
+
+test("Geführte Einrichtung: Studienstruktur, Jahrgang und Semester übernehmen", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  await studyFlow(page);
+});
+
+test("Bestehende Browser-Demo wird ohne Verlust von Raumänderungen ergänzt", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: "Automatisch planen", exact: true }),
+  ).toBeVisible();
+  await page.evaluate(() => {
+    const key = "campustime-browser-demo-v1";
+    const saved = JSON.parse(localStorage.getItem(key)!);
+    saved.data.rooms[0].capacity = 777;
+    for (const resource of ["studyversions", "modules", "teachingunits"]) {
+      delete saved.data[resource];
+      delete saved.schema[resource];
+    }
+    localStorage.setItem(key, JSON.stringify(saved));
+  });
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Automatisch planen", exact: true }),
+  ).toBeVisible();
+  const saved = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("campustime-browser-demo-v1")!),
+  );
+  expect(saved.data.rooms[0].capacity).toBe(777);
+  expect(saved.data.modules).toHaveLength(37);
+  expect(
+    saved.data.cohorts.filter((row: any) => row.code === "STUDY-JG27"),
+  ).toHaveLength(1);
+});
 
 test("Demo funktioniert ohne Backend, Raumänderungen bleiben im Browser", async ({
   page,

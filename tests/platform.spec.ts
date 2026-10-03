@@ -1,4 +1,107 @@
 import { test, expect } from "@playwright/test";
+test("Studienverwaltung pflegt Lehrende mit mehreren Zeitfenstern", async ({
+  page,
+}) => {
+  const code = `TEACH-E2E-${Date.now()}`;
+  await page.goto("/");
+  await page.getByLabel("Passwort", { exact: true }).fill("Campuszeit2026!");
+  await page.getByRole("button", { name: "Anmelden", exact: true }).click();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "Einrichtung & Studienstruktur", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Schritt 4: Studienstruktur", exact: true })
+    .click();
+  await expect(page.locator(".study-facts")).toContainText("180.0 / 180.0 CP");
+  await expect(page.locator(".study-unit")).toHaveCount(36);
+  await page
+    .getByRole("button", { name: "Schritt 2: Lehrende", exact: true })
+    .click();
+  try {
+    await page
+      .getByRole("button", { name: "Lehrende hinzufügen", exact: true })
+      .click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel(/^Kennung/).fill(code);
+    await dialog.getByLabel(/^Name/).fill(code);
+    while (
+      (await dialog.locator(".availability-window:not(.exclusions)").count()) >
+      1
+    )
+      await dialog
+        .getByRole("button", { name: "Zeitfenster 2 entfernen", exact: true })
+        .click();
+    await dialog
+      .getByLabel("Zeitfenster 1: Wochentag", { exact: true })
+      .selectOption("0");
+    await dialog
+      .getByLabel("Zeitfenster 1: Beginn", { exact: true })
+      .fill("09:00");
+    await dialog
+      .getByLabel("Zeitfenster 1: Ende", { exact: true })
+      .fill("11:00");
+    await dialog
+      .getByRole("button", { name: "Zeitfenster hinzufügen", exact: true })
+      .click();
+    await dialog
+      .getByLabel("Zeitfenster 2: Wochentag", { exact: true })
+      .selectOption("3");
+    await dialog
+      .getByLabel("Zeitfenster 2: Beginn", { exact: true })
+      .fill("14:00");
+    await dialog
+      .getByLabel("Zeitfenster 2: Ende", { exact: true })
+      .fill("17:00");
+    await dialog
+      .getByRole("button", { name: "Sperrzeit hinzufügen", exact: true })
+      .click();
+    await dialog
+      .getByLabel("Sperrzeit 1: Beginn", { exact: true })
+      .fill("2026-11-05T14:00");
+    await dialog
+      .getByLabel("Sperrzeit 1: Ende", { exact: true })
+      .fill("2026-11-05T15:00");
+    await dialog
+      .getByRole("button", { name: "Speichern", exact: true })
+      .click();
+    await expect(dialog).toHaveCount(0);
+    await page.getByRole("button", { name: new RegExp(code) }).click();
+    await expect(
+      dialog.getByLabel("Zeitfenster 2: Wochentag", { exact: true }),
+    ).toHaveValue("3");
+    await expect(
+      dialog.getByLabel("Zeitfenster 2: Ende", { exact: true }),
+    ).toHaveValue("17:00");
+    await expect(
+      dialog.getByLabel("Sperrzeit 1: Beginn", { exact: true }),
+    ).toHaveValue("2026-11-05T14:00");
+    await expect(dialog.locator("textarea")).toHaveCount(0);
+    await page.screenshot({
+      path: "test-results/study-availability.png",
+      fullPage: true,
+      animations: "disabled",
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(390);
+    await dialog
+      .getByRole("button", { name: "Abbrechen", exact: true })
+      .click();
+  } finally {
+    const csrf =
+      (await page.context().cookies()).find(
+        (cookie) => cookie.name === "csrftoken",
+      )?.value || "";
+    const response = await page.request.get(`/api/people/?search=${code}`);
+    for (const record of (await response.json()).results || [])
+      if (record.code === code)
+        await page.request.delete(`/api/people/${record.id}/`, {
+          headers: { "X-CSRFToken": csrf },
+        });
+  }
+});
 test("Raumverwaltung: Bereich, Stockwerk und Raum pflegen", async ({
   page,
 }) => {
@@ -105,7 +208,9 @@ test("Verwaltung: Kalender, Pflege, Raumkacheln und öffentliche Anzeige", async
   await expect(
     page.getByRole("cell", { name: "dWI25 A1", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Planbereiche", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Planungsbereiche", exact: true })
+    .click();
   await page.getByRole("button", { name: "Hinzufügen", exact: true }).click();
   const code = "E2E-" + Date.now();
   await page.getByRole("dialog").getByLabel("Kennung").fill(code);

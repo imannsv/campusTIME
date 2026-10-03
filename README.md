@@ -36,6 +36,18 @@ Für den umfangreichen Produkttest anschließend `seed_showcase` ausführen. Die
 
 Alternativ `npm.cmd run build` ausführen und die vollständige Anwendung über http://127.0.0.1:8000 öffnen. Ohne Redis nutzt die lokale Entwicklung einen Hintergrundthread; im Dockerbetrieb werden Celery-Worker verwendet.
 
+## Geführte Einrichtung
+
+Unter **Einrichtung & Studienstruktur**: Räume → Lehrende → Studiengänge →
+Studienstruktur → Jahrgänge → Semester planen. Versionierte Lehrpläne enthalten
+Module, Teilmodule, Credit Points und semesterbezogene Lehrveranstaltungen.
+Die Studienverwaltung pflegt mehrere Verfügbarkeitsfenster je Lehrendem.
+Details und Grenzen: [Studienstruktur](docs/STUDY_WORKFLOW.md).
+
+Das zusätzliche fiktive Beispiel wird lokal mit
+`.\.venv\Scripts\python.exe backend/manage.py seed_study` nach den Migrationen
+angelegt. Es enthält sechs Semester, 180 CP und Jahrgang dWI27.
+
 ## Bedienung
 
 1. Unter **Stammdaten** Zeiträume, Planbereiche, Studien-/Bildungsgänge, Jahrgänge und Gruppen anlegen. Für Räume zuerst einen Raumbereich und ein Stockwerk anlegen.

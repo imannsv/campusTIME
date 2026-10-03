@@ -179,7 +179,19 @@ class ResourceViewSet(viewsets.ModelViewSet):
             if hasattr(model, "code"):
                 lookup |= Q(code__icontains=query["search"])
             qs = qs.filter(lookup)
-        for field in ["plan", "floor", "building", "kind", "cohort", "program"]:
+        for field in [
+            "plan",
+            "floor",
+            "building",
+            "kind",
+            "cohort",
+            "program",
+            "study_version",
+            "module",
+            "semester",
+            "groups",
+            "status",
+        ]:
             if query.get(field) and hasattr(model, field):
                 qs = qs.filter(**{field: query[field]})
         if self.resource == "sessions":
@@ -211,6 +223,14 @@ class ResourceViewSet(viewsets.ModelViewSet):
     def _save(self, serializer):
         with transaction.atomic():
             institution = lock_tenant(self.request)
+            from .study import validate_study
+
+            validate_study(
+                RESOURCES[self.resource],
+                serializer.instance,
+                serializer.validated_data,
+                institution,
+            )
             code = serializer.validated_data.get("code")
             if (
                 code
@@ -285,6 +305,24 @@ class ResourceViewSet(viewsets.ModelViewSet):
 
         with transaction.atomic():
             institution = lock_tenant(self.request)
+            from .study import owner_version
+
+            version = owner_version(instance)
+            if version:
+                version.refresh_from_db()
+            if version and version.status == "approved":
+                raise serializers.ValidationError(
+                    "Freigegebene Lehrplanversionen und ihre Inhalte bleiben erhalten."
+                )
+            if (
+                isinstance(instance, m.Person)
+                and instance.study_teaching_units.filter(
+                    module__study_version__status="approved"
+                ).exists()
+            ):
+                raise serializers.ValidationError(
+                    "Person ist einer freigegebenen Studienstruktur zugeordnet. Verfügbarkeiten können weiterhin angepasst werden."
+                )
             try:
                 instance.delete()
             except ProtectedError:
@@ -384,6 +422,48 @@ def preferences(request):
 
 
 @api_view(["GET", "POST"])
+def study_action(request, pk, operation):
+    institution = tenant(request)
+    version = get_object_or_404(m.StudyVersion, institution=institution, pk=pk)
+    from .study import clone_version, structure_report
+
+    if operation == "check" and request.method == "GET":
+        return Response(structure_report(version))
+    if request.method != "POST":
+        return Response(status=405)
+    with transaction.atomic():
+        institution = lock_tenant(request)
+        version.refresh_from_db()
+        if operation == "approve":
+            report = structure_report(version)
+            if report["errors"]:
+                return Response(
+                    {"detail": "Lehrplanversion ist noch unvollständig.", **report},
+                    status=400,
+                )
+            version.status = "approved"
+            version.save(update_fields=["status"])
+            bump(request, institution, f"{version.name}: Lehrplanversion freigegeben")
+            return Response({"ok": True, **report})
+        if operation == "clone":
+            values = [
+                str(request.data.get(field, "")).strip()
+                for field in ["code", "name", "version"]
+            ]
+            if any(
+                len(value) > limit
+                for value, limit in zip(values, [80, 200, 80], strict=True)
+            ):
+                raise serializers.ValidationError(
+                    "Kennung oder Versionsbezeichnung zu lang."
+                )
+            copy = clone_version(version, *values)
+            bump(request, institution, f"{version.name}: Neue Lehrplanversion angelegt")
+            return Response(serializer_for(m.StudyVersion)(copy).data, status=201)
+    return Response(status=404)
+
+
+@api_view(["GET", "POST"])
 def plan_action(request, pk, operation):
     institution = tenant(request)
     plan = get_object_or_404(m.Plan, institution=institution, pk=pk)
@@ -403,6 +483,21 @@ def plan_action(request, pk, operation):
         return Response(status=405)
     with transaction.atomic():
         institution = lock_tenant(request)
+        if operation == "prepare":
+            from .study import prepare_semester
+
+            plan = m.Plan.objects.select_related("cohort__study_version").get(
+                pk=plan.pk
+            )
+            groups = request.data.get("groups")
+            if groups is not None:
+                groups = serializers.ListField(
+                    child=serializers.IntegerField(min_value=1)
+                ).run_validation(groups)
+            result = prepare_semester(plan, groups)
+            if result["created"]:
+                bump(request, institution, f"{plan.name}: Semester vorbereitet")
+            return Response(result)
         if operation == "publish":
             rows = plan_rows(plan)
             errors = validate_rows(plan, rows, coverage=True)

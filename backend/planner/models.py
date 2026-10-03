@@ -84,11 +84,80 @@ class Area(TenantModel):
 
 
 class Program(TenantModel):
-    pass
+    duration_semesters = models.PositiveIntegerField(default=6)
+    total_credits = models.DecimalField(max_digits=6, decimal_places=1, default=180)
+
+
+class StudyVersion(TenantModel):
+    program = models.ForeignKey(Program, on_delete=models.PROTECT)
+    version = models.CharField(max_length=80)
+    duration_semesters = models.PositiveIntegerField(default=6)
+    total_credits = models.DecimalField(max_digits=6, decimal_places=1, default=180)
+    status = models.CharField(
+        max_length=12,
+        choices=[("draft", "Entwurf"), ("approved", "Freigegeben")],
+        default="draft",
+    )
+
+
+class Module(TenantModel):
+    study_version = models.ForeignKey(
+        StudyVersion, on_delete=models.PROTECT, related_name="modules"
+    )
+    parent = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.PROTECT, related_name="children"
+    )
+    credits = models.DecimalField(max_digits=6, decimal_places=1, default=0)
+    prerequisites = models.ManyToManyField("self", symmetrical=False, blank=True)
+
+
+class TeachingUnit(TenantModel):
+    group_mode = models.CharField(
+        max_length=12,
+        choices=[("combined", "Gruppen gemeinsam"), ("per_group", "Je Gruppe separat")],
+        default="combined",
+    )
+    module = models.ForeignKey(
+        Module, on_delete=models.PROTECT, related_name="teaching_units"
+    )
+    semester = models.PositiveIntegerField(default=1)
+    format = models.CharField(
+        max_length=20,
+        choices=[
+            ("lecture", "Vorlesung"),
+            ("seminar", "Seminar"),
+            ("exercise", "Übung"),
+            ("lab", "Labor"),
+            ("project", "Projekt"),
+        ],
+        default="lecture",
+    )
+    target_mode = models.CharField(
+        max_length=10,
+        choices=[("weekly", "Pro Woche"), ("total", "Gesamtumfang")],
+        default="weekly",
+    )
+    target_units = models.PositiveIntegerField(default=2)
+    duration_minutes = models.PositiveIntegerField(default=90)
+    block_days = models.PositiveIntegerField(default=1)
+    week_pattern = models.CharField(
+        max_length=10,
+        choices=[("all", "Jede Woche"), ("A", "A-Woche"), ("B", "B-Woche")],
+        default="all",
+    )
+    elective = models.BooleanField(default=False)
+    equipment = models.JSONField(default=list, blank=True)
+    teachers = models.ManyToManyField(
+        "Person", blank=True, related_name="study_teaching_units"
+    )
 
 
 class Cohort(TenantModel):
     program = models.ForeignKey(Program, on_delete=models.PROTECT)
+    study_version = models.ForeignKey(
+        StudyVersion, null=True, blank=True, on_delete=models.PROTECT
+    )
+    entry_year = models.PositiveIntegerField(null=True, blank=True)
 
 
 class Group(TenantModel):
@@ -147,10 +216,22 @@ class Curriculum(TenantModel):
 class Plan(TenantModel):
     period = models.ForeignKey(Period, on_delete=models.PROTECT)
     area = models.ForeignKey(Area, on_delete=models.PROTECT)
+    cohort = models.ForeignKey(Cohort, null=True, blank=True, on_delete=models.PROTECT)
+    semester = models.PositiveIntegerField(default=1)
 
 
 class Course(TenantModel):
+    study_group = models.ForeignKey(
+        Group,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="study_deliveries",
+    )
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
+    teaching_unit = models.ForeignKey(
+        TeachingUnit, null=True, blank=True, on_delete=models.PROTECT
+    )
     groups = models.ManyToManyField(Group, blank=True)
     learners = models.ManyToManyField(
         Person, blank=True, related_name="enrolled_courses"
@@ -176,6 +257,19 @@ class Course(TenantModel):
     color = models.CharField(max_length=20, default="blue")
     # Explicit per-occurrence teacher IDs. Empty means the full teaching team.
     teacher_assignments = models.JSONField(default=list, blank=True)
+
+    class Meta(TenantModel.Meta):
+        constraints = TenantModel.Meta.constraints + [
+            models.UniqueConstraint(
+                fields=["plan", "teaching_unit"],
+                condition=models.Q(study_group__isnull=True),
+                name="course_study_combined_unique",
+            ),
+            models.UniqueConstraint(
+                fields=["plan", "teaching_unit", "study_group"],
+                name="course_study_group_unique",
+            ),
+        ]
 
 
 class Exam(TenantModel):

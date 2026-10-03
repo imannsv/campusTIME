@@ -39,3 +39,38 @@ Jobstatus: `queued`, `running`, `ready`, `infeasible`, `timeout`, `invalid`, `fa
 Einrichtungsänderungen erhöhen eine Revisionsnummer. Jobübernahme, Importe und Veröffentlichungen sperren den Einrichtungsdatensatz während des Schreibens. `apply` lehnt jede gegenüber dem Berechnungsstand veränderte Datenbasis ab. Veröffentlichungen prüfen andere Planbereiche anhand deren freigegebener Versionen, nicht anhand unveröffentlichter Entwürfe.
 
 Interne Prüfungstermine enthalten `room_allocations` mit Raum-ID, Teilnehmer-IDs und Aufsichts-ID. Dieses Feld gehört ausschließlich zur Verwaltungsansicht und wird vom öffentlichen Serializer ausgeschlossen.
+
+## Studienstruktur und Semesterübernahme
+
+Neue Ressourcen: `studyversions`, `modules`, `teachingunits`. Programme speichern
+`duration_semesters` und `total_credits`. Jahrgänge speichern optional
+`study_version` und `entry_year`; Pläne optional `cohort` und `semester`.
+Veranstaltungen speichern eine geschützte Herkunft `teaching_unit` und bei
+separater Durchführung `study_group`. `teachingunits.group_mode` ist `combined`
+(Gruppen gemeinsam) oder `per_group` (eine Veranstaltung je Gruppe).
+
+- `GET /api/studyversions/<id>/check/`: Fehler, Hinweise und CP-Gesamtumfang.
+- `POST /api/studyversions/<id>/approve/`: Vollständige Studienstruktur freigeben.
+  `status` ist über die generische CRUD-API nicht beschreibbar. Freigegebene
+  Versionen sowie ihre Module und Lehrveranstaltungen sind geschützt.
+- `POST /api/studyversions/<id>/clone/`: `code`, `name`, `version` übergeben.
+  Erzeugt einen neuen Entwurf mit kopierten Modulbeziehungen und Veranstaltungen.
+- `POST /api/plans/<id>/prepare/`: Veranstaltungen des ausgewählten Fachsemesters
+  übernehmen. Optional `groups` als Liste von Gruppen-IDs des Jahrgangs.
+  Je nach `group_mode` entsteht eine gemeinsame Veranstaltung oder je Gruppe
+  eine eigene. Jede erhält den vorgegebenen Unterrichtsumfang.
+  Liefert `created`, `existing`, `warnings`; vorhandene Einträge bleiben erhalten.
+
+Alle Zugriffe sind authentifiziert und an die Einrichtung gebunden. Schreibende
+Aktionen prüfen die Lizenz und sperren die Einrichtung während der Transaktion.
+Ein Jahrgang behält seine einmal zugeordnete freigegebene Lehrplanversion.
+
+`availability.windows` ersetzt bei Personen die bisherige gemeinsame Wochenzeit:
+`[{"weekday":0,"from":"09:00","to":"11:00"},{"weekday":3,"from":"14:00","to":"17:00"}]`.
+Eine leere Liste bedeutet keine Verfügbarkeit. `exclusions` enthält weiterhin
+Start-/Endzeitpunkte mit Zeitzone. Alte `weekdays`/`from`/`to` werden verwendet,
+wenn `windows` fehlt. Unterricht und Prüfungsplanung verwenden dieselbe Prüfung.
+
+Zusätzliche Listenfilter: `study_version`, `module`, `semester`, `status`,
+bei Personen `groups` und `kind`. Die CSV-Importe verwenden die dynamischen
+Ressourcenschemata; Freigabe einer Lehrplanversion erfolgt separat.

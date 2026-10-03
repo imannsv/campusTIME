@@ -58,3 +58,30 @@ Am 03.10.2026 nach dem Umbau geprüft:
 Die Browser-Demo ist kein Nachweis für produktiven Mehrbenutzerbetrieb,
 Anmeldung, automatische Planung oder vollständige Freigabeprüfung. Diese
 Funktionen benötigen weiterhin das Django-Backend; siehe `BROWSER_DEMO.md`.
+
+## Ergänzung: Geführte Einrichtung und Studienstruktur
+
+Am 03.10.2026 geprüft:
+
+- 36 Backendtests mit SQLite bestanden. Neue Tests prüfen CP-Zählung ohne
+  Doppelzählung, Modulhierarchie und Voraussetzungen, geschützte freigegebene
+  Versionen, Kopien mit eigenen Beziehungen, feste Jahrgangszuordnung,
+  Mandantentrennung und wiederholbare Semesterübernahme. Gemeinsame
+  Veranstaltungen und getrennte Veranstaltungen je Gruppe sind enthalten.
+- Ein echter Planervorschlag für einen neuen Semesterplan liegt vollständig
+  innerhalb des von der Verwaltung eingetragenen Zeitfensters. Mehrere
+  Verfügbarkeitsfenster, Lücken, datierte Sperren und ungültige Zeiten werden
+  zusätzlich geprüft.
+- Fünf lokale Playwrighttests und vier Tests gegen den Demo-Build bestanden.
+  Der neue Ablauf umfasst Studiengang, Version, Obermodul, zwei Teilmodule in
+  unterschiedlichen Semestern, Freigabe, Jahrgang mit zwei Gruppen,
+  Studierendenpflege, Kalender mit freiem Tag und wiederholte Semesterübernahme.
+  Mobile Breite und Erhalt bestehender Browser-Raumänderungen wurden geprüft.
+- Regulärer Build, Demo-Build, Ruff, Django-Systemprüfung, Migrationsprüfung
+  und `git diff --check` bestanden. Migrationen 0005 und 0006 wurden lokal
+  angewendet; PostgreSQL wurde für diese Erweiterung nicht erneut getestet.
+
+Die Vercel-Ausführung bleibt eine Browser-Demo. Studienstruktur und
+Semesterübernahme funktionieren dort mit Browser-Speicherung; Solver und
+Dateiimporte benötigen das Backend. Siehe `STUDY_WORKFLOW.md` für den Ablauf
+und dessen fachliche Grenzen.

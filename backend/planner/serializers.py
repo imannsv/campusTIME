@@ -8,6 +8,9 @@ from . import models as m
 RESOURCES = {
     "areas": m.Area,
     "programs": m.Program,
+    "studyversions": m.StudyVersion,
+    "modules": m.Module,
+    "teachingunits": m.TeachingUnit,
     "cohorts": m.Cohort,
     "groups": m.Group,
     "people": m.Person,
@@ -47,6 +50,9 @@ class TenantSerializer(serializers.ModelSerializer):
 
         model = self.Meta.model
         tenant = self.context["institution"]
+        from .study import validate_study
+
+        validate_study(model, self.instance, attrs, tenant)
         if model == m.Period:
             if value("start") > value("end"):
                 raise serializers.ValidationError("Zeitraum endet vor seinem Beginn.")
@@ -178,6 +184,18 @@ class TenantSerializer(serializers.ModelSerializer):
                         "Nur Lehrende/Aufsichten auswählen."
                     )
         if model == m.Person:
+            if (
+                self.instance
+                and attrs.get("kind", self.instance.kind) != self.instance.kind
+                and (
+                    self.instance.study_teaching_units.exists()
+                    or self.instance.teaching_courses.exists()
+                    or self.instance.supervised_exams.exists()
+                )
+            ):
+                raise serializers.ValidationError(
+                    "Person ist als Lehrende oder Aufsicht zugeordnet; die Art kann nicht geändert werden."
+                )
             a = value("availability", {})
             if not isinstance(a, dict):
                 raise serializers.ValidationError("Verfügbarkeit muss ein Objekt sein.")
@@ -194,6 +212,19 @@ class TenantSerializer(serializers.ModelSerializer):
                 for key in ["from", "to"]:
                     if key in a:
                         time.fromisoformat(a[key])
+                if a.get("from", "00:00") >= a.get("to", "23:59"):
+                    raise ValueError()
+                if "windows" in a:
+                    if not isinstance(a["windows"], list):
+                        raise ValueError()
+                    for window in a["windows"]:
+                        if (
+                            type(window["weekday"]) is not int
+                            or window["weekday"] not in range(7)
+                            or time.fromisoformat(window["from"])
+                            >= time.fromisoformat(window["to"])
+                        ):
+                            raise ValueError()
                 for x in a.get("exclusions", []):
                     s, e = (
                         datetime.fromisoformat(x["start"]),
@@ -280,6 +311,8 @@ class TenantSerializer(serializers.ModelSerializer):
 
 def serializer_for(model):
     read_only = ["id", "institution", "token"]
+    if model == m.StudyVersion:
+        read_only.append("status")
     meta = type(
         "Meta",
         (),
@@ -298,7 +331,9 @@ def schema():
     for resource, model in RESOURCES.items():
         fields = []
         for field in list(model._meta.fields) + list(model._meta.many_to_many):
-            if field.name in ["id", "institution", "token"]:
+            if field.name in ["id", "institution", "token"] or (
+                model == m.StudyVersion and field.name == "status"
+            ):
                 continue
             kind = "text"
             if field.is_relation:
@@ -311,7 +346,9 @@ def schema():
                 kind = "date"
             elif isinstance(field, models.TimeField):
                 kind = "time"
-            elif isinstance(field, (models.IntegerField, models.FloatField)):
+            elif isinstance(
+                field, (models.IntegerField, models.FloatField, models.DecimalField)
+            ):
                 kind = "number"
             elif isinstance(field, models.JSONField):
                 kind = "json"

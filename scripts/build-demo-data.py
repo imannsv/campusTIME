@@ -32,6 +32,7 @@ with TemporaryDirectory(prefix="campustime-demo-") as temporary:
     call_command("seed_demo", password="FictionalBuildOnly2026!")
     reference = date(2026, 10, 3)
     call_command("seed_showcase", date=reference)
+    call_command("seed_study")
     institution = Institution.objects.get(slug="demo")
     content = {
         "reference": reference.isoformat(),

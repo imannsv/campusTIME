@@ -96,23 +96,26 @@ export function Relation({
   onChange,
   many = false,
   kind,
+  filters = {},
 }: {
   resource: string;
   value: any;
   onChange: (v: any) => void;
   many?: boolean;
   kind?: string;
+  filters?: Row;
 }) {
   const [options, setOptions] = useState<Row[]>([]),
     [selected, setSelected] = useState<Row[]>([]),
     [query, setQuery] = useState(""),
     [error, setError] = useState("");
   const ids: number[] = many ? value || [] : value ? [Number(value)] : [];
+  const filterQuery = new URLSearchParams(filters).toString();
   useEffect(() => {
     let live = true;
     const timer = setTimeout(() => {
       api(
-        `${resource}/?search=${encodeURIComponent(query)}${kind ? "&kind=" + kind : ""}`,
+        `${resource}/?search=${encodeURIComponent(query)}${kind ? "&kind=" + kind : ""}&${filterQuery}`,
       )
         .then((r) => {
           if (live) setOptions(r.results);
@@ -125,7 +128,7 @@ export function Relation({
       live = false;
       clearTimeout(timer);
     };
-  }, [resource, query, kind]);
+  }, [resource, query, kind, filterQuery]);
   useEffect(() => {
     let live = true;
     Promise.all(ids.map((id) => api(`${resource}/${id}/`)))
@@ -368,64 +371,243 @@ function TeamEditor({
 function AvailabilityEditor({
   value,
   onChange,
+  zone,
 }: {
   value: Row;
   onChange: (v: Row) => void;
+  zone: string;
 }) {
   const a = value || {};
+  const windows: Row[] =
+    a.windows ??
+    (a.weekdays ?? [0, 1, 2, 3, 4]).map((weekday: number) => ({
+      weekday,
+      from: a.from || "08:00",
+      to: a.to || "18:00",
+    }));
+  const exclusions: Row[] = a.exclusions || [];
+  const setWindows = (items: Row[]) => onChange({ ...a, windows: items });
   return (
     <div className="availability-editor">
-      <div className="day-checkboxes">
-        {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((day, i) => (
-          <label key={day}>
-            <input
-              type="checkbox"
-              checked={(a.weekdays || [0, 1, 2, 3, 4]).includes(i)}
-              onChange={(e) =>
-                onChange({
-                  ...a,
-                  weekdays: e.target.checked
-                    ? [...(a.weekdays || [0, 1, 2, 3, 4]), i]
-                    : (a.weekdays || [0, 1, 2, 3, 4]).filter(
-                        (n: number) => n !== i,
-                      ),
-                })
-              }
-            />
-            {day}
-          </label>
-        ))}
-      </div>
+      <small>
+        Die Studienverwaltung trägt die mit den Lehrenden abgestimmten Zeiten
+        ein. Mehrere Zeitfenster je Tag sind möglich. Ohne Zeitfenster ist die
+        Person nicht verfügbar.
+      </small>
+      {windows.map((window, index) => (
+        <div className="availability-window" key={index}>
+          <select
+            aria-label={`Zeitfenster ${index + 1}: Wochentag`}
+            value={window.weekday}
+            onChange={(e) =>
+              setWindows(
+                windows.map((row, i) =>
+                  i === index
+                    ? { ...row, weekday: Number(e.target.value) }
+                    : row,
+                ),
+              )
+            }
+          >
+            {[
+              "Montag",
+              "Dienstag",
+              "Mittwoch",
+              "Donnerstag",
+              "Freitag",
+              "Samstag",
+              "Sonntag",
+            ].map((day, i) => (
+              <option value={i} key={i}>
+                {day}
+              </option>
+            ))}
+          </select>
+          <input
+            aria-label={`Zeitfenster ${index + 1}: Beginn`}
+            type="time"
+            required
+            value={window.from}
+            onChange={(e) =>
+              setWindows(
+                windows.map((row, i) =>
+                  i === index ? { ...row, from: e.target.value } : row,
+                ),
+              )
+            }
+          />
+          <input
+            aria-label={`Zeitfenster ${index + 1}: Ende`}
+            type="time"
+            required
+            value={window.to}
+            onChange={(e) =>
+              setWindows(
+                windows.map((row, i) =>
+                  i === index ? { ...row, to: e.target.value } : row,
+                ),
+              )
+            }
+          />
+          <button
+            className="button secondary"
+            type="button"
+            aria-label={`Zeitfenster ${index + 1} entfernen`}
+            onClick={() => setWindows(windows.filter((_, i) => i !== index))}
+          >
+            Entfernen
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        className="button secondary"
+        onClick={() =>
+          setWindows([...windows, { weekday: 0, from: "08:00", to: "12:00" }])
+        }
+      >
+        Zeitfenster hinzufügen
+      </button>
+      <strong>Zusätzliche Sperrzeiten</strong>
+      {exclusions.map((entry, index) => (
+        <div className="availability-window exclusions" key={index}>
+          <input
+            type="datetime-local"
+            required
+            aria-label={`Sperrzeit ${index + 1}: Beginn`}
+            value={localInput(entry.start, zone)}
+            onChange={(e) =>
+              onChange({
+                ...a,
+                exclusions: exclusions.map((row, i) =>
+                  i === index
+                    ? {
+                        ...row,
+                        start: DateTime.fromISO(e.target.value, {
+                          zone,
+                        }).toISO(),
+                      }
+                    : row,
+                ),
+              })
+            }
+          />
+          <input
+            type="datetime-local"
+            required
+            aria-label={`Sperrzeit ${index + 1}: Ende`}
+            value={localInput(entry.end, zone)}
+            onChange={(e) =>
+              onChange({
+                ...a,
+                exclusions: exclusions.map((row, i) =>
+                  i === index
+                    ? {
+                        ...row,
+                        end: DateTime.fromISO(e.target.value, { zone }).toISO(),
+                      }
+                    : row,
+                ),
+              })
+            }
+          />
+          <button
+            className="button secondary"
+            type="button"
+            aria-label={`Sperrzeit ${index + 1} entfernen`}
+            onClick={() =>
+              onChange({
+                ...a,
+                exclusions: exclusions.filter((_, i) => i !== index),
+              })
+            }
+          >
+            Entfernen
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        className="button secondary"
+        onClick={() => {
+          const start = DateTime.now().setZone(zone).startOf("hour");
+          onChange({
+            ...a,
+            exclusions: [
+              ...exclusions,
+              { start: start.toISO(), end: start.plus({ hours: 1 }).toISO() },
+            ],
+          });
+        }}
+      >
+        Sperrzeit hinzufügen
+      </button>
+    </div>
+  );
+}
+
+function FreeDaysEditor({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (value: string[]) => void;
+}) {
+  const [from, setFrom] = useState(""),
+    [until, setUntil] = useState("");
+  const length = DateTime.fromISO(until).diff(
+    DateTime.fromISO(from),
+    "days",
+  ).days;
+  return (
+    <div className="free-days-editor">
       <div className="form-row">
         <input
-          aria-label="Verfügbar ab"
-          type="time"
-          value={a.from || "08:00"}
-          onChange={(e) => onChange({ ...a, from: e.target.value })}
+          type="date"
+          aria-label="Unterrichtsfrei ab"
+          value={from}
+          onChange={(e) => setFrom(e.target.value)}
         />
         <input
-          aria-label="Verfügbar bis"
-          type="time"
-          value={a.to || "18:00"}
-          onChange={(e) => onChange({ ...a, to: e.target.value })}
+          type="date"
+          aria-label="Unterrichtsfrei bis"
+          value={until}
+          onChange={(e) => setUntil(e.target.value)}
         />
+        <button
+          type="button"
+          className="button secondary"
+          disabled={!Number.isFinite(length) || length < 0 || length > 550}
+          onClick={() => {
+            const days = Array.from(
+              { length: Math.floor(length) + 1 },
+              (_, index) =>
+                DateTime.fromISO(from).plus({ days: index }).toISODate()!,
+            );
+            onChange([...new Set([...value, ...days])].sort());
+            setFrom("");
+            setUntil("");
+          }}
+        >
+          Freie Tage hinzufügen
+        </button>
+      </div>
+      <div className="selected-chips">
+        {value.map((day) => (
+          <button
+            type="button"
+            key={day}
+            onClick={() => onChange(value.filter((item) => item !== day))}
+            aria-label={`${day} als freien Tag entfernen`}
+          >
+            {DateTime.fromISO(day).setLocale("de").toFormat("dd.MM.yyyy")} ×
+          </button>
+        ))}
       </div>
       <small>
-        Sperrzeiten als Liste von Start-/Endzeitpunkten mit Zeitzone.
+        Einzelne Tage oder ganze Ferienzeiträume hinzufügen. Zum Entfernen einen
+        Tag anklicken.
       </small>
-      <textarea
-        aria-label="Sperrzeiten"
-        defaultValue={JSON.stringify(a.exclusions || [], null, 2)}
-        onBlur={(e) => {
-          try {
-            onChange({ ...a, exclusions: JSON.parse(e.target.value) });
-          } catch {
-            e.target.setCustomValidity("Gültige JSON-Liste eingeben.");
-            e.target.reportValidity();
-          }
-        }}
-        onChange={(e) => e.target.setCustomValidity("")}
-      />
     </div>
   );
 }
@@ -461,7 +643,13 @@ export function RecordForm({
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const change = (key: string, value: any) =>
-    setValues((v) => ({ ...v, [key]: value }));
+    setValues((v) => ({
+      ...v,
+      [key]: value,
+      ...(key === "program" && resource === "cohorts"
+        ? { study_version: null }
+        : {}),
+    }));
   async function submit(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -523,6 +711,8 @@ export function RecordForm({
                   "polygon",
                   "longitude",
                   "latitude",
+                  "teaching_unit",
+                  "study_group",
                 ].includes(f.type === "file" ? "file" : f.name),
             )
             .map((f) => (
@@ -537,6 +727,16 @@ export function RecordForm({
                 {f.type === "relation" || f.type === "many" ? (
                   <Relation
                     resource={f.resource!}
+                    filters={
+                      f.name === "study_version" && resource === "cohorts"
+                        ? {
+                            program: String(values.program || 0),
+                            status: "approved",
+                          }
+                        : ["parent", "prerequisites"].includes(f.name)
+                          ? { study_version: String(values.study_version || 0) }
+                          : {}
+                    }
                     value={values[f.name]}
                     many={f.type === "many"}
                     kind={
@@ -556,6 +756,7 @@ export function RecordForm({
                 ) : f.name === "availability" ? (
                   <AvailabilityEditor
                     value={values.availability}
+                    zone={zone}
                     onChange={(v) => change("availability", v)}
                   />
                 ) : f.name === "teacher_assignments" ? (
@@ -598,6 +799,43 @@ export function RecordForm({
                       </option>
                     ))}
                   </select>
+                ) : f.name === "weekdays" ? (
+                  <div className="day-checkboxes">
+                    {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map(
+                      (day, index) => (
+                        <label key={day}>
+                          <input
+                            type="checkbox"
+                            aria-label={`Unterricht am ${day}`}
+                            checked={JSON.parse(
+                              values.weekdays || "[]",
+                            ).includes(index)}
+                            onChange={(e) => {
+                              const days: number[] = JSON.parse(
+                                values.weekdays || "[]",
+                              );
+                              change(
+                                "weekdays",
+                                JSON.stringify(
+                                  e.target.checked
+                                    ? [...days, index].sort()
+                                    : days.filter((item) => item !== index),
+                                ),
+                              );
+                            }}
+                          />
+                          {day}
+                        </label>
+                      ),
+                    )}
+                  </div>
+                ) : f.name === "excluded_dates" ? (
+                  <FreeDaysEditor
+                    value={JSON.parse(values.excluded_dates || "[]")}
+                    onChange={(days) =>
+                      change("excluded_dates", JSON.stringify(days))
+                    }
+                  />
                 ) : f.type === "json" ? (
                   <>
                     <textarea
@@ -628,7 +866,12 @@ export function RecordForm({
                         : undefined
                     }
                     step={
-                      f.name === "longitude" || f.name === "latitude"
+                      [
+                        "longitude",
+                        "latitude",
+                        "credits",
+                        "total_credits",
+                      ].includes(f.name)
                         ? "any"
                         : undefined
                     }

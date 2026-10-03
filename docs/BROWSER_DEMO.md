@@ -5,7 +5,7 @@ Diese Variante benötigt keinen Server und greift nicht auf Supabase zu.
 Sie wird sichtbar als Demo gekennzeichnet und öffnet ohne Anmeldung.
 Es gibt keine echte Benutzer- oder Zugriffsverwaltung.
 
-Die Demo enthält ausschließlich generierte Beispieldaten: 7 Jahrgänge,
+Die Demo enthält ausschließlich generierte Beispieldaten: 8 Jahrgänge,
 8 veröffentlichte Beispielpläne, 262 Lernende, 16 Prüfungen und 14 Räume.
 `scripts/build-demo-data.py` erstellt diese in einer separaten temporären
 Datenbank und liest niemals die bestehende lokale Produktdatenbank aus.
@@ -14,6 +14,9 @@ damit die Kalenderansicht zur aktuellen Woche passt.
 
 ## Testbare Funktionen
 
+- Geführte Einrichtung, versionierte Studienstrukturen, Module/Teilmodule und Credit Points pflegen.
+- Lehrplanversionen prüfen, freigeben, kopieren und passende Semesterveranstaltungen übernehmen.
+- Lehrende mit mehreren Zeitfenstern pro Wochentag und datierten Sperrzeiten pflegen.
 - Stundenpläne, Jahrgänge, Gruppen, Kurse und Prüfungen ansehen.
 - Bereiche, Stockwerke, Raumkacheln, Kapazitäten und Ausstattung pflegen.
 - Datensätze und einzelne Termine anlegen, bearbeiten und löschen.
@@ -51,7 +54,7 @@ Remove-Item Env:DEMO_TEST_URL
 
 Die Demotests sperren Backend-Anfragen und prüfen Raumänderungen einschließlich
 Persistenz, Stockwerkfilter, Zurücksetzen, mobile Breite und feste Anzeigezeiträume.
-Die regulären lokalen Tests bleiben unter `npm test` unverändert mit dem
+Die regulären lokalen Tests bleiben unter `npm test` mit dem
 Django-Backend ausführbar. `npm run build` baut weiterhin die reguläre Variante.
 
 ## Später auf echten Betrieb wechseln

@@ -1,8 +1,14 @@
 import { DateTime } from "luxon";
 import example from "./demo-data.json";
 import type { Field, Row } from "./api";
+import {
+  checkStructure,
+  validateStudy,
+  studyAction,
+  prepareSemester,
+} from "./demo-study";
 
-type Store = {
+export type Store = {
   reference: string;
   schema: Record<string, Field[]>;
   institution: Row;
@@ -45,6 +51,59 @@ function read(): Store {
       const value = JSON.parse(saved);
       if (!value.data || !value.schema || !Array.isArray(value.publications))
         throw new Error();
+      if (!value.data.studyversions) {
+        // Upgrade the earlier demo in place; preserve room and schedule edits.
+        const fresh = initial();
+        value.schema = fresh.schema;
+        for (const resource of ["studyversions", "modules", "teachingunits"])
+          value.data[resource] = fresh.data[resource];
+        for (const [resource, rows] of Object.entries(value.data) as [
+          string,
+          Row[],
+        ][])
+          for (const row of rows)
+            for (const field of fresh.schema[resource] || [])
+              if (row[field.name] === undefined)
+                row[field.name] =
+                  field.type === "relation"
+                    ? null
+                    : structuredClone(field.default);
+        const cohortIds = new Map<number, number>();
+        for (const item of fresh.data.cohorts.filter((row) =>
+          row.code.startsWith("STUDY-"),
+        )) {
+          const existing = value.data.cohorts.find(
+            (row: Row) => row.code === item.code,
+          );
+          const id =
+            existing?.id ||
+            Math.max(0, ...value.data.cohorts.map((row: Row) => row.id)) + 1;
+          cohortIds.set(item.id, id);
+          if (!existing) value.data.cohorts.push({ ...item, id });
+        }
+        for (const item of fresh.data.groups.filter((row) =>
+          row.code.startsWith("STUDY-"),
+        ))
+          if (!value.data.groups.some((row: Row) => row.code === item.code))
+            value.data.groups.push({
+              ...item,
+              id:
+                Math.max(0, ...value.data.groups.map((row: Row) => row.id)) + 1,
+              cohort: cohortIds.get(item.cohort),
+            });
+        localStorage.setItem(KEY, JSON.stringify(value));
+      }
+      if (
+        !value.schema.teachingunits.some(
+          (field: Field) => field.name === "group_mode",
+        )
+      ) {
+        value.schema = initial().schema;
+        for (const unit of value.data.teachingunits)
+          unit.group_mode ??= "combined";
+        for (const course of value.data.courses) course.study_group ??= null;
+        localStorage.setItem(KEY, JSON.stringify(value));
+      }
       return value;
     }
     const value = initial();
@@ -319,6 +378,15 @@ export async function demoApi(
     };
   if (resource === "jobs" && !key) return [];
   if (resource === "public") return displayFor(state, key, query);
+  if (resource === "studyversions" && operation) {
+    const version = get(state, resource, id);
+    if (operation === "check" && method === "GET")
+      return checkStructure(state, version);
+    if (method !== "POST") throw new Error("POST erforderlich.");
+    const result = studyAction(state, version, operation, body || {});
+    save(state, "Demo-Lehrplanversion aktualisiert");
+    return result;
+  }
   if (
     resource === "imports" ||
     resource === "jobs" ||
@@ -343,7 +411,12 @@ export async function demoApi(
     return { ok: true };
   }
   if (resource === "plans" && operation) {
-    get(state, resource, id);
+    const plan = get(state, resource, id);
+    if (operation === "prepare" && method === "POST") {
+      const result = prepareSemester(state, plan, body || {});
+      if (result.created) save(state, "Demo-Semester vorbereitet");
+      return result;
+    }
     const rows = rowsFor(state, id);
     const conflicts = conflictsFor(state, id);
     const publication =
@@ -391,9 +464,17 @@ export async function demoApi(
       "kind",
       "cohort",
       "program",
+      "study_version",
+      "module",
+      "semester",
+      "status",
     ])
       if (query.has(field))
         rows = rows.filter((row) => String(row[field]) === query.get(field));
+    if (query.has("groups"))
+      rows = rows.filter((row) =>
+        row.groups?.includes(Number(query.get("groups"))),
+      );
     const page = Math.max(1, Number(query.get("page")) || 1),
       size = Math.min(1000, Math.max(1, Number(query.get("page_size")) || 100));
     return {
@@ -403,7 +484,23 @@ export async function demoApi(
     };
   }
   if (method === "DELETE") {
-    get(state, resource, id);
+    const record = get(state, resource, id);
+    if (
+      resource === "people" &&
+      state.data.teachingunits.some(
+        (unit) =>
+          unit.teachers.includes(id) &&
+          get(
+            state,
+            "studyversions",
+            get(state, "modules", unit.module).study_version,
+          ).status === "approved",
+      )
+    )
+      throw new Error(
+        "Person ist einer freigegebenen Studienstruktur zugeordnet. Verfügbarkeiten können weiterhin angepasst werden.",
+      );
+    validateStudy(state, resource, record, record, true);
     const inUse = Object.entries(state.schema).some(([name, fields]) =>
       fields.some(
         (field) =>
@@ -491,6 +588,7 @@ export async function demoApi(
       );
   }
   if (resource === "displays" && !key) record.token = crypto.randomUUID();
+  validateStudy(state, resource, record, key ? get(state, resource, id) : null);
   if (resource === "blocks" && record.repeat_weekly && !record.repeat_until)
     throw new Error("Wiederholungsende auswählen.");
   state.data[resource] = [
