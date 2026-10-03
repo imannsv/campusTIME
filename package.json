@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "playwright test"
+    "test": "playwright test",
+    "deployment:check": "node scripts/check-deployment.mjs"
   },
   "keywords": [],
   "author": "",

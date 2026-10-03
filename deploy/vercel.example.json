@@ -12,6 +12,14 @@
       "source": "/admin/:path*",
       "destination": "https://api.your-domain.example/admin/:path*"
     },
+    {
+      "source": "/static/admin/:path*",
+      "destination": "https://api.your-domain.example/static/admin/:path*"
+    },
+    {
+      "source": "/static/rest_framework/:path*",
+      "destination": "https://api.your-domain.example/static/rest_framework/:path*"
+    },
     { "source": "/:path*", "destination": "/index.html" }
   ]
 }

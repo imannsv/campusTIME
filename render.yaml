@@ -1,0 +1,113 @@
+# Proposed pilot deployment. Creating this Blueprint provisions paid services.
+# Database credentials are entered in Render, never in Git or browser variables.
+services:
+  - type: web
+    name: campustime-api
+    runtime: docker
+    region: frankfurt
+    plan: 0.5c-512mb
+    repo: https://github.com/imannsv/campusTIME
+    branch: main
+    autoDeployTrigger: "off"
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: gunicorn config.wsgi:application --bind 0.0.0.0:10000 --workers 1 --threads 2 --timeout 90 --access-logfile -
+    preDeployCommand: python manage.py migrate --noinput
+    healthCheckPath: /api/health/
+    disk:
+      name: campustime-floorplans
+      mountPath: /app/backend/media
+      sizeGB: 1
+    envVars:
+      - fromGroup: campustime-runtime
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        fromService:
+          type: web
+          name: campustime-api
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+      - key: POSTGRES_HOST
+        sync: false
+      - key: POSTGRES_PORT
+        sync: false
+      - key: POSTGRES_USER
+        sync: false
+      - key: POSTGRES_PASSWORD
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: campustime-queue
+          property: connectionString
+  - type: worker
+    name: campustime-planner
+    runtime: docker
+    region: frankfurt
+    plan: 1c-2g
+    repo: https://github.com/imannsv/campusTIME
+    branch: main
+    autoDeployTrigger: "off"
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: celery -A config worker --loglevel=info --concurrency=1
+    maxShutdownDelaySeconds: 300
+    envVars:
+      - fromGroup: campustime-runtime
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: campustime-api
+          envVarKey: SECRET_KEY
+      - key: POSTGRES_HOST
+        fromService:
+          type: web
+          name: campustime-api
+          envVarKey: POSTGRES_HOST
+      - key: POSTGRES_PORT
+        fromService:
+          type: web
+          name: campustime-api
+          envVarKey: POSTGRES_PORT
+      - key: POSTGRES_USER
+        fromService:
+          type: web
+          name: campustime-api
+          envVarKey: POSTGRES_USER
+      - key: POSTGRES_PASSWORD
+        fromService:
+          type: web
+          name: campustime-api
+          envVarKey: POSTGRES_PASSWORD
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: campustime-queue
+          property: connectionString
+  - type: keyvalue
+    name: campustime-queue
+    region: frankfurt
+    plan: 256mb
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+    persistenceMode: journal-snapshot
+
+envVarGroups:
+  - name: campustime-runtime
+    envVars:
+      - key: DEBUG
+        value: "0"
+      - key: LOCAL_WORKER
+        value: "0"
+      - key: POSTGRES_DB
+        value: postgres
+      - key: POSTGRES_SCHEMA
+        value: campustime
+      - key: POSTGRES_SSLMODE
+        value: require
+      - key: TRUST_PROXY
+        value: "1"
+      - key: SECURE_SSL_REDIRECT
+        value: "1"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://campustime-flame.vercel.app,https://campustime-imanabi.vercel.app

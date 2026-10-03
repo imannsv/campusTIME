@@ -16,10 +16,22 @@ Stand: 03.10.2026. Die laufende Produkttestumgebung verwendet weiterhin lokale S
 
 Die bestehende Anwendung besteht aus einer Vite-Oberfläche, einem Django-Webdienst, einem Celery-Worker mit OR-Tools, Redis und dauerhaft gespeicherten Grundrissdateien. Für diese Architektur kann Vercel die Oberfläche bereitstellen; der langlebige Webdienst und der Planungsworker benötigen zusätzlich einen Backend-Host. Supabase übernimmt dann PostgreSQL. Dieser Host ist bisher nicht angegeben oder eingerichtet.
 
+Als konkreter Vorschlag liegt jetzt `render.yaml` für einen Pilot auf Render
+vor: Webdienst, Planungsworker und private Warteschlange in Frankfurt sowie
+persistent gespeicherte Grundrisse. Kosten, Einrichtung und verbliebene
+Schritte stehen in [RENDER.md](RENDER.md). Noch kein Render-Deployment gestartet.
+
+Die aktuelle Vercel-Domain ist `https://campustime-flame.vercel.app`.
+Am 03.10.2026 bestätigte die Prüfung: `/api/auth/me/` liefert dort HTTP 404,
+während die lokale Entwicklungsadresse eine gültige JSON-Antwort liefert.
+Ein Vercel-Status `READY` bestätigt daher bisher nur die Oberfläche.
+Mit `npm run deployment:check -- <Live-Adresse>` werden Anmeldungserkennung
+und Backend-Health geprüft; ein anschließender Funktionstest bleibt nötig.
+
 Nach Bereitstellung des Backend-Hosts:
 
 1. Die Oberfläche über Vercel mit dem GitHub-Repository verbinden. `vercel.json` legt Framework Vite, Build `npm run build`, Ausgabe `dist` und die SPA-Route für Anzeigen fest. Damit wird zunächst nur die Oberfläche gebaut; Anmeldung und Datenzugriffe benötigen noch das Backend.
-2. Sobald die Backend-Domain bereitsteht, `deploy/vercel.example.json` als `vercel.json` ins Projekt kopieren und die Backend-Domain an beiden Stellen ersetzen. Die API- und Admin-Regeln müssen vor der SPA-Regel bleiben. Das Beispiel enthält Platzhalter und ist noch keine aktive Backend-Anbindung.
+2. Sobald die Backend-Domain bereitsteht, `deploy/vercel.example.json` als `vercel.json` ins Projekt kopieren und alle Backend-Platzhalter ersetzen. Die Regeln für API, Admin und Backend-Styles müssen vor der SPA-Regel bleiben. Das Beispiel enthält Platzhalter und ist noch keine aktive Backend-Anbindung.
 3. Die Django-Umgebung mit den Werten aus `.env.supabase.example` konfigurieren. Diese Datei enthält ausschließlich Platzhalter; Django lädt sie nicht automatisch. Webdienst und Worker bekommen dieselben Datenbank-/Redisvariablen über die Laufzeitumgebung des Hosts.
 4. `ALLOWED_HOSTS` auf die Backend-Domain setzen, `CSRF_TRUSTED_ORIGINS` auf die tatsächliche Vercel-/eigene Frontend-Domain. Session- und CSRF-Cookies benötigen HTTPS. Keine pauschale Freigabe aller Preview-Domains.
 5. Redis privat bereitstellen, Medien persistent speichern und den Backend-Host inklusive Backupprüfung nach `OPERATIONS.md` abnehmen. Die mitgelieferte Compose-Datei nutzt ihre eigene lokale PostgreSQL-Datenbank; für Supabase die Datenbankvariablen für Webdienst/Worker und den Backupdienst gezielt anpassen.
