@@ -41,6 +41,7 @@ import RoomOverview from "./RoomOverview";
 import StudySetup from "./StudySetup";
 import StudentOverview from "./StudentOverview";
 import AssessmentBoard from "./AssessmentBoard";
+import CampusAI from "./CampusAI";
 
 type SessionState = {
   authenticated: boolean;
@@ -57,6 +58,7 @@ const nav = [
   { id: "map", label: "Räume", icon: Building2 },
   { id: "displays", label: "Öffentliche Anzeige", icon: Monitor },
   { id: "students", label: "Studierendenübersicht", icon: Users },
+  { id: "campusai", label: "campusAI", icon: Sparkles },
 ];
 const descriptions: Record<string, string> = {
   areas: "Getrennt planen, gemeinsame Ressourcen berücksichtigen.",
@@ -1221,6 +1223,14 @@ function Workspace() {
                       .toISODate()!,
                   );
               }}
+            />
+          ) : page === "campusai" ? (
+            <CampusAI
+              data={data}
+              planId={planId}
+              onPlan={setPlanId}
+              refresh={refresh}
+              onNavigate={go}
             />
           ) : page === "schedule" ? (
             <>

@@ -3,7 +3,84 @@ import { progressionFlow } from "./progression-flow";
 import { overviewFlow } from "./overview-flow";
 import { studyFlow } from "./study-flow";
 import { assessmentFlow } from "./assessment-flow";
+import { campusAIFlow } from "./campus-ai-flow";
 test.use({ actionTimeout: 10000 });
+
+test("campusAI erreicht das echte lokale Sprachmodell", async ({ page }) => {
+  test.skip(
+    process.env.CAMPUS_AI_LIVE_TEST !== "1",
+    "Optionaler Test des installierten lokalen Modells",
+  );
+  test.setTimeout(150000);
+  await page.goto("/");
+  await page.getByLabel("Passwort", { exact: true }).fill("Campuszeit2026!");
+  await page.getByRole("button", { name: "Anmelden", exact: true }).click();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "campusAI", exact: true })
+    .click();
+  await expect(
+    page.getByRole("checkbox", { name: "Lokale KI nutzen" }),
+  ).toBeChecked();
+  await expect(
+    page.getByRole("button", {
+      name: "Wie lege ich einen neuen Jahrgang an?",
+      exact: true,
+    }),
+  ).toBeEnabled();
+  const before = await (
+    await page.request.get("/api/campusai/context/")
+  ).json();
+  const responsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/campusai/chat/") &&
+      response.request().method() === "POST",
+    { timeout: 120000 },
+  );
+  await page
+    .getByRole("button", {
+      name: "Wie lege ich einen neuen Jahrgang an?",
+      exact: true,
+    })
+    .click();
+  const response = await responsePromise;
+  expect(response.status()).toBe(200);
+  const reply = await response.json();
+  expect(reply.mode).toBe("local");
+  expect(reply.changed).toBe(false);
+  expect(reply.service_note).toBeUndefined();
+  expect(reply.answer).toMatch(/Schritt 5|Jahrgänge/);
+  await expect(page.locator(".campus-ai-message.assistant")).toContainText(
+    "lokale KI",
+  );
+  expect(
+    await (await page.request.get("/api/campusai/context/")).json(),
+  ).toEqual(before);
+  console.log("Lokale Modellantwort:", reply.answer);
+  await page.screenshot({
+    path: "test-results/campus-ai-local-model.png",
+    fullPage: true,
+    animations: "disabled",
+  });
+});
+
+test("campusAI beantwortet Fragen ohne Datenänderungen", async ({ page }) => {
+  test.setTimeout(60000);
+  await page.goto("/");
+  await page.getByLabel("Passwort", { exact: true }).fill("Campuszeit2026!");
+  await page.getByRole("button", { name: "Anmelden", exact: true }).click();
+  await expect(
+    page
+      .getByRole("navigation")
+      .getByRole("button", { name: "campusAI", exact: true }),
+  ).toBeVisible();
+  const before = await (
+    await page.request.get("/api/campusai/context/")
+  ).json();
+  await campusAIFlow(page);
+  const after = await (await page.request.get("/api/campusai/context/")).json();
+  expect(after).toEqual(before);
+});
 
 test("Prüfungsanforderungen werden zu Prüfungsvorlagen und gespeicherten Abgabefristen", async ({
   page,
@@ -13,12 +90,10 @@ test("Prüfungsanforderungen werden zu Prüfungsvorlagen und gespeicherten Abgab
   await page.getByLabel("Passwort", { exact: true }).fill("Campuszeit2026!");
   await page.getByRole("button", { name: "Anmelden", exact: true }).click();
   await expect(
-    page
-      .getByRole("navigation")
-      .getByRole("button", {
-        name: "Einrichtung & Studienstruktur",
-        exact: true,
-      }),
+    page.getByRole("navigation").getByRole("button", {
+      name: "Einrichtung & Studienstruktur",
+      exact: true,
+    }),
   ).toBeVisible();
   await studyFlow(page);
   await assessmentFlow(page);

@@ -54,6 +54,11 @@ angelegt. Es enthält sechs Semester, 180 CP und Jahrgang dWI27.
 
 ## Bedienung
 
+Unter **campusAI** gibt es Bedienhilfe und aktuelle Planungshinweise.
+Optional kann ein eigenes lokales Sprachmodell über Ollama Fragen formuliert
+beantworten, ohne kostenpflichtige Modell-API. Auf Vercel steht die Schnellhilfe
+zur Verfügung. Einrichtung, Datenschutz und Grenzen: [campusAI](docs/CAMPUS_AI.md).
+
 1. Unter **Stammdaten** Zeiträume, Planbereiche, Studien-/Bildungsgänge, Jahrgänge und Gruppen anlegen. Für Räume zuerst einen Raumbereich und ein Stockwerk anlegen.
 2. Personen mit Gruppen und Kursen verbinden. Lehrende als solche kennzeichnen und Verfügbarkeiten hinterlegen. Bei vollständigen Klassenlisten werden Teilnehmerzahlen aus eindeutigen Personen berechnet; noch fehlende Klassenmitglieder werden über die Gruppengröße berücksichtigt.
 3. Einen Stundenplan für Planbereich und Zeitraum anlegen. Veranstaltungen manuell pflegen oder eine Lehrplanvorlage übernehmen. Vorlagen werden kopiert, nicht nachträglich mit bestehenden Plänen synchronisiert.

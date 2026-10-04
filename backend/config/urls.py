@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path, re_path
 from django.views.generic import TemplateView
-from planner import views
+from planner import campus_ai_api, views
 from planner.serializers import RESOURCES
 from rest_framework.routers import DefaultRouter
 
@@ -19,6 +19,9 @@ urlpatterns = [
     path("api/bootstrap/", views.bootstrap),
     path("api/health/", views.health),
     path("api/preferences/", views.preferences),
+    path("api/campusai/status/", campus_ai_api.status),
+    path("api/campusai/context/", campus_ai_api.context),
+    path("api/campusai/chat/", campus_ai_api.chat),
     path("api/plans/<int:pk>/<str:operation>/", views.plan_action),
     path("api/studyversions/<int:pk>/<str:operation>/", views.study_action),
     path("api/cohorts/<int:pk>/progression/", views.cohort_progression),

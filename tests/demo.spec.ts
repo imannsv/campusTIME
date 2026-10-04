@@ -3,7 +3,38 @@ import { studyFlow } from "./study-flow";
 import { progressionFlow } from "./progression-flow";
 import { overviewFlow } from "./overview-flow";
 import { assessmentFlow } from "./assessment-flow";
+import { campusAIFlow } from "./campus-ai-flow";
 test.use({ actionTimeout: 10000 });
+
+test("campusAI Schnellhilfe bleibt ohne Server und ohne Datenänderung verfügbar", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.startsWith("/api/"))
+      requests.push(request.url());
+  });
+  await page.goto("/");
+  await expect(
+    page
+      .getByRole("navigation")
+      .getByRole("button", { name: "campusAI", exact: true }),
+  ).toBeVisible();
+  const before = await page.evaluate(() =>
+    localStorage.getItem("campustime-browser-demo-v1"),
+  );
+  await campusAIFlow(page);
+  expect(
+    await page.evaluate(() =>
+      localStorage.getItem("campustime-browser-demo-v1"),
+    ),
+  ).toEqual(before);
+  expect(requests).toEqual([]);
+  await expect(
+    page.getByRole("checkbox", { name: "Lokale KI nutzen" }),
+  ).toBeDisabled();
+});
 
 test("Studierendenübersicht filtert Kurse, bleibt teilbar und aktualisiert sich", async ({
   page,

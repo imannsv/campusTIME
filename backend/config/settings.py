@@ -90,6 +90,10 @@ SOLVER_SECONDS = min(int(os.getenv("SOLVER_SECONDS", "600")), 600)
 if os.getenv("TRUST_PROXY", "0") == "1":
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 LOCAL_WORKER = os.getenv("LOCAL_WORKER", "1" if DEBUG else "0") == "1"
+CAMPUS_AI_ENABLED = os.getenv("CAMPUS_AI_ENABLED", "1" if DEBUG else "0") == "1"
+CAMPUS_AI_URL = os.getenv("CAMPUS_AI_URL", "http://127.0.0.1:11434")
+CAMPUS_AI_MODEL = os.getenv("CAMPUS_AI_MODEL", "qwen3.5:2b")
+CAMPUS_AI_TIMEOUT = min(max(int(os.getenv("CAMPUS_AI_TIMEOUT", "90")), 5), 120)
 MAP_STYLE_URL = os.getenv(
     "MAP_STYLE_URL", "https://tiles.openfreemap.org/styles/liberty"
 )

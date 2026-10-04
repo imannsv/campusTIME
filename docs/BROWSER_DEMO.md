@@ -20,6 +20,7 @@ damit die Kalenderansicht zur aktuellen Woche passt.
 
 ## Testbare Funktionen
 
+- campusAI-Schnellhilfe und einfache Planungshinweise aus den Demo-Daten; kein Sprachmodell verbunden. [Umfang und lokaler Betrieb](CAMPUS_AI.md).
 - Geführte Einrichtung, versionierte Studienstrukturen, Module/Teilmodule und Credit Points pflegen.
 - Lehrplanversionen prüfen, freigeben, kopieren und passende Semesterveranstaltungen übernehmen.
 - Prüfungsanforderungen als Semester-Vorlagen übernehmen, konkrete Prüfungen daraus anlegen und interne Abgabefristen pflegen: [Ablauf](ASSESSMENT_WORKFLOW.md).

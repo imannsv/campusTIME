@@ -1,0 +1,162 @@
+[
+  {
+    "id": "setup",
+    "title": "Einrichtung Schritt für Schritt",
+    "keywords": [
+      "einrichten",
+      "einrichtung",
+      "anfangen",
+      "start",
+      "onboarding",
+      "fehlt"
+    ],
+    "page": "setup",
+    "answer": "Öffne Einrichtung & Studienstruktur. Der Ablauf ist: 1. Räume mit Kapazität und Ausstattung, 2. Lehrende mit abgestimmten Verfügbarkeiten, 3. Studiengang und Lehrplanversion, 4. Module und Lehrveranstaltungen, 5. Jahrgang mit Gruppen und Studierenden, 6. Semesterplan und Zeitraum. Erst danach werden konkrete Termine geplant und veröffentlicht."
+  },
+  {
+    "id": "rooms",
+    "title": "Räume und Ausstattung",
+    "keywords": [
+      "raum",
+      "räume",
+      "kapazität",
+      "stockwerk",
+      "bereich",
+      "beamer",
+      "pc-labor",
+      "gebäude"
+    ],
+    "page": "map",
+    "answer": "Unter Räume legst du zuerst einen Bereich an, dann Stockwerke und darin Räume. Jeder Raum braucht eine Bezeichnung, Kapazität und bei Bedarf Ausstattung wie PC oder Beamer. Die Planung berücksichtigt diese Angaben und Raumblockierungen. Ein ausreichend großer und ausgestatteter Raum ist erst dann für einen Termin geeignet, wenn er zu dieser Zeit verfügbar ist."
+  },
+  {
+    "id": "teachers",
+    "title": "Lehrende und Verfügbarkeiten",
+    "keywords": [
+      "lehrend",
+      "dozent",
+      "professor",
+      "verfügbar",
+      "verfügbarkeit",
+      "zeitfenster",
+      "aufsicht"
+    ],
+    "page": "setup",
+    "answer": "Öffne Einrichtung & Studienstruktur → Schritt 2: Lehrende. Über Lehrende hinzufügen erfasst die Verwaltung Personen und die mit ihnen abgestimmten Zeitfenster. Mehrere Zeitfenster je Tag sowie zusätzliche datierte Sperrzeiten sind möglich. Ohne Zeitfenster ist eine Person nicht verfügbar. Bei Veranstaltungen können mehrere Lehrende zugeordnet werden; ohne einzelne Lehrendenteams unterrichten sie gemeinsam."
+  },
+  {
+    "id": "study",
+    "title": "Studiengang, Module und Lehrplanversion",
+    "keywords": [
+      "studiengang",
+      "lehrplan",
+      "modul",
+      "teilmodul",
+      "untermodul",
+      "obermodul",
+      "freigeben",
+      "credit",
+      "cp"
+    ],
+    "page": "setup",
+    "answer": "Lege in Schritt 3 den Studiengang mit Regelstudienzeit und CP-Ziel sowie eine Lehrplanversion an. In Schritt 4 folgen Obermodule, Teilmodule und Lehrveranstaltungen mit Semester, Unterrichtsumfang und Prüfungsanforderungen. CP und Unterrichtsstunden werden getrennt erfasst. Ober- und Teilmodule werden nicht doppelt gezählt. Eine vollständige Version kann freigegeben werden; spätere Strukturänderungen erfolgen über Neue Version aus Kopie. Bestehende Jahrgänge behalten ihre Version."
+  },
+  {
+    "id": "cohort",
+    "title": "Jahrgang und Gruppen",
+    "keywords": [
+      "jahrgang",
+      "gruppe",
+      "klasse",
+      "studierende",
+      "student",
+      "schüler",
+      "teilnehmer"
+    ],
+    "page": "setup",
+    "answer": "Öffne Einrichtung & Studienstruktur → Schritt 5: Jahrgänge. Lege einen Jahrgang mit Aufnahmejahr und freigegebener Lehrplanversion an. Ergänze Gruppen wie A1 und A2 und ihre tatsächlichen Studierendenlisten. Über Studierendenliste verwalten lassen sich Personen einer Gruppe pflegen. Gruppengröße und erfasste Personen sollten zusammenpassen. Die Semesterübernahme erzeugt je nach Lehrveranstaltung gemeinsame oder getrennte Gruppenkurse."
+  },
+  {
+    "id": "progression",
+    "title": "Semesterbelastung und Verschiebungen",
+    "keywords": [
+      "überlast",
+      "belast",
+      "verschieb",
+      "ausgleich",
+      "semester",
+      "schwierig",
+      "voraussetzung"
+    ],
+    "page": "setup",
+    "answer": "In Schritt 5 öffnest du Studienverlauf und Semesterbelastung für den Jahrgang. Die Prüfung berücksichtigt CP-Anteile, wöchentliche Unterrichtseinheiten, administrativ hinterlegte Schwierigkeit und Voraussetzungen. Ausgleich vorschlagen erstellt eine Vorschau. Erst nach fachlicher Prüfung und Studienverlauf speichern wird sie übernommen. Bereits übernommene Veranstaltungen und Prüfungsvorlagen schützen ihre Semesterzuordnung. Der Ausgleich garantiert keine optimale Verteilung."
+  },
+  {
+    "id": "schedule",
+    "title": "Stundenplanung und Konflikte",
+    "keywords": [
+      "stundenplan",
+      "planen",
+      "konflikt",
+      "überschneid",
+      "automatisch",
+      "termin",
+      "soll"
+    ],
+    "page": "schedule",
+    "answer": "In Schritt 6 legst du einen Semesterplan mit Jahrgang, Fachsemester und Kalenderzeitraum an. Veranstaltungen übernehmen kopiert das passende Unterrichtssoll; vorhandene Anpassungen bleiben erhalten. Unter Stundenplanung nutzt Automatisch planen Lehrende, Verfügbarkeiten, Räume, Ausstattung, Teilnehmer und Sperren. Ein Vorschlag muss geprüft, übernommen und veröffentlicht werden. Die Browser-Demo hat keine automatische Terminplanung. Die angezeigte Konfliktprüfung benennt Probleme und fehlendes Unterrichtssoll; sie ist kein Beweis, dass überhaupt keine Lösung existiert."
+  },
+  {
+    "id": "assessments",
+    "title": "Prüfungen und Abgabefristen",
+    "keywords": [
+      "prüf",
+      "klausur",
+      "nachschreib",
+      "hausarbeit",
+      "abgabe",
+      "frist",
+      "portfolio"
+    ],
+    "page": "exams",
+    "answer": "Unter Prüfungen wählst du den Semesterplan und Prüfungsanforderungen übernehmen. Vorgaben werden im letzten zum Modul gehörenden Fachsemester vorgeschlagen; bestehende Vorlagen bleiben erhalten. Prüfung anlegen übernimmt Art, Dauer und Hinweise. Prüfe Teilnehmer, Zeitraum und Aufsichten. Wahlpflichtprüfungen verwenden erfasste Belegungen. Hausarbeiten stehen unter Abgaben & Fristen und erhalten dort Datum und Uhrzeit ohne Raumtermin. Fristen sind derzeit nur intern sichtbar. Nachschreiber werden separat mit eigener Teilnehmerliste angelegt."
+  },
+  {
+    "id": "electives",
+    "title": "Wahlpflicht und gemeinsame Veranstaltungen",
+    "keywords": [
+      "wahlpflicht",
+      "belegung",
+      "gemeinsam",
+      "mehrere gruppen",
+      "a1",
+      "a2"
+    ],
+    "page": "data",
+    "answer": "Je Lehrveranstaltung bestimmst du, ob sie gemeinsam für den Jahrgang oder separat je Gruppe durchgeführt wird. Die Semesterübernahme erzeugt entsprechende Veranstaltungen. In den konkreten Veranstaltungen kannst du mehrere Gruppen, Lehrende und tatsächliche Wahlpflichtbelegungen zuordnen. Bei Wahlpflicht zählen ausdrücklich ausgewählte Lernende statt pauschal der ganze Jahrgang. Die Gruppenliste allein ersetzt keine Wahlpflichtbelegung."
+  },
+  {
+    "id": "display",
+    "title": "Veröffentlichung und Studierendenübersicht",
+    "keywords": [
+      "öffentlich",
+      "veröffentlich",
+      "anzeige",
+      "heute",
+      "morgen",
+      "scroll",
+      "übersicht",
+      "filter",
+      "teilen"
+    ],
+    "page": "displays",
+    "answer": "Nach Prüfung und Veröffentlichung legst du unter Öffentliche Anzeige eine Anzeige mit ausgewählten Plänen an. Jeder Anzeigelink bleibt fest auf Woche, Heute oder Morgen eingestellt. Scrollen lässt sich konfigurieren. Die separate Studierendenübersicht bietet Jahrgangs-, Gruppen- und Kursfilter und einen teilbaren Link. Sie zeigt veröffentlichte Termine und lädt Änderungen nach. In der Vercel-Demo liegen Änderungen nur im jeweiligen Browserprofil."
+  },
+  {
+    "id": "blocks",
+    "title": "Raumsperren für Projekte oder Bauarbeiten",
+    "keywords": ["sperr", "block", "bauarbeit", "wartung", "projekt"],
+    "page": "data",
+    "answer": "Unter Stammdaten → Raumblockierungen wählst du Räume sowie Beginn und Ende der Sperre. Damit lassen sich Bauarbeiten, Wartung und Projektbelegungen berücksichtigen. Vorhandene Termine werden dadurch nicht automatisch verschoben. Prüfe den betroffenen Stundenplan und plane konfliktbehaftete Termine neu."
+  }
+]

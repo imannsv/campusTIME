@@ -4,6 +4,7 @@ COPY package*.json ./
 RUN npm ci
 COPY index.html vite.config.ts tsconfig.json ./
 COPY src ./src
+COPY shared ./shared
 RUN npm run build
 
 FROM python:3.12-slim
@@ -12,6 +13,7 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend ./backend
+COPY shared ./shared
 COPY --from=frontend /app/dist ./dist
 RUN DEBUG=1 python backend/manage.py collectstatic --noinput
 WORKDIR /app/backend

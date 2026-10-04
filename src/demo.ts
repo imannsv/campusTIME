@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 import example from "./demo-data.json";
 import type { Field, Row } from "./api";
+import { demoAIStatus, demoAIContext, demoAIReply } from "./demo-campus-ai";
 import { cohortProgression, limitFields } from "./demo-progression";
 import {
   prepareAssessments,
@@ -489,6 +490,24 @@ export async function demoApi(
   const [resource, key, operation] = url.pathname.split("/").filter(Boolean);
   const id = Number(key);
   const query = url.searchParams;
+  if (resource === "campusai") {
+    if (key === "status" && method === "GET") return demoAIStatus;
+    const selection =
+      method === "POST" ? body || {} : Object.fromEntries(query);
+    if (
+      ["context", "chat"].includes(key) &&
+      ((key === "context" && method === "GET") ||
+        (key === "chat" && method === "POST"))
+    ) {
+      const context = demoAIContext(
+        state,
+        selection,
+        selection.plan ? conflictsFor(state, Number(selection.plan)) : [],
+      );
+      return key === "chat" ? demoAIReply(body || {}, context) : context;
+    }
+    throw new Error("Diese campusAI-Aktion ist nicht verfügbar.");
+  }
   if (resource === "auth")
     return {
       authenticated: true,

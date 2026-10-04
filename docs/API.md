@@ -127,3 +127,16 @@ Semesterübernahme und Validierung der Veranstaltung verwenden die effektive
 Semesterzuordnung. Bereits übernommene Veranstaltungen können durch den
 Jahrgangsverlauf nicht verschoben werden. Grenzen sind weich; Verletzungen
 der Voraussetzungen, ungültige Zuordnungen und veraltete Stände sind Fehler.
+
+## campusAI (intern, nur lesend)
+
+- `GET /api/campusai/status/`: lokaler Modellstatus und expliziter Verfügbarkeitsgrund.
+- `GET /api/campusai/context/?plan=<id>&cohort=<id>`: aktuelle Fakten, berechnete Hinweise, Semesterbelastung und Revision. Beide Filter sind optional; bei gemeinsamer Auswahl muss der Jahrgang zum Plan gehören.
+- `POST /api/campusai/chat/`: `{ "question": "Wie lege ich einen Jahrgang an?", "plan": 1, "use_model": false, "history": [] }`. `cohort` ist optional; Verlaufseinträge verwenden `role: user|assistant` und `content`.
+
+Die Antwort enthält `answer`, `mode: help|local`, `model`, `sources`,
+`revision` und stets `changed: false`. Bei Modellproblemen ist `mode: help`
+mit `service_note` gesetzt. Anmeldung, Mandantenzuordnung und beim POST
+CSRF sind erforderlich. Fremde Plan-/Jahrgangs-IDs ergeben 404; ungültige
+Eingaben 400, mehr als zwölf Chat-Anfragen pro Minute 429. Kein Modelldownload
+und keine Datenmutation durch diese Endpunkte. [Grenzen und Konfiguration](CAMPUS_AI.md).

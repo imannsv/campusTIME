@@ -156,3 +156,28 @@ Abgabefristen gehören zur internen Verwaltung und werden noch nicht öffentlich
 ausgeliefert. Die Übernahme erstellt Vorlagen; die bestehende Terminplanung
 erzeugt die konkreten Raumbelegungen. Die Vercel-Variante bleibt eine Demo mit
 Speicherung im jeweiligen Browserprofil.
+
+## Ergänzung: campusAI (04.10.2026)
+
+- 78 Django-Tests bestanden, darunter 18 campusAI-Prüfungen für Anmeldung,
+  CSRF, Mandantentrennung, unveränderte Planungsdaten, berechnete Hinweise,
+  Semesterlasten, Prüfungsvorlagen/Fristen, Eingabegrenzen, Rate-Limit,
+  lokale Modellantworten und ausdrücklich gekennzeichnete Fehlerfälle.
+- Der lokale campusAI-Browserablauf bestand: Fragen, Schnellhilfe, Planwechsel,
+  Gespräch leeren, unveränderte Daten und Darstellung bei 390 Pixel Breite.
+  Zusätzlich bestand der optionale Browsertest gegen das tatsächlich installierte
+  Qwen3.5-2B-Modell über Ollama, ohne Änderungen am Datenbestand.
+- Sieben Demo-Browserabläufe bestanden. campusAI verursacht dort keine
+  Backend-/Modell-Anfragen und verändert keinen Demo-Speicher. Desktop- und
+  Mobilansicht wurden visuell geprüft.
+- TypeScript, regulärer Build, Demo-Build, Ruff und Migrationsprüfung bestanden.
+  Es gibt keine neue Datenbankmigration und keinen persistenten Chatverlauf.
+
+Das lokale Modell wurde auf einem i5-1335U mit rund 16 GB RAM getestet.
+Beispielantworten mit Plan-Kontext benötigten etwa 26–40 Sekunden; dies ist
+keine garantierte Antwortzeit. Zwei zunächst geprüfte Modelle wurden wegen
+unzureichender Antworten verworfen. Auch das gewählte Modell kann Angaben
+falsch formulieren; die Oberfläche verweist auf die Hilfe und berechneten
+Hinweise. Der Test bestätigt keine allgemeine inhaltliche Zuverlässigkeit.
+Produktionsbetrieb in Docker oder auf PostgreSQL wurde für campusAI nicht
+erneut getestet; Vercel bietet ausschließlich die Browser-Schnellhilfe.
