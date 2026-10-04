@@ -2067,6 +2067,74 @@ tbody tr:hover {
   border: 1px solid var(--line);
   border-radius: 12px;
 }
+.assessment-board {
+  margin-bottom: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  background: #fff;
+}
+.assessment-board .resource-tabs {
+  margin: 18px 0;
+  flex-wrap: wrap;
+}
+.assessment-board .resource-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.assessment-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(310px, 100%), 1fr));
+  gap: 14px;
+}
+.assessment-cards article {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+.assessment-card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.assessment-card-heading h3 {
+  font-size: 15px;
+}
+.assessment-cards p {
+  margin: 10px 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.assessment-overdue {
+  color: #934d37;
+  background: #fbeee8;
+}
+.assessment-plan-select {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 12px;
+  color: var(--muted);
+}
+.assessment-plan-select select {
+  max-width: min(430px, 100%);
+}
+@media (max-width: 720px) {
+  .assessment-board {
+    padding: 14px;
+  }
+  .assessment-board .study-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
 .student-filters label,
 .student-week label {
   display: grid;

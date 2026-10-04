@@ -3,6 +3,11 @@ import example from "./demo-data.json";
 import type { Field, Row } from "./api";
 import { cohortProgression, limitFields } from "./demo-progression";
 import {
+  prepareAssessments,
+  examDraft,
+  validateAssessment,
+} from "./demo-assessments";
+import {
   enrichDemoSnapshot,
   matchesOverview,
   overviewCatalog,
@@ -55,6 +60,23 @@ function read(): Store {
     const saved = localStorage.getItem(KEY);
     if (saved) {
       const value = JSON.parse(saved);
+      if (
+        !value.schema.assessments ||
+        !value.schema.exams.some(
+          (field: Field) => field.name === "assessment_template",
+        )
+      ) {
+        const fresh = initial();
+        value.schema.assessments = fresh.schema.assessments;
+        value.data.assessments ??= [];
+        value.schema.exams = fresh.schema.exams;
+        for (const exam of value.data.exams) {
+          exam.assessment_template ??= null;
+          exam.assessment_type ??= "exam";
+          exam.assessment_notes ??= "";
+        }
+        localStorage.setItem(KEY, JSON.stringify(value));
+      }
       if (!value.data || !value.schema || !Array.isArray(value.publications))
         throw new Error();
       if (!value.data.studyversions) {
@@ -245,7 +267,18 @@ function rowsFor(state: Store, planId: number): Row[] {
           (id: number) => get(state, "people", id).name,
         ),
         group_names: isExam
-          ? [entity.resit ? "Nachschreibeklausur" : "Klausur"]
+          ? [
+              entity.resit
+                ? "Nachschreibeklausur"
+                : (
+                    {
+                      exam: "Klausur",
+                      oral: "Mündliche Prüfung",
+                      presentation: "Präsentation",
+                      practical: "Praktische Prüfung",
+                    } as Row
+                  )[entity.assessment_type || "exam"],
+            ]
           : entity.groups.map((id: number) => get(state, "groups", id).name),
         ...(!isExam ? { group_ids: entity.groups } : {}),
         locked: session.locked,
@@ -536,6 +569,11 @@ export async function demoApi(
   }
   if (resource === "plans" && operation) {
     const plan = get(state, resource, id);
+    if (operation === "prepare-assessments" && method === "POST") {
+      const result = prepareAssessments(state, plan);
+      if (result.created) save(state, "Prüfungsvorlagen übernommen");
+      return result;
+    }
     if (operation === "prepare" && method === "POST") {
       const result = prepareSemester(state, plan, body || {});
       if (result.created) save(state, "Demo-Semester vorbereitet");
@@ -571,6 +609,12 @@ export async function demoApi(
         .map((row) => publicRow(row, true)),
     };
   }
+  if (
+    resource === "assessments" &&
+    operation === "exam_draft" &&
+    method === "GET"
+  )
+    return examDraft(state, get(state, resource, id));
   if (!state.data[resource] || operation)
     throw new Error("Diese Funktion ist in der Browser-Demo nicht verfügbar.");
   if (method === "GET") {
@@ -679,6 +723,12 @@ export async function demoApi(
       for (const related of field.type === "many" ? value : [value])
         get(state, field.resource, Number(related));
   }
+  validateAssessment(
+    state,
+    resource,
+    record,
+    key ? get(state, resource, id) : undefined,
+  );
   if (
     ["rooms", "groups"].includes(resource) &&
     (!Number.isInteger(record[resource === "rooms" ? "capacity" : "size"]) ||

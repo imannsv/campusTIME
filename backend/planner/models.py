@@ -299,7 +299,47 @@ class Course(TenantModel):
         ]
 
 
+class Assessment(TenantModel):
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name="assessments")
+    module = models.ForeignKey(Module, on_delete=models.PROTECT)
+    assessment_type = models.CharField(
+        max_length=20, choices=Module._meta.get_field("assessment_type").choices[2:]
+    )
+    assessment_duration_minutes = models.PositiveIntegerField(null=True, blank=True)
+    assessment_notes = models.CharField(max_length=2000, blank=True, default="")
+    due_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(
+        max_length=12,
+        choices=[("open", "Offen"), ("waived", "Entfällt für diesen Semesterplan")],
+        default="open",
+    )
+
+    class Meta(TenantModel.Meta):
+        constraints = TenantModel.Meta.constraints + [
+            models.UniqueConstraint(
+                fields=["plan", "module"], name="assessment_plan_module_unique"
+            )
+        ]
+
+
 class Exam(TenantModel):
+    assessment_template = models.OneToOneField(
+        Assessment,
+        null=True,
+        blank=True,
+        on_delete=models.RESTRICT,
+        related_name="planned_exam",
+    )
+    assessment_type = models.CharField(
+        max_length=20,
+        choices=[
+            choice
+            for choice in Module._meta.get_field("assessment_type").choices
+            if choice[0] in ["exam", "oral", "presentation", "practical"]
+        ],
+        default="exam",
+    )
+    assessment_notes = models.CharField(max_length=2000, blank=True, default="")
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.PROTECT, null=True, blank=True)
     learners = models.ManyToManyField(Person, blank=True, related_name="exams")

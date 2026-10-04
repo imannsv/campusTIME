@@ -52,7 +52,11 @@ def entity_data(entity):
         "learner_ids": sorted(ids),
         "count": len(ids),
         "group_resources": [],
-        "group_names": ["Nachschreibeklausur" if entity.resit else "Klausur"],
+        "group_names": [
+            "Nachschreibeklausur"
+            if entity.resit
+            else entity.get_assessment_type_display()
+        ],
         "teacher_ids": [p.id for p in entity.supervisors.all()],
         "color": "rose",
         "equipment": entity.equipment,

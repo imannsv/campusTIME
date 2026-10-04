@@ -1,7 +1,28 @@
 import { test, expect } from "@playwright/test";
 import { progressionFlow } from "./progression-flow";
 import { overviewFlow } from "./overview-flow";
+import { studyFlow } from "./study-flow";
+import { assessmentFlow } from "./assessment-flow";
 test.use({ actionTimeout: 10000 });
+
+test("Prüfungsanforderungen werden zu Prüfungsvorlagen und gespeicherten Abgabefristen", async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  await page.goto("/");
+  await page.getByLabel("Passwort", { exact: true }).fill("Campuszeit2026!");
+  await page.getByRole("button", { name: "Anmelden", exact: true }).click();
+  await expect(
+    page
+      .getByRole("navigation")
+      .getByRole("button", {
+        name: "Einrichtung & Studienstruktur",
+        exact: true,
+      }),
+  ).toBeVisible();
+  await studyFlow(page);
+  await assessmentFlow(page);
+});
 
 test("Separate Studierendenübersicht zeigt freigegebene Termine mit Kursfiltern", async ({
   page,

@@ -29,6 +29,8 @@ Alle Verwaltungsanfragen verwenden die Django-Sitzung. Schreibende Anfragen ben�
 | `POST /api/jobs/{uuid}/` | `{action: "cancel" | "apply"}` |
 | `POST /api/plans/{id}/publish/` | Prüft Konflikte und Soll; erstellt unveränderliche Veröffentlichung |
 | `POST /api/plans/{id}/template/` | `{curriculum, groups: []}`; kopiert Lehrplanfächer |
+| `POST /api/plans/{id}/prepare-assessments/` | Kopiert Prüfungsanforderungen anhand des effektiven Jahrgangsverlaufs; liefert `created`, `existing`, `warnings` |
+| `GET /api/assessments/{id}/exam_draft/` | Liefert `defaults` und `warnings` für eine konkrete zeitgebundene Prüfung; erzeugt keine Buchung |
 | `GET /api/imports/{resource}/` | CSV-Vorlage |
 | `POST /api/imports/{resource}/` | Multipart `file`: validierte Vorschau; JSON `{batch}`: atomare Übernahme |
 | `POST /api/floors/{id}/upload/` | Multipart `file`: PNG/JPEG/WebP bis 10 MB |
@@ -36,7 +38,15 @@ Alle Verwaltungsanfragen verwenden die Django-Sitzung. Schreibende Anfragen ben�
 | `GET /api/rooms/{id}/occupancy/` | Freigegebene Belegung für die Verwaltungsansicht |
 | `GET /api/public/{token}/` | Anonyme, explizit reduzierte öffentliche Ansicht; keine Personenkennungen |
 
-Ressourcen: `areas`, `programs`, `cohorts`, `groups`, `people`, `periods`, `buildings`, `floors`, `rooms`, `curricula`, `plans`, `courses`, `exams`, `sessions`, `blocks`, `displays`.
+Ressourcen: `areas`, `programs`, `studyversions`, `modules`, `teachingunits`, `cohorts`, `groups`, `people`, `periods`, `buildings`, `floors`, `rooms`, `curricula`, `plans`, `courses`, `assessments`, `exams`, `sessions`, `blocks`, `displays`.
+
+`assessments` speichert `plan`, `module`, `assessment_type`,
+`assessment_duration_minutes`, `assessment_notes`, `due_at` und `status`
+(`open` oder `waived`). `due_at` gehört nur zu nicht zeitgebundenen Leistungen.
+Pro Plan und Modul existiert höchstens eine Vorlage; ihre Herkunft bleibt bei
+Änderungen erhalten. `exams.assessment_template` ist eine optionale eindeutige
+Herkunftszuordnung. Konkrete Prüfungen speichern außerdem die Prüfungsart und
+Hinweise. Eine verwendete Vorlage kann nicht einzeln gelöscht werden.
 
 Listen unterstützen `page`, `page_size` (maximal 1.000), `search` und passende Beziehungsfilter (`plan`, `floor`, `building`, `kind`, `cohort`, `program`). Öffentliche Anzeigen und Terminlisten können über `since`/`until` auf ein Zeitfenster eingeschränkt werden. Öffentliche Metadaten enthalten den frühesten veröffentlichten Termin und den Anzeige-Zeitrahmen.
 

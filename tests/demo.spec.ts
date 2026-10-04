@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { studyFlow } from "./study-flow";
 import { progressionFlow } from "./progression-flow";
 import { overviewFlow } from "./overview-flow";
+import { assessmentFlow } from "./assessment-flow";
 test.use({ actionTimeout: 10000 });
 
 test("Studierendenübersicht filtert Kurse, bleibt teilbar und aktualisiert sich", async ({
@@ -45,8 +46,9 @@ test("Jahrgangsverlauf verschieben, Voraussetzungen und Ausgleich prüfen", asyn
 test("Geführte Einrichtung: Studienstruktur, Jahrgang und Semester übernehmen", async ({
   page,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(120000);
   await studyFlow(page);
+  await assessmentFlow(page);
 });
 
 test("Bestehende Browser-Demo wird ohne Verlust von Raumänderungen ergänzt", async ({
@@ -151,6 +153,47 @@ test("Bestehende Browser-Demo wird ohne Verlust von Raumänderungen ergänzt", a
         module.assessment_notes === "",
     ),
   ).toBeTruthy();
+  const originalExam = withAssessments.data.exams[0];
+  await page.evaluate(() => {
+    const key = "campustime-browser-demo-v1";
+    const state = JSON.parse(localStorage.getItem(key)!);
+    delete state.schema.assessments;
+    delete state.data.assessments;
+    state.schema.exams = state.schema.exams.filter(
+      (field: any) =>
+        ![
+          "assessment_template",
+          "assessment_type",
+          "assessment_notes",
+        ].includes(field.name),
+    );
+    for (const exam of state.data.exams) {
+      delete exam.assessment_template;
+      delete exam.assessment_type;
+      delete exam.assessment_notes;
+    }
+    localStorage.setItem(key, JSON.stringify(state));
+  });
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Automatisch planen", exact: true }),
+  ).toBeVisible();
+  const templatesUpgrade = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("campustime-browser-demo-v1")!),
+  );
+  expect(templatesUpgrade.data.rooms[0].capacity).toBe(777);
+  expect(templatesUpgrade.data.assessments).toEqual([]);
+  expect(
+    templatesUpgrade.schema.assessments.some(
+      (field: any) => field.name === "due_at",
+    ),
+  ).toBeTruthy();
+  expect(templatesUpgrade.data.exams[0]).toEqual({
+    ...originalExam,
+    assessment_template: null,
+    assessment_type: "exam",
+    assessment_notes: "",
+  });
 });
 
 test("Demo funktioniert ohne Backend, Raumänderungen bleiben im Browser", async ({

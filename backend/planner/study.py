@@ -168,7 +168,10 @@ def validate_study(model, instance, attrs, institution):
             raise serializers.ValidationError("Gültiges Fachsemester wählen.")
         if (
             instance
-            and instance.course_set.filter(teaching_unit__isnull=False).exists()
+            and (
+                instance.course_set.filter(teaching_unit__isnull=False).exists()
+                or instance.assessments.exists()
+            )
             and (
                 getattr(cohort, "id", None) != instance.cohort_id
                 or semester != instance.semester

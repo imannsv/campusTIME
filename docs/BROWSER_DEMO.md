@@ -22,6 +22,7 @@ damit die Kalenderansicht zur aktuellen Woche passt.
 
 - Geführte Einrichtung, versionierte Studienstrukturen, Module/Teilmodule und Credit Points pflegen.
 - Lehrplanversionen prüfen, freigeben, kopieren und passende Semesterveranstaltungen übernehmen.
+- Prüfungsanforderungen als Semester-Vorlagen übernehmen, konkrete Prüfungen daraus anlegen und interne Abgabefristen pflegen: [Ablauf](ASSESSMENT_WORKFLOW.md).
 - Jahrgangsverläufe separat verschieben, Semesterbelastung prüfen und Ausgleichsvorschläge mit Voraussetzungen und Fixierungen testen.
 - Lehrende mit mehreren Zeitfenstern pro Wochentag und datierten Sperrzeiten pflegen.
 - Stundenpläne, Jahrgänge, Gruppen, Kurse und Prüfungen ansehen.
@@ -39,7 +40,8 @@ Keine echten personenbezogenen Daten in diese öffentliche Demo eingeben.
 
 Die Demo prüft einfache Überschneidungen und Raumkapazitäten. Sie ersetzt
 nicht die vollständige Django-Prüfung von Unterrichtssoll, Verfügbarkeiten,
-Prüfungsregeln und Raumaufteilungen. Automatische Planung, Lehrplanübernahme,
+Prüfungsregeln und Raumaufteilungen. Automatische Planung, die ältere Übernahme
+aus einfachen Lehrplanvorlagen (`curricula`),
 Wiederholungsserien für Termine, Dateiimporte und Betriebsverwaltung benötigen
 das echte Backend. Die entsprechenden Hauptaktionen sind deaktiviert;
 weitergehende API-Aufrufe melden die Einschränkung ausdrücklich.

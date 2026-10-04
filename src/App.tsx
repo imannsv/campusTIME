@@ -40,6 +40,7 @@ import Timetable from "./Timetable";
 import RoomOverview from "./RoomOverview";
 import StudySetup from "./StudySetup";
 import StudentOverview from "./StudentOverview";
+import AssessmentBoard from "./AssessmentBoard";
 
 type SessionState = {
   authenticated: boolean;
@@ -458,6 +459,10 @@ function DataTable({
         !["json", "many", "file"].includes(f.type) &&
         !["geometry", "polygon", "color", "longitude", "latitude"].includes(
           f.name,
+        ) &&
+        !(
+          resource === "exams" &&
+          ["assessment_template", "assessment_notes"].includes(f.name)
         ),
     )
     .slice(0, 6);
@@ -1193,6 +1198,10 @@ function Workspace() {
               onEdit={edit}
               onChanged={reload}
               onOpenRooms={() => go("map")}
+              onOpenExams={(id) => {
+                setPlanId(id);
+                go("exams");
+              }}
               onOpenStudents={(groupId) => {
                 go("data");
                 setResource("people");
@@ -1656,6 +1665,22 @@ function Workspace() {
             <>
               {page === "exams" && (
                 <div className="page-actions">
+                  <label className="assessment-plan-select">
+                    Semesterplan für Prüfungen
+                    <select
+                      aria-label="Semesterplan für Prüfungen"
+                      value={planId || ""}
+                      onChange={(event) =>
+                        setPlanId(Number(event.target.value))
+                      }
+                    >
+                      {data.plans?.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <button
                     className="button primary"
                     disabled={!plan}
@@ -1665,6 +1690,19 @@ function Workspace() {
                     Prüfungen planen
                   </button>
                 </div>
+              )}
+              {page === "exams" && (
+                <AssessmentBoard
+                  plan={plan}
+                  hasStructure={
+                    !!data.cohorts?.find((item) => item.id === plan?.cohort)
+                      ?.study_version
+                  }
+                  zone={zone}
+                  refresh={refresh}
+                  onChanged={reload}
+                  onEdit={edit}
+                />
               )}
               {page === "data" && (
                 <div className="resource-tabs">
@@ -1725,8 +1763,8 @@ function Workspace() {
                   <GraduationCap size={21} />
                   <p>
                     Die Automatik nutzt die Teilnehmerlisten, Prüfungszeiträume
-                    und Aufsichten jeder Klausur. Nachschreiber erhalten eine
-                    eigene Teilnehmerliste.
+                    und Aufsichten jeder zeitgebundenen Prüfung. Nachschreiber
+                    erhalten eine eigene Teilnehmerliste.
                   </p>
                 </div>
               )}
@@ -1806,7 +1844,11 @@ function Workspace() {
                   onImport={() => setModal({ type: "import", resource })}
                   refresh={refresh}
                   query={search}
-                  filters={dataFilters}
+                  filters={
+                    page === "exams"
+                      ? { ...dataFilters, plan: String(planId || 0) }
+                      : dataFilters
+                  }
                   data={data}
                 />
               )}

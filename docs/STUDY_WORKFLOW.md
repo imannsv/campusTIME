@@ -33,7 +33,10 @@ Für Klausuren bietet das Formular 60, 90 und 120 Minuten als Vorschläge.
 Hausarbeiten und Abgaben haben keine Minutendauer; Umfang und relative
 Abgabehinweise stehen in einem eigenen Textfeld. Konkrete Termine, Abgabedaten,
 Räume und Aufsichten werden weiterhin separat für den jeweiligen Jahrgang
-geplant. Aus diesen Vorgaben entstehen noch keine automatischen Prüfungsbuchungen.
+geplant. **Prüfungsanforderungen übernehmen** erstellt jetzt Vorlagen für den
+Semesterplan. Daraus lassen sich konkrete Prüfungen und interne Abgabefristen
+anlegen; Raumtermine entstehen weiterhin erst durch die Terminplanung.
+Details: [Prüfungen und Abgaben](ASSESSMENT_WORKFLOW.md).
 Neue Lehrplanversionen als Kopie übernehmen die Prüfungsanforderungen.
 Bestehende Module bleiben bei der Migration zunächst „Noch nicht festgelegt“.
 
@@ -153,7 +156,8 @@ Voraussetzung, saisonale Angebote und personelle/raumbezogene Kapazitäten
 lassen sich daraus nicht ableiten. Letztere prüft die konkrete Stundenplanung.
 
 Die Semesterübernahme verwendet den gespeicherten Jahrgangsverlauf.
-Bereits übernommene Veranstaltungen sind gegen Semesterwechsel geschützt;
-sie müssen zuerst aus ihrem bestehenden Semesterplan entfernt werden.
+Bereits übernommene Veranstaltungen und vorbereitete Prüfungsvorlagen sind
+gegen Semesterwechsel geschützt; ihre Zuordnungen müssen zuerst aus dem
+bestehenden Semesterplan entfernt werden.
 Speichern prüft zusätzlich den Stand der Einrichtungsdaten und lehnt eine
 veraltete Vorschau ab. Bestehende Jahrgänge starten ohne Abweichungen.

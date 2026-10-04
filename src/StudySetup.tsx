@@ -13,6 +13,7 @@ type Props = {
   onChanged: () => void;
   onOpenRooms: () => void;
   onOpenPlan: (id: number) => void;
+  onOpenExams: (id: number) => void;
   onOpenStudents: (groupId: number) => void;
 };
 
@@ -24,6 +25,7 @@ export default function StudySetup({
   onChanged,
   onOpenRooms,
   onOpenPlan,
+  onOpenExams,
   onOpenStudents,
 }: Props) {
   const [step, setStep] = useState(0),
@@ -751,6 +753,12 @@ export default function StudySetup({
                     onClick={() => onOpenPlan(plan.id)}
                   >
                     Stundenplanung öffnen
+                  </button>
+                  <button
+                    className="button secondary"
+                    onClick={() => onOpenExams(plan.id)}
+                  >
+                    Prüfungen und Abgaben öffnen
                   </button>
                 </div>
               ))}

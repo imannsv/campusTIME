@@ -21,6 +21,7 @@ RESOURCES = {
     "curricula": m.Curriculum,
     "plans": m.Plan,
     "courses": m.Course,
+    "assessments": m.Assessment,
     "exams": m.Exam,
     "sessions": m.Session,
     "blocks": m.RoomBlock,
@@ -53,6 +54,9 @@ class TenantSerializer(serializers.ModelSerializer):
         from .study import validate_study
 
         validate_study(model, self.instance, attrs, tenant)
+        from .assessments import validate_assessment
+
+        validate_assessment(model, self.instance, attrs)
         if model == m.Period:
             if value("start") > value("end"):
                 raise serializers.ValidationError("Zeitraum endet vor seinem Beginn.")

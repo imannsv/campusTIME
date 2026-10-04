@@ -53,6 +53,7 @@ for name in [
     "Curriculum",
     "Plan",
     "Course",
+    "Assessment",
     "Exam",
     "RoomBlock",
     "Display",

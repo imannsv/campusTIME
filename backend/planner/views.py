@@ -232,6 +232,11 @@ class ResourceViewSet(viewsets.ModelViewSet):
                 serializer.validated_data,
                 institution,
             )
+            from .assessments import validate_assessment
+
+            validate_assessment(
+                RESOURCES[self.resource], serializer.instance, serializer.validated_data
+            )
             code = serializer.validated_data.get("code")
             if (
                 code
@@ -302,7 +307,7 @@ class ResourceViewSet(viewsets.ModelViewSet):
             )
 
     def perform_destroy(self, instance):
-        from django.db.models.deletion import ProtectedError
+        from django.db.models.deletion import ProtectedError, RestrictedError
 
         with transaction.atomic():
             institution = lock_tenant(self.request)
@@ -326,11 +331,19 @@ class ResourceViewSet(viewsets.ModelViewSet):
                 )
             try:
                 instance.delete()
-            except ProtectedError:
+            except (ProtectedError, RestrictedError):
                 raise serializers.ValidationError(
                     "Datensatz wird noch verwendet. Zuerst die Zuordnungen entfernen."
                 ) from None
             bump(self.request, institution, f"{self.resource}: gelöscht")
+
+    @action(detail=True, methods=["get"])
+    def exam_draft(self, request, pk=None):
+        if self.resource != "assessments":
+            return Response(status=404)
+        from .assessments import exam_draft
+
+        return Response(exam_draft(self.get_object()))
 
     @action(detail=True, methods=["get"])
     def file(self, request, pk=None):
@@ -526,6 +539,13 @@ def plan_action(request, pk, operation):
         return Response(status=405)
     with transaction.atomic():
         institution = lock_tenant(request)
+        if operation == "prepare-assessments":
+            from .assessments import prepare_assessments
+
+            result = prepare_assessments(plan)
+            if result["created"]:
+                bump(request, institution, f"{plan.name}: Prüfungsvorlagen übernommen")
+            return Response(result)
         if operation == "prepare":
             from .study import prepare_semester
 

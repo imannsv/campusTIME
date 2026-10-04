@@ -75,6 +75,14 @@ def context(cohort):
             plan__cohort=cohort, teaching_unit__isnull=False
         ).values_list("teaching_unit_id", flat=True)
     )
+    prepared_modules = set(
+        m.Assessment.objects.filter(plan__cohort=cohort).values_list(
+            "module_id", flat=True
+        )
+    )
+    for module in modules:
+        if module.id in prepared_modules:
+            locked.update(unit.id for unit in descendants(module))
     return {
         "cohort": cohort,
         "units": units,
@@ -146,7 +154,7 @@ def assignments(ctx, changes):
         old = ctx["cohort"].study_schedule.get(key, {}).get("semester", unit.semester)
         if unit.id in ctx["locked"] and old != semester:
             raise serializers.ValidationError(
-                f"{unit.name}: bereits in einem Semesterplan übernommen. Zuerst dort die Veranstaltung entfernen."
+                f"{unit.name}: bereits in einem Semesterplan übernommen. Zuerst dort die Veranstaltung bzw. Prüfungsvorlage entfernen."
             )
         schedule[unit.id] = semester
         if pinned:

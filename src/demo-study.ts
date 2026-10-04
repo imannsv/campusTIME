@@ -175,9 +175,12 @@ export function validateStudy(
       throw new Error("Gültiges Fachsemester auswählen.");
     if (
       old &&
-      state.data.courses.some(
+      (state.data.courses.some(
         (course) => course.plan === old.id && course.teaching_unit,
-      ) &&
+      ) ||
+        state.data.assessments?.some(
+          (assessment) => assessment.plan === old.id,
+        )) &&
       (old.cohort !== row.cohort || old.semester !== row.semester)
     )
       throw new Error(

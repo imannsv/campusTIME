@@ -133,3 +133,26 @@ keine erreichten Leistungen; Schwierigkeit ist administrativ gepflegt.
 Vercel bleibt eine Browser-Demo. Diese Prüfung bestätigt keinen gemeinsamen
 Cloud-Datenbestand oder produktiven Mehrbenutzerbetrieb. Der neue Endpunkt
 und die Datenmigration wurden lokal auf SQLite getestet.
+
+## Ergänzung: Semester-Prüfungsvorlagen und Abgabefristen (04.10.2026)
+
+- 60 Django-Tests bestanden, darunter neun neue Prüfungen für wiederholbare
+  Übernahme, getrennte Ober-/Teilmodulvorgaben, effektive Semesterzuordnung,
+  Wahlpflichtbelegungen, konkrete Prüfungen, Abgabefristen, Herkunftsschutz,
+  Löschschutz, ungültige Angaben und Mandantentrennung.
+- Acht lokale Browserabläufe bestanden. Der neue vollständige Einrichtungs-
+  und Prüfungsablauf wurde auf einer Kopie der bestehenden SQLite-Datenbank
+  ausgeführt; die Produktdatenbank erhielt ausschließlich Migration 0010.
+  Konkrete Prüfung mit übernommener Dauer, wiederholte Übernahme, Hausarbeitsfrist,
+  Neuladen und mobile Breite wurden geprüft.
+- Alle sechs Demo-Browserabläufe bestanden. Die Aktualisierung eines alten
+  Browserprofils erhält bestehende Raumänderungen und Prüfungen und ergänzt
+  die neuen Vorlagenfelder. Desktop- und Mobilansicht wurden visuell geprüft.
+- TypeScript, normaler Build, Demo-Build, Ruff, Django-Systemprüfung,
+  Migrationsprüfung und `git diff --check` bestanden. Migration 0010 wurde
+  nach SQLite-Backup lokal angewendet. PostgreSQL wurde nicht erneut geprüft.
+
+Abgabefristen gehören zur internen Verwaltung und werden noch nicht öffentlich
+ausgeliefert. Die Übernahme erstellt Vorlagen; die bestehende Terminplanung
+erzeugt die konkreten Raumbelegungen. Die Vercel-Variante bleibt eine Demo mit
+Speicherung im jeweiligen Browserprofil.

@@ -140,7 +140,9 @@ export async function studyFlow(page: Page) {
   await expect(page.locator(".study-assessment-notes")).toContainText(
     "Abgabe vier Wochen nach Themenausgabe",
   );
-  await expect(page.locator(".study-facts")).toContainText("10 / 10 CP");
+  await expect(page.locator(".study-facts")).toContainText(
+    /10(?:\.0)? \/ 10(?:\.0)? CP/,
+  );
   await expect(
     page.getByRole("button", { name: "Lehrplan freigeben", exact: true }),
   ).toBeEnabled();

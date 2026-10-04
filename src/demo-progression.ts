@@ -85,6 +85,13 @@ export function cohortProgression(
       )
       .map((course) => course.teaching_unit),
   );
+  for (const assessment of state.data.assessments || [])
+    if (
+      state.data.plans.some(
+        (plan) => plan.id === assessment.plan && plan.cohort === cohort.id,
+      )
+    )
+      for (const unit of descendants(assessment.module)) locked.add(unit.id);
   let schedule: Row = Object.fromEntries(
     units.map((unit) => [unit.id, unit.semester]),
   );

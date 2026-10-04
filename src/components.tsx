@@ -650,11 +650,15 @@ export function RecordForm({
       ...(key === "program" && resource === "cohorts"
         ? { study_version: null }
         : {}),
-      ...(key === "assessment_type" && resource === "modules"
+      ...(key === "assessment_type" &&
+      ["modules", "assessments"].includes(resource)
         ? {
             assessment_duration_minutes: timedAssessment(value)
               ? v.assessment_duration_minutes || 90
               : null,
+            ...(timedAssessment(value) && resource === "assessments"
+              ? { due_at: "" }
+              : {}),
           }
         : {}),
     }));
@@ -705,11 +709,20 @@ export function RecordForm({
   return (
     <Modal
       title={record ? "Eintrag bearbeiten" : `${labels[resource]} hinzufügen`}
-      subtitle="Änderungen werden im Entwurf gespeichert."
+      subtitle={
+        defaults.assessment_template
+          ? "Prüfungsvorlage übernehmen. Teilnehmer, Zeitraum und Aufsichten prüfen."
+          : "Änderungen werden im Entwurf gespeichert."
+      }
       onClose={onClose}
       wide={resource === "courses" || resource === "exams"}
     >
       <form onSubmit={submit} className="record-form">
+        {defaults._draft_warnings?.length > 0 && (
+          <div className="info-note">
+            <p>{defaults._draft_warnings.join(" ")}</p>
+          </div>
+        )}
         <div className="form-grid">
           {fields
             .filter(
@@ -722,7 +735,15 @@ export function RecordForm({
                   "latitude",
                   "teaching_unit",
                   "study_group",
+                  "assessment_template",
                 ].includes(f.type === "file" ? "file" : f.name) &&
+                !(
+                  resource === "assessments" &&
+                  ["plan", "module"].includes(f.name)
+                ) &&
+                !(
+                  f.name === "due_at" && timedAssessment(values.assessment_type)
+                ) &&
                 (f.name !== "assessment_duration_minutes" ||
                   timedAssessment(values.assessment_type)),
             )
@@ -751,9 +772,15 @@ export function RecordForm({
                             program: String(values.program || 0),
                             status: "approved",
                           }
-                        : ["parent", "prerequisites"].includes(f.name)
-                          ? { study_version: String(values.study_version || 0) }
-                          : {}
+                        : f.name === "course" && resource === "exams"
+                          ? { plan: String(values.plan || 0) }
+                          : ["parent", "prerequisites"].includes(f.name)
+                            ? {
+                                study_version: String(
+                                  values.study_version || 0,
+                                ),
+                              }
+                            : {}
                     }
                     value={values[f.name]}
                     many={f.type === "many"}
@@ -801,9 +828,9 @@ export function RecordForm({
                       placeholder="Zum Beispiel Umfang, Hilfsmittel oder Abgabe vier Wochen nach Themenausgabe"
                     />
                     <small>
-                      Die Vorgabe gilt für dieses Modul. Konkrete
-                      Prüfungstermine und Abgabedaten werden für den jeweiligen
-                      Jahrgang festgelegt.
+                      {resource === "modules"
+                        ? "Die Vorgabe gilt für dieses Modul. Konkrete Prüfungstermine und Abgabedaten werden für den jeweiligen Jahrgang festgelegt."
+                        : "Anforderungen, Umfang und erlaubte Hilfsmittel für diese Prüfungsleistung."}
                     </small>
                   </>
                 ) : f.name === "assessment_duration_minutes" ? (
