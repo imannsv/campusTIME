@@ -1,10 +1,24 @@
 import { expect, type Page } from "@playwright/test";
 
 export async function campusAIFlow(page: Page) {
-  await page
-    .getByRole("navigation")
-    .getByRole("button", { name: "campusAI", exact: true })
-    .click();
+  const launcher = page.getByRole("button", {
+    name: "campusAI öffnen",
+    exact: true,
+  });
+  await expect(launcher).toBeVisible();
+  await expect(
+    page
+      .getByRole("navigation")
+      .getByRole("button", { name: "campusAI", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("dialog", { name: "campusAI", exact: true }),
+  ).toHaveCount(0);
+  await launcher.click();
+  const chat = page.getByRole("dialog", { name: "campusAI", exact: true });
+  await expect(chat).toBeVisible();
+  await expect(page.getByLabel("Deine Frage an campusAI")).toBeFocused();
+  await page.getByText("Plan und Hinweise", { exact: false }).first().click();
   await expect(
     page.getByRole("heading", { name: "campusAI", exact: true }),
   ).toBeVisible();
@@ -32,6 +46,19 @@ export async function campusAIFlow(page: Page) {
   await page.getByRole("button", { name: "Frage senden", exact: true }).click();
   await expect(answer).toHaveCount(2);
   await expect(answer.last()).toContainText("Voraussetzungen");
+  await page
+    .getByRole("button", { name: "Chat schließen", exact: true })
+    .click();
+  await expect(chat).not.toBeVisible();
+  await expect(launcher).toBeFocused();
+  await launcher.click();
+  await expect(answer).toHaveCount(2);
+  await answer
+    .first()
+    .getByRole("button", { name: "Jahrgang und Gruppen", exact: true })
+    .click();
+  await expect(chat).toBeVisible();
+  await expect(answer).toHaveCount(2);
   await page.getByLabel("Semesterplan für campusAI").selectOption("");
   await expect(answer).toHaveCount(0);
   await expect(page.getByLabel("Jahrgang für campusAI")).toBeVisible();
@@ -50,6 +77,7 @@ export async function campusAIFlow(page: Page) {
     .fill("Was ist die Hauptstadt von Kanada?");
   await page.getByRole("button", { name: "Frage senden", exact: true }).click();
   await expect(answer).toContainText("keine passende Schnellhilfe");
+  await page.locator(".campus-ai-options summary").click();
   await page.screenshot({
     path: "test-results/campus-ai-desktop.png",
     fullPage: true,
@@ -68,7 +96,24 @@ export async function campusAIFlow(page: Page) {
     animations: "disabled",
   });
   await page
+    .getByLabel("Deine Frage an campusAI")
+    .fill("Diese Nachricht noch nicht senden.");
+  await page
     .getByRole("button", { name: "Gespräch leeren", exact: true })
     .click();
   await expect(answer).toHaveCount(0);
+  await expect(page.getByLabel("Deine Frage an campusAI")).toHaveValue(
+    "Diese Nachricht noch nicht senden.",
+  );
+  const box = await chat.boundingBox();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(844);
+  await page.getByLabel("Deine Frage an campusAI").press("Escape");
+  await expect(chat).not.toBeVisible();
+  await expect(launcher).toBeFocused();
+  await launcher.click();
+  await expect(chat).toBeVisible();
+  await page.locator(".campus-ai-options summary").click();
 }

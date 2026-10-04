@@ -1,7 +1,10 @@
 # campusAI
 
-campusAI ist ein Assistent für die Verwaltung. Die eigene Ansicht bietet
-Bedienhilfe und Hinweise zum ausgewählten Semesterplan oder Jahrgang.
+campusAI ist ein Assistent für die Verwaltung. Das Chat-Icon unten rechts öffnet
+ein kompaktes Fenster über der aktuellen Verwaltungsansicht. **Plan und Hinweise**
+klappt Plan-/Jahrgangsauswahl, Modelloption und berechnete Hinweise auf.
+Die Auswahl im Chat verändert nicht den Plan in der Arbeitsansicht; beim Wechsel
+des aktiven Arbeitsplans übernimmt der Chat den neuen Plan.
 Die erste Version liest Daten und erklärt; sie verändert keine Termine,
 Raumzuordnungen, Lehrpläne oder Veröffentlichungen.
 
@@ -92,9 +95,12 @@ Ein neuer Frageaufruf berechnet die Fakten erneut. **Hinweise aktualisieren**
 lädt die sichtbaren Prüfungen neu. Antworten tragen den verwendeten Datenstand;
 alte Chatantworten werden nicht nachträglich aktualisiert.
 
-Der Gesprächsverlauf liegt im Arbeitsspeicher der Ansicht, wird beim Wechsel
-von Plan/Jahrgang oder beim Verlassen der Ansicht geleert und nicht als Chat
-in der Datenbank gespeichert. Für Anschlussfragen werden höchstens vier
+Der Gesprächsverlauf liegt im Arbeitsspeicher. Schließen, Wiederöffnen und
+Wechsel zwischen Verwaltungsansichten erhalten das Gespräch, einschließlich
+einer noch laufenden Antwort. Der Chat lässt sich per Schließen-Button, Icon
+oder Escape im Fenster schließen; der Fokus kehrt zum Icon zurück.
+Plan-/Jahrgangswechsel, Neuladen der Seite und Abmelden leeren den Verlauf.
+Er wird nicht als Chat in der Datenbank gespeichert. Für Anschlussfragen werden höchstens vier
 vorherige Nachrichten an das lokale Modell übergeben. Backend: 2.000 Zeichen
 pro Frage, maximal sechs Verlaufsnachrichten und 6.000 Zeichen Verlauf,
 zwölf Chat-Anfragen pro Minute je angemeldetem Benutzer. Es werden keine

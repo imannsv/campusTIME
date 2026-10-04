@@ -16,9 +16,9 @@ test("campusAI erreicht das echte lokale Sprachmodell", async ({ page }) => {
   await page.getByLabel("Passwort", { exact: true }).fill("Campuszeit2026!");
   await page.getByRole("button", { name: "Anmelden", exact: true }).click();
   await page
-    .getByRole("navigation")
-    .getByRole("button", { name: "campusAI", exact: true })
+    .getByRole("button", { name: "campusAI öffnen", exact: true })
     .click();
+  await page.locator(".campus-ai-options summary").click();
   await expect(
     page.getByRole("checkbox", { name: "Lokale KI nutzen" }),
   ).toBeChecked();
@@ -70,9 +70,7 @@ test("campusAI beantwortet Fragen ohne Datenänderungen", async ({ page }) => {
   await page.getByLabel("Passwort", { exact: true }).fill("Campuszeit2026!");
   await page.getByRole("button", { name: "Anmelden", exact: true }).click();
   await expect(
-    page
-      .getByRole("navigation")
-      .getByRole("button", { name: "campusAI", exact: true }),
+    page.getByRole("button", { name: "campusAI öffnen", exact: true }),
   ).toBeVisible();
   const before = await (
     await page.request.get("/api/campusai/context/")

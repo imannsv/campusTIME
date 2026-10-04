@@ -58,7 +58,6 @@ const nav = [
   { id: "map", label: "Räume", icon: Building2 },
   { id: "displays", label: "Öffentliche Anzeige", icon: Monitor },
   { id: "students", label: "Studierendenübersicht", icon: Users },
-  { id: "campusai", label: "campusAI", icon: Sparkles },
 ];
 const descriptions: Record<string, string> = {
   areas: "Getrennt planen, gemeinsame Ressourcen berücksichtigen.",
@@ -1224,14 +1223,6 @@ function Workspace() {
                   );
               }}
             />
-          ) : page === "campusai" ? (
-            <CampusAI
-              data={data}
-              planId={planId}
-              onPlan={setPlanId}
-              refresh={refresh}
-              onNavigate={go}
-            />
           ) : page === "schedule" ? (
             <>
               <div className="page-actions">
@@ -1875,6 +1866,7 @@ function Workspace() {
           </span>
         </footer>
       </div>
+      <CampusAI data={data} planId={planId} refresh={refresh} onNavigate={go} />
       {toast && (
         <div className="toast" role="status">
           <CheckCircle2 size={18} />

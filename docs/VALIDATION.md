@@ -181,3 +181,17 @@ falsch formulieren; die Oberfläche verweist auf die Hilfe und berechneten
 Hinweise. Der Test bestätigt keine allgemeine inhaltliche Zuverlässigkeit.
 Produktionsbetrieb in Docker oder auf PostgreSQL wurde für campusAI nicht
 erneut getestet; Vercel bietet ausschließlich die Browser-Schnellhilfe.
+
+## Ergänzung: campusAI als Chatfenster (04.10.2026)
+
+Die Verwaltungsansichten zeigen ein Chat-Icon unten rechts. Der frühere
+Navigationspunkt und die separate Assistentenseite wurden entfernt.
+Plan-Auswahl und Hinweise sind im Chat aufklappbar; sie verändern die
+Planauswahl der Arbeitsansicht nicht.
+
+Der lokale Browserablauf und alle sieben Demo-Browserabläufe bestanden.
+Geprüft wurden Öffnen, Schließen, Wiederöffnen mit erhaltenem Gespräch,
+Navigation aus einer Hilfequelle, Escape mit Fokus-Rückgabe, Planwechsel,
+Gespräch leeren ohne Senden einer vorhandenen Eingabe und unveränderte Daten.
+Desktop- und Mobilansicht bei 390 Pixel Breite wurden visuell geprüft.
+TypeScript und beide Builds bestanden. Das Backend wurde nicht verändert.

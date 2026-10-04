@@ -17,9 +17,7 @@ test("campusAI Schnellhilfe bleibt ohne Server und ohne Datenänderung verfügba
   });
   await page.goto("/");
   await expect(
-    page
-      .getByRole("navigation")
-      .getByRole("button", { name: "campusAI", exact: true }),
+    page.getByRole("button", { name: "campusAI öffnen", exact: true }),
   ).toBeVisible();
   const before = await page.evaluate(() =>
     localStorage.getItem("campustime-browser-demo-v1"),
