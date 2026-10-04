@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   ArrowRight,
-  CheckCircle2,
+  Check,
+  MoreHorizontal,
+  CalendarDays,
+  Trash2,
   LoaderCircle,
   RefreshCw,
   Send,
@@ -31,6 +34,18 @@ export default function CampusAI({
 }) {
   const [open, setOpen] = useState(false);
   const [activated, setActivated] = useState(false);
+  const [picker, setPicker] = useState<"plan" | "options" | null>(null);
+  const panel = useRef<HTMLElement>(null);
+  const planButton = useRef<HTMLButtonElement>(null);
+  const optionsButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!picker) return;
+    const outside = (event: PointerEvent) => {
+      if (!panel.current?.contains(event.target as Node)) setPicker(null);
+    };
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
+  }, [picker]);
   const [selectedPlanId, setSelectedPlanId] = useState(planId);
   const launcher = useRef<HTMLButtonElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
@@ -39,6 +54,7 @@ export default function CampusAI({
     if (open) input.current?.focus();
   }, [open]);
   function close() {
+    setPicker(null);
     setOpen(false);
     launcher.current?.focus();
   }
@@ -117,6 +133,7 @@ export default function CampusAI({
     if (busy || loading || !context || !value.trim()) return;
     const current = generation.current;
     setBusy(true);
+    setPicker(null);
     setError("");
     setQuestion("");
     const history = messages
@@ -153,10 +170,10 @@ export default function CampusAI({
       <button
         ref={launcher}
         className="campus-ai-launcher"
-        aria-label={open ? "campusAI schließen" : "campusAI öffnen"}
+        aria-label={open ? "Freddy schließen" : "Freddy öffnen"}
         aria-expanded={open}
         aria-controls="campus-ai-chat"
-        title="campusAI"
+        title="Freddy"
         onClick={() => {
           if (open) close();
           else {
@@ -169,6 +186,7 @@ export default function CampusAI({
       </button>
       {activated && (
         <section
+          ref={panel}
           id="campus-ai-chat"
           className="campus-ai"
           hidden={!open}
@@ -178,7 +196,13 @@ export default function CampusAI({
           onKeyDown={(event) => {
             if (event.key === "Escape") {
               event.stopPropagation();
-              close();
+              if (picker) {
+                (picker === "plan"
+                  ? planButton
+                  : optionsButton
+                ).current?.focus();
+                setPicker(null);
+              } else close();
             }
           }}
         >
@@ -186,143 +210,169 @@ export default function CampusAI({
             <div className="campus-ai-identity">
               <MessageCircle size={21} />
               <div>
-                <h2 id="campus-ai-title">campusAI</h2>
-                <span>
-                  {status?.ready ? "Lokale KI verbunden" : "Schnellhilfe"}
-                </span>
+                <h2 id="campus-ai-title">Freddy</h2>
+                <span>CampusAI-Assistent</span>
               </div>
             </div>
-            <button
-              className="campus-ai-icon"
-              aria-label="Chat schließen"
-              onClick={close}
-            >
-              <X size={20} />
-            </button>
-          </header>
-          <details className="campus-ai-options">
-            <summary>
-              Plan und Hinweise{" "}
-              <span>{context ? context.notice_count : ""}</span>
-              <ChevronDown size={15} />
-            </summary>
-            <div className="campus-ai-settings">
-              <label>
-                Semesterplan
-                <select
-                  aria-label="Semesterplan für campusAI"
-                  value={selectedPlanId || ""}
-                  onChange={(event) =>
-                    setSelectedPlanId(Number(event.target.value) || null)
-                  }
-                >
-                  <option value="">Allgemeine Einrichtung</option>
-                  {(data.plans || []).map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {!selectedPlanId && (
-                <label>
-                  Jahrgang
-                  <select
-                    aria-label="Jahrgang für campusAI"
-                    value={cohortId}
-                    onChange={(event) => setCohortId(event.target.value)}
-                  >
-                    <option value="">Kein Jahrgang ausgewählt</option>
-                    {(data.cohorts || []).map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              <div className="campus-ai-settings-actions">
-                <label className="campus-ai-toggle">
-                  <input
-                    type="checkbox"
-                    checked={useModel}
-                    disabled={!status?.ready || busy}
-                    onChange={(event) => setUseModel(event.target.checked)}
-                  />
-                  Lokale KI nutzen
-                </label>
-                <button
-                  className="campus-ai-icon"
-                  aria-label="Hinweise aktualisieren"
-                  title="Hinweise aktualisieren"
-                  disabled={busy}
-                  onClick={() => setReload((value) => value + 1)}
-                >
-                  <RefreshCw size={16} />
-                </button>
-              </div>
-              <small>{status ? status.reason : "Verbindung prüfen …"}</small>
-              <aside
-                className="campus-ai-insights"
-                aria-label="Geprüfte Planungshinweise"
+            <div className="campus-ai-header-actions">
+              <button
+                ref={optionsButton}
+                className="campus-ai-icon"
+                aria-label="Chat-Optionen"
+                aria-expanded={picker === "options"}
+                aria-controls="campus-ai-menu"
+                onClick={() =>
+                  setPicker((value) => (value === "options" ? null : "options"))
+                }
               >
-                {loading ? (
-                  <p role="status">Daten prüfen …</p>
-                ) : (
-                  context && (
-                    <>
-                      <p className="campus-ai-scope">
-                        {context.facts.rooms} Räume · {context.facts.teachers}{" "}
-                        Lehrende · Datenstand {context.revision}
-                      </p>
-                      {!context.notices.length && (
-                        <p>
-                          <CheckCircle2 size={14} /> Bei diesen Prüfungen wurden
-                          keine Hinweise gefunden.
-                        </p>
-                      )}
-                      {context.notices.map((item: Row, index: number) => (
-                        <article
-                          key={index}
-                          className={
-                            item.severity === "error" ? "conflict" : ""
-                          }
-                        >
-                          <p>{item.text}</p>
-                          <button onClick={() => onNavigate(item.page)}>
-                            Bereich öffnen <ArrowRight size={12} />
-                          </button>
-                        </article>
-                      ))}
-                      {context.notice_count > context.notices.length && (
-                        <small>
-                          {context.notices.length} von {context.notice_count}{" "}
-                          Hinweisen angezeigt.
-                        </small>
-                      )}
-                      {context.semesters?.length > 0 && (
-                        <div className="campus-ai-semesters">
-                          <h3>Semesterbelastung</h3>
-                          {context.semesters.map((item: Row) => (
-                            <div key={item.semester}>
-                              <span>Semester {item.semester}</span>
-                              <strong>{item.credits} CP</strong>
-                              {item.overloaded && (
-                                <span>Grenze überschritten</span>
-                              )}
-                            </div>
-                          ))}
-                          <small>
-                            Planungs-CP; keine bestandenen Leistungen.
-                          </small>
-                        </div>
-                      )}
-                    </>
-                  )
-                )}
-              </aside>
+                <MoreHorizontal size={20} />
+              </button>
+              <button
+                className="campus-ai-icon"
+                aria-label="Chat schließen"
+                onClick={close}
+              >
+                <X size={20} />
+              </button>
             </div>
-          </details>
+          </header>
+          <div className="campus-ai-context-line">
+            <button
+              ref={planButton}
+              aria-label="Kontext für Freddy auswählen"
+              title={
+                plan?.name ||
+                data.cohorts?.find((item) => String(item.id) === cohortId)
+                  ?.name ||
+                "Allgemeine Einrichtung"
+              }
+              aria-expanded={picker === "plan"}
+              aria-controls="campus-ai-plan-picker"
+              onClick={() =>
+                setPicker((value) => (value === "plan" ? null : "plan"))
+              }
+            >
+              <CalendarDays size={14} />
+              <span>
+                {plan?.name ||
+                  data.cohorts?.find((item) => String(item.id) === cohortId)
+                    ?.name ||
+                  "Allgemeine Einrichtung"}
+              </span>
+              <ChevronDown size={14} />
+            </button>
+          </div>
+          {picker === "plan" && (
+            <div
+              id="campus-ai-plan-picker"
+              className="campus-ai-popover campus-ai-plan-picker"
+              role="group"
+              aria-label="Kontext auswählen"
+            >
+              <button
+                onClick={() => {
+                  setSelectedPlanId(null);
+                  setCohortId("");
+                  setPicker(null);
+                  planButton.current?.focus();
+                }}
+              >
+                <span>Allgemeine Einrichtung</span>
+                {!selectedPlanId && !cohortId && <Check size={14} />}
+              </button>
+              <p>Semesterpläne</p>
+              {(data.plans || []).map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setSelectedPlanId(item.id);
+                    setCohortId("");
+                    setPicker(null);
+                    planButton.current?.focus();
+                  }}
+                >
+                  <span>{item.name}</span>
+                  {selectedPlanId === item.id && <Check size={14} />}
+                </button>
+              ))}
+              <p>Jahrgänge</p>
+              {(data.cohorts || []).map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setSelectedPlanId(null);
+                    setCohortId(String(item.id));
+                    setPicker(null);
+                    planButton.current?.focus();
+                  }}
+                >
+                  <span>{item.name}</span>
+                  {!selectedPlanId && cohortId === String(item.id) && (
+                    <Check size={14} />
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+          {picker === "options" && (
+            <div
+              id="campus-ai-menu"
+              className="campus-ai-popover campus-ai-menu"
+              role="group"
+              aria-label="Chat-Optionen"
+            >
+              <p>Antworten mit</p>
+              <button
+                aria-pressed={useModel}
+                disabled={!status?.ready || busy}
+                title={!status?.ready ? status?.reason : undefined}
+                onClick={() => {
+                  setUseModel(true);
+                  setPicker(null);
+                  optionsButton.current?.focus();
+                }}
+              >
+                <span>Lokale KI nutzen</span>
+                {useModel && <Check size={14} />}
+              </button>
+              <button
+                aria-pressed={!useModel}
+                disabled={busy}
+                onClick={() => {
+                  setUseModel(false);
+                  setPicker(null);
+                  optionsButton.current?.focus();
+                }}
+              >
+                <span>Schnellhilfe nutzen</span>
+                {!useModel && <Check size={14} />}
+              </button>
+              <div className="campus-ai-menu-divider" />
+              <button
+                disabled={busy}
+                onClick={() => {
+                  setReload((value) => value + 1);
+                  setPicker(null);
+                  optionsButton.current?.focus();
+                }}
+              >
+                <RefreshCw size={14} />
+                <span>Hinweise aktualisieren</span>
+              </button>
+              <button
+                disabled={busy || !messages.length}
+                onClick={() => {
+                  setMessages([]);
+                  setError("");
+                  setPicker(null);
+                  optionsButton.current?.focus();
+                }}
+              >
+                <Trash2 size={14} />
+                <span>Gespräch leeren</span>
+              </button>
+            </div>
+          )}
           {error && (
             <div className="campus-ai-error" role="alert">
               {error}
@@ -332,14 +382,30 @@ export default function CampusAI({
             className="campus-ai-conversation"
             ref={conversation}
             role="log"
-            aria-label="campusAI Gespräch"
+            aria-label="Freddy Gespräch"
             aria-live="polite"
             aria-relevant="additions"
           >
             {!messages.length && (
               <div className="campus-ai-welcome">
-                <p>Wie kann ich dir helfen?</p>
-                <span>Fragen zu campusTIME oder deinem Plan.</span>
+                <p>
+                  Hi, ich bin Freddy, dein CampusAI-Assistent. Wie kann ich dir
+                  helfen?
+                </p>
+                <div
+                  className="campus-ai-questions"
+                  aria-label="Beispielfragen"
+                >
+                  {questions.map((value) => (
+                    <button
+                      key={value}
+                      disabled={busy || loading || !context}
+                      onClick={() => void ask(value)}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {messages.map((message, index) => (
@@ -351,8 +417,8 @@ export default function CampusAI({
                   {message.role === "user"
                     ? "Du"
                     : message.mode === "local"
-                      ? "campusAI · lokale KI"
-                      : "campusAI · Schnellhilfe"}
+                      ? "Freddy · lokale KI"
+                      : "Freddy · Schnellhilfe"}
                 </strong>
                 <div className="campus-ai-answer">{message.content}</div>
                 {message.service_note && (
@@ -392,20 +458,9 @@ export default function CampusAI({
               </p>
             )}
           </div>
-          <div className="campus-ai-questions" aria-label="Beispielfragen">
-            {questions.map((value) => (
-              <button
-                key={value}
-                disabled={busy || loading || !context}
-                onClick={() => void ask(value)}
-              >
-                {value}
-              </button>
-            ))}
-          </div>
           <form className="campus-ai-composer" onSubmit={submit}>
             <label className="sr-only" htmlFor="campus-ai-question">
-              Deine Frage an campusAI
+              Deine Frage an Freddy
             </label>
             <div className="campus-ai-input">
               <textarea
@@ -415,7 +470,7 @@ export default function CampusAI({
                 maxLength={2000}
                 value={question}
                 onChange={(event) => setQuestion(event.target.value)}
-                placeholder="Nachricht an campusAI …"
+                placeholder="Nachricht an Freddy …"
                 onKeyDown={(event) => {
                   if (
                     event.key === "Enter" &&
@@ -444,19 +499,6 @@ export default function CampusAI({
                     ? "KI-Antworten anhand der Hilfe prüfen"
                     : "Anleitung und geprüfte Hinweise"}
               </small>
-              {messages.length > 0 && (
-                <button
-                  type="button"
-                  className="campus-ai-clear"
-                  disabled={busy}
-                  onClick={() => {
-                    setMessages([]);
-                    setError("");
-                  }}
-                >
-                  Gespräch leeren
-                </button>
-              )}
             </div>
           </form>
         </section>

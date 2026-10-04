@@ -45,7 +45,7 @@
   right: max(24px, env(safe-area-inset-right));
   bottom: calc(max(24px, env(safe-area-inset-bottom)) + 72px);
   width: min(420px, calc(100vw - 32px));
-  height: min(680px, calc(100dvh - 120px));
+  height: min(600px, calc(100dvh - 120px));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -104,88 +104,93 @@
 .campus-ai-icon:hover {
   background: #edf3f8;
 }
-.campus-ai-options {
+.campus-ai-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.campus-ai-context-line {
+  padding: 8px 16px;
   border-bottom: 1px solid var(--line);
-  max-height: 40%;
-  overflow-y: auto;
   flex-shrink: 0;
 }
-.campus-ai-options summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 18px;
-  cursor: pointer;
-  font-size: 12px;
-  color: var(--navy);
-  list-style: none;
-}
-.campus-ai-options summary::-webkit-details-marker {
-  display: none;
-}
-.campus-ai-options summary span {
-  margin-left: auto;
-  font-size: 11px;
-}
-.campus-ai-options[open] summary > svg {
-  transform: rotate(180deg);
-}
-.campus-ai-settings {
-  padding: 2px 18px 16px;
-}
-.campus-ai-settings > label {
-  display: grid;
-  gap: 5px;
-  margin-bottom: 10px;
-  font-size: 11px;
-  color: #64778b;
-}
-.campus-ai-settings select {
-  width: 100%;
-  min-width: 0;
-  font-size: 12px;
-}
-.campus-ai-settings-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.campus-ai-toggle {
+.campus-ai-context-line > button {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
-}
-.campus-ai-toggle input {
-  width: 15px;
-  height: 15px;
-  accent-color: var(--navy);
-}
-.campus-ai-settings small {
-  font-size: 11px;
-  line-height: 1.5;
+  width: 100%;
+  border: 0;
+  padding: 3px 0;
+  background: transparent;
   color: #64778b;
+  font-size: 11px;
+  text-align: left;
 }
-.campus-ai-insights {
-  margin-top: 10px;
+.campus-ai-context-line > button span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.campus-ai-insights p {
-  line-height: 1.5;
-  margin: 7px 0;
+.campus-ai-context-line > button > svg {
+  flex-shrink: 0;
 }
-.campus-ai-insights article {
-  padding: 7px 0;
+.campus-ai-popover {
+  position: absolute;
+  border: 1px solid #dce5ee;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 8px 25px #24374c1f;
+  padding: 6px;
+  z-index: 2;
+}
+.campus-ai-plan-picker {
+  top: 111px;
+  left: 12px;
+  right: 12px;
+  max-height: min(280px, 50%);
+  overflow-y: auto;
+}
+.campus-ai-menu {
+  right: 12px;
+  top: 64px;
+  width: 225px;
+}
+.campus-ai-popover button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+  font-size: 12px;
+  color: var(--ink);
+}
+.campus-ai-popover button span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.campus-ai-popover button svg {
+  flex-shrink: 0;
+  color: var(--navy);
+}
+.campus-ai-popover button:hover {
+  background: #f2f6fa;
+}
+.campus-ai-popover p {
+  margin: 7px 10px 3px;
+  color: #64778b;
+  font-size: 10px;
+}
+.campus-ai-menu-divider {
+  margin: 5px 4px;
   border-top: 1px solid var(--line);
 }
-.campus-ai-insights article.conflict {
-  color: #9b4e35;
-}
-.campus-ai-scope {
-  color: #64778b;
-  font-size: 11px;
-}
-.campus-ai-insights button,
 .campus-ai-sources button {
   display: inline-flex;
   align-items: center;
@@ -196,18 +201,6 @@
   color: var(--navy);
   cursor: pointer;
   text-align: left;
-  font-size: 11px;
-}
-.campus-ai-semesters h3 {
-  font-size: 12px;
-  margin: 12px 0 6px;
-}
-.campus-ai-semesters > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: space-between;
-  padding: 4px 0;
   font-size: 11px;
 }
 .campus-ai-error {
@@ -285,21 +278,19 @@
   font-size: 12px;
 }
 .campus-ai-questions {
-  display: flex;
+  display: grid;
+  justify-items: start;
   gap: 7px;
-  overflow-x: auto;
-  padding: 8px 14px 12px;
-  flex-shrink: 0;
-  scrollbar-width: thin;
+  padding: 16px 0 0;
 }
 .campus-ai-questions button {
-  white-space: nowrap;
   border: 1px solid #dce5ee;
-  border-radius: 14px;
+  border-radius: 9px;
   background: white;
-  padding: 7px 10px;
+  padding: 9px 11px;
   color: var(--navy);
-  font-size: 11px;
+  font-size: 12px;
+  text-align: left;
   cursor: pointer;
 }
 .campus-ai-questions button:hover {
@@ -334,6 +325,10 @@
   line-height: 1.5;
   max-height: 100px;
 }
+.campus-ai-input textarea:focus {
+  outline: 0;
+  box-shadow: none;
+}
 .campus-ai-input button {
   width: 34px;
   height: 34px;
@@ -362,14 +357,6 @@
   color: #64778b;
   font-size: 10px;
 }
-.campus-ai-clear {
-  border: 0;
-  background: transparent;
-  color: #64778b;
-  padding: 0;
-  font-size: 10px;
-  cursor: pointer;
-}
 @media (max-width: 600px) {
   .campus-ai-launcher {
     right: max(16px, env(safe-area-inset-right));
@@ -381,7 +368,7 @@
     right: max(12px, env(safe-area-inset-right));
     bottom: calc(80px + env(safe-area-inset-bottom));
     width: calc(100vw - 24px);
-    height: min(660px, calc(100dvh - 96px - env(safe-area-inset-bottom)));
+    height: min(620px, calc(100dvh - 96px - env(safe-area-inset-bottom)));
   }
 }
 .demo-notice {

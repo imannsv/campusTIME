@@ -1,8 +1,12 @@
 # campusAI
 
-campusAI ist ein Assistent für die Verwaltung. Das Chat-Icon unten rechts öffnet
-ein kompaktes Fenster über der aktuellen Verwaltungsansicht. **Plan und Hinweise**
-klappt Plan-/Jahrgangsauswahl, Modelloption und berechnete Hinweise auf.
+**Freddy** ist der CampusAI-Assistent für die Verwaltung. Das Chat-Icon unten rechts
+öffnet ein kompaktes Fenster über der aktuellen Verwaltungsansicht mit der Begrüßung
+„Hi, ich bin Freddy, dein CampusAI-Assistent. Wie kann ich dir helfen?“.
+Die kompakte Kontextzeile öffnet eine Auswahl von Plänen und Jahrgängen.
+Im Drei-Punkte-Menü liegen Antwortmodus, Aktualisieren und Gespräch leeren.
+Berechnete Planungshinweise erscheinen im Gespräch. Beispielfragen stehen
+untereinander unter der Begrüßung und verschwinden nach der ersten Nachricht.
 Die Auswahl im Chat verändert nicht den Plan in der Arbeitsansicht; beim Wechsel
 des aktiven Arbeitsplans übernimmt der Chat den neuen Plan.
 Die erste Version liest Daten und erklärt; sie verändert keine Termine,

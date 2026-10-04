@@ -17,7 +17,7 @@ test("campusAI Schnellhilfe bleibt ohne Server und ohne Datenänderung verfügba
   });
   await page.goto("/");
   await expect(
-    page.getByRole("button", { name: "campusAI öffnen", exact: true }),
+    page.getByRole("button", { name: "Freddy öffnen", exact: true }),
   ).toBeVisible();
   const before = await page.evaluate(() =>
     localStorage.getItem("campustime-browser-demo-v1"),
@@ -30,7 +30,7 @@ test("campusAI Schnellhilfe bleibt ohne Server und ohne Datenänderung verfügba
   ).toEqual(before);
   expect(requests).toEqual([]);
   await expect(
-    page.getByRole("checkbox", { name: "Lokale KI nutzen" }),
+    page.getByRole("button", { name: "Lokale KI nutzen" }),
   ).toBeDisabled();
 });
 

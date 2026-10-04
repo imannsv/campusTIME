@@ -195,3 +195,18 @@ Navigation aus einer Hilfequelle, Escape mit Fokus-Rückgabe, Planwechsel,
 Gespräch leeren ohne Senden einer vorhandenen Eingabe und unveränderte Daten.
 Desktop- und Mobilansicht bei 390 Pixel Breite wurden visuell geprüft.
 TypeScript und beide Builds bestanden. Das Backend wurde nicht verändert.
+
+## Ergänzung: Freddy und kompakte Chat-Bedienung (04.10.2026)
+
+Der Assistent heißt Freddy und begrüßt mit dem vorgegebenen Text.
+Der aufklappbare Verwaltungsblock wurde durch eine kompakte Kontextzeile mit
+Auswahlliste und ein Drei-Punkte-Menü ersetzt. Planungshinweise bleiben Teil
+der Antworten. Vorschläge stehen unter der Begrüßung ohne horizontales Scrollen
+und verschwinden nach der ersten Nachricht.
+
+18 campusAI-Backend-Tests, der lokale Chat-Browserablauf und sieben
+Demo-Browserabläufe bestanden. Die Prüfung enthält Kontext-/Moduswechsel,
+Menübedienung mit Escape und Fokus-Rückgabe, erhaltenes Gespräch und unveränderte
+Daten. Die Vorschlagsliste hat auf Desktop und bei 390 Pixel Breite keinen
+horizontalen Überlauf. Desktop, mobile Begrüßung und die Kontextauswahl wurden
+visuell geprüft. Der Systemtext des lokalen Modells verwendet ebenfalls Freddy.
