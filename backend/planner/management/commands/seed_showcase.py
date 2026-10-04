@@ -8,6 +8,7 @@ from django.db.models import F
 from django.utils import timezone
 
 from planner import models as m
+from planner.overview import enrich_snapshot
 from planner.services import plan_rows, validate_rows
 
 
@@ -616,7 +617,7 @@ class Command(BaseCommand):
                 plan=plan,
                 number=1,
                 created_by=user,
-                snapshot=rows,
+                snapshot=enrich_snapshot(rows, institution.id),
             )
         # Check all plans again now that every external publication is present.
         for plan in m.Plan.objects.filter(institution=institution):

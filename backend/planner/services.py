@@ -41,6 +41,8 @@ def entity_data(entity):
             "count": count,
             "group_resources": sorted(groups),
             "group_names": [g.name for g in entity.groups.all()],
+            "group_ids": [g.id for g in entity.groups.all()],
+            "course_name": entity.name,
             "teacher_ids": [p.id for p in entity.teachers.all()],
             "color": entity.color,
             "equipment": entity.equipment,

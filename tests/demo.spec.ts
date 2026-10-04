@@ -1,7 +1,38 @@
 import { test, expect } from "@playwright/test";
 import { studyFlow } from "./study-flow";
 import { progressionFlow } from "./progression-flow";
+import { overviewFlow } from "./overview-flow";
 test.use({ actionTimeout: 10000 });
+
+test("Studierendenübersicht filtert Kurse, bleibt teilbar und aktualisiert sich", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.startsWith("/api/"))
+      requests.push(request.url());
+  });
+  await page.clock.install();
+  await page.goto("/");
+  const { mathKey, sharedUrl } = await overviewFlow(page);
+  await page.evaluate((key) => {
+    const storageKey = "campustime-browser-demo-v1";
+    const state = JSON.parse(localStorage.getItem(storageKey)!);
+    for (const publication of state.publications)
+      for (const row of publication.snapshot)
+        if (row.overview_scope.course === key)
+          row.name = "Mathematik I · aktualisiert";
+    localStorage.setItem(storageKey, JSON.stringify(state));
+  }, mathKey);
+  await page.clock.runFor(10000);
+  await expect(page.locator(".student-agenda")).toContainText(
+    "Mathematik I · aktualisiert",
+  );
+  await expect(page.getByLabel("Kurs", { exact: true })).toHaveValue(mathKey);
+  expect(page.url()).toBe(sharedUrl);
+  expect(requests).toEqual([]);
+});
 
 test("Jahrgangsverlauf verschieben, Voraussetzungen und Ausgleich prüfen", async ({
   page,
@@ -29,6 +60,8 @@ test("Bestehende Browser-Demo wird ohne Verlust von Raumänderungen ergänzt", a
     const key = "campustime-browser-demo-v1";
     const saved = JSON.parse(localStorage.getItem(key)!);
     saved.data.rooms[0].capacity = 777;
+    for (const publication of saved.publications)
+      for (const row of publication.snapshot) delete row.overview_scope;
     for (const resource of ["studyversions", "modules", "teachingunits"]) {
       delete saved.data[resource];
       delete saved.schema[resource];
@@ -44,6 +77,13 @@ test("Bestehende Browser-Demo wird ohne Verlust von Raumänderungen ergänzt", a
   );
   expect(saved.data.rooms[0].capacity).toBe(777);
   expect(saved.data.modules).toHaveLength(37);
+  expect(
+    saved.publications.every((publication: any) =>
+      publication.snapshot.every(
+        (row: any) => row.overview_scope?.groups && row.overview_scope.course,
+      ),
+    ),
+  ).toBeTruthy();
   await page.evaluate(() => {
     const key = "campustime-browser-demo-v1";
     const saved = JSON.parse(localStorage.getItem(key)!);

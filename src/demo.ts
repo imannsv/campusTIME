@@ -3,6 +3,11 @@ import example from "./demo-data.json";
 import type { Field, Row } from "./api";
 import { cohortProgression, limitFields } from "./demo-progression";
 import {
+  enrichDemoSnapshot,
+  matchesOverview,
+  overviewCatalog,
+} from "./overview-data";
+import {
   checkStructure,
   validateStudy,
   studyAction,
@@ -139,9 +144,23 @@ function read(): Store {
         }
         localStorage.setItem(KEY, JSON.stringify(value));
       }
+      if (
+        value.publications.some((publication: Row) =>
+          publication.snapshot.some((row: Row) => !row.overview_scope),
+        )
+      ) {
+        for (const publication of value.publications)
+          publication.snapshot = enrichDemoSnapshot(
+            value,
+            publication.snapshot,
+          );
+        localStorage.setItem(KEY, JSON.stringify(value));
+      }
       return value;
     }
     const value = initial();
+    for (const publication of value.publications)
+      publication.snapshot = enrichDemoSnapshot(value, publication.snapshot);
     localStorage.setItem(KEY, JSON.stringify(value));
     return value;
   } catch {
@@ -214,6 +233,7 @@ function rowsFor(state: Store, planId: number): Row[] {
         course: session.course,
         exam: session.exam,
         name: session.name || entity.name,
+        ...(!isExam ? { course_name: entity.name } : {}),
         start: session.start,
         end: session.end,
         color: isExam ? "rose" : entity.color,
@@ -227,6 +247,7 @@ function rowsFor(state: Store, planId: number): Row[] {
         group_names: isExam
           ? [entity.resit ? "Nachschreibeklausur" : "Klausur"]
           : entity.groups.map((id: number) => get(state, "groups", id).name),
+        ...(!isExam ? { group_ids: entity.groups } : {}),
         locked: session.locked,
         room_allocations: [],
       };
@@ -312,12 +333,17 @@ function publicRow(row: Row, teachers: boolean): Row {
   } = row;
   return { ...visible, teacher_names: teachers ? row.teacher_names : [] };
 }
-function displayFor(state: Store, token: string, query: URLSearchParams) {
+function displayFor(
+  state: Store,
+  token: string,
+  query: URLSearchParams,
+  overview = false,
+) {
   const display = state.data.displays.find(
     (item) => item.token === token && item.active,
   );
   if (!display) throw new Error("Anzeige nicht gefunden oder deaktiviert.");
-  const mode = display.view_mode;
+  const mode = overview ? "week" : display.view_mode;
   let start = query.get("since"),
     end = query.get("until");
   if (mode === "today" || mode === "tomorrow") {
@@ -332,6 +358,21 @@ function displayFor(state: Store, token: string, query: URLSearchParams) {
     display.plans.includes(item.plan_id),
   );
   const allRows: Row[] = publications.flatMap((item) => item.snapshot);
+  const catalog = overview ? overviewCatalog(allRows) : null;
+  const filters: Row = {};
+  if (catalog) {
+    for (const [key, resource] of [
+      ["cohort", "cohorts"],
+      ["group", "groups"],
+      ["course", "courses"],
+    ]) {
+      const value = query.get(key);
+      if (!value) continue;
+      if (!catalog[resource].some((item: Row) => String(item.id) === value))
+        throw new Error("Auswahl ist in dieser Übersicht nicht verfügbar.");
+      filters[key] = value;
+    }
+  }
   const periods = display.plans.map((id: number) =>
     get(state, "periods", get(state, "plans", id).period),
   );
@@ -346,16 +387,35 @@ function displayFor(state: Store, token: string, query: URLSearchParams) {
     rows: allRows
       .filter(
         (row) =>
+          (!overview || matchesOverview(row, filters)) &&
           (!start || Date.parse(row.end) > Date.parse(start)) &&
           (!end || Date.parse(row.start) < Date.parse(end)),
       )
       .map((row) => ({
         ...publicRow(row, display.show_teachers),
+        ...(overview
+          ? {
+              course_key: row.overview_scope.course,
+              group_names: row.overview_scope.groups.map(
+                (group: Row) => group.name,
+              ).length
+                ? row.overview_scope.groups.map((group: Row) => group.name)
+                : row.group_names,
+              kind: row.exam ? "exam" : "teaching",
+              resit: Boolean(
+                row.exam && row.group_names.includes("Nachschreibeklausur"),
+              ),
+            }
+          : {}),
         blocked: blocksFor(state, row.start, row.end).some((block) =>
           intersects(row.room_ids, block.room_ids),
         ),
       })),
-    available_from: allRows.map((row) => row.start).sort()[0] || null,
+    available_from:
+      allRows
+        .filter((row) => !overview || matchesOverview(row, filters))
+        .map((row) => row.start)
+        .sort()[0] || null,
     weekdays: periods.length
       ? [...new Set(periods.flatMap((period: Row) => period.weekdays))].sort()
       : [0, 1, 2, 3, 4],
@@ -375,13 +435,14 @@ function displayFor(state: Store, token: string, query: URLSearchParams) {
           }),
         )
       : 18,
-    auto_scroll: display.auto_scroll,
+    auto_scroll: overview ? false : display.auto_scroll,
     scroll_seconds: display.scroll_seconds,
     updated:
       publications
         .map((item) => item.created)
         .sort()
         .at(-1) || null,
+    ...(overview ? { catalog, filters } : {}),
   };
 }
 
@@ -412,7 +473,8 @@ export async function demoApi(
       audit: state.audit,
     };
   if (resource === "jobs" && !key) return [];
-  if (resource === "public") return displayFor(state, key, query);
+  if (resource === "public")
+    return displayFor(state, key, query, operation === "overview");
   if (resource === "cohorts" && operation === "progression") {
     const cohort = get(state, resource, id);
     if (method !== "GET" && method !== "POST")
@@ -494,7 +556,7 @@ export async function demoApi(
         plan_id: id,
         number,
         created: DateTime.now().toISO(),
-        snapshot: rows,
+        snapshot: enrichDemoSnapshot(state, rows),
       });
       save(state, "Demoanzeige aktualisiert");
       return { number };

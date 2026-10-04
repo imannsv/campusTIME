@@ -8,6 +8,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from planner import models as m
+from planner.overview import enrich_snapshot
 from planner.services import session_row, validate_rows
 
 
@@ -298,7 +299,11 @@ class Command(BaseCommand):
         if errors:
             raise CommandError(str(errors))
         m.Publication.objects.create(
-            institution=institution, plan=plan, number=1, created_by=user, snapshot=rows
+            institution=institution,
+            plan=plan,
+            number=1,
+            created_by=user,
+            snapshot=enrich_snapshot(rows, institution.id),
         )
         display = make(
             m.Display, "FOYER", "Campus Nord · Wochenübersicht", show_teachers=True

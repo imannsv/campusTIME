@@ -39,6 +39,7 @@ import { Modal, RecordForm, ImportModal, Relation } from "./components";
 import Timetable from "./Timetable";
 import RoomOverview from "./RoomOverview";
 import StudySetup from "./StudySetup";
+import StudentOverview from "./StudentOverview";
 
 type SessionState = {
   authenticated: boolean;
@@ -54,6 +55,7 @@ const nav = [
   { id: "exams", label: "Prüfungen", icon: GraduationCap },
   { id: "map", label: "Räume", icon: Building2 },
   { id: "displays", label: "Öffentliche Anzeige", icon: Monitor },
+  { id: "students", label: "Studierendenübersicht", icon: Users },
 ];
 const descriptions: Record<string, string> = {
   areas: "Getrennt planen, gemeinsame Ressourcen berücksichtigen.",
@@ -842,6 +844,15 @@ function SolverModal({
 }
 
 export default function App() {
+  const overviewMatch = window.location.pathname.match(/^\/overview\/([\w-]+)/);
+  if (overviewMatch)
+    return (
+      <StudentOverview
+        token={overviewMatch[1]}
+        brand={<Brand />}
+        notice={<DemoNotice />}
+      />
+    );
   const publicMatch = window.location.pathname.match(/^\/display\/([\w-]+)/);
   if (publicMatch) return <PublicDisplay token={publicMatch[1]} />;
   return <Workspace />;
@@ -1522,6 +1533,63 @@ function Workspace() {
               query={search}
               onEdit={edit}
             />
+          ) : page === "students" ? (
+            <>
+              <div className="page-actions">
+                <h1>Studierendenübersichten</h1>
+                <button
+                  className="button secondary"
+                  onClick={() => go("displays")}
+                >
+                  Planauswahl verwalten
+                </button>
+              </div>
+              <p className="resource-description">
+                Jeder Link zeigt die ausgewählten freigegebenen Pläne. Jahrgang,
+                Gruppe und Kurs können in der Übersicht gefiltert werden.
+              </p>
+              <div className="display-cards">
+                {(data.displays || []).map((display) => (
+                  <article key={display.id}>
+                    <div className="display-card-icon">
+                      <GraduationCap size={23} />
+                    </div>
+                    <span
+                      className={"badge " + (display.active ? "success" : "")}
+                    >
+                      {display.active ? "Aktiv" : "Deaktiviert"}
+                    </span>
+                    <h3>{display.name}</h3>
+                    <p>
+                      {display.plans
+                        .map(
+                          (id: number) =>
+                            data.plans?.find((plan) => plan.id === id)?.name,
+                        )
+                        .filter(Boolean)
+                        .join(" · ") || "Keine Stundenpläne ausgewählt"}
+                    </p>
+                    <div>
+                      <a
+                        className="button secondary"
+                        href={`/overview/${display.token}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <ExternalLink size={15} />
+                        Studierendenübersicht öffnen
+                      </a>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              {!data.displays?.length && (
+                <p className="display-empty">
+                  Lege unter „Planauswahl verwalten“ eine Anzeige mit den
+                  gewünschten Stundenplänen an.
+                </p>
+              )}
+            </>
           ) : page === "settings" ? (
             <>
               <div className="section-heading">
@@ -1693,6 +1761,15 @@ function Workspace() {
                         >
                           <ExternalLink size={15} />
                           Anzeige öffnen
+                        </a>
+                        <a
+                          className="button secondary"
+                          href={`/overview/${d.token}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <GraduationCap size={15} />
+                          Studierendenübersicht öffnen
                         </a>
                         <button
                           className="icon-button"

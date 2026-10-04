@@ -25,6 +25,7 @@ urlpatterns = [
     path("api/jobs/<uuid:pk>/", views.job_detail),
     path("api/jobs/", views.jobs),
     path("api/public/<uuid:token>/", views.public_display),
+    path("api/public/<uuid:token>/overview/", views.public_overview),
     path("api/rooms/<int:pk>/occupancy/", views.room_occupancy),
     path("api/imports/<str:resource>/", views.imports),
     path("api/", include(router.urls)),

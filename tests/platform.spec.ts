@@ -1,6 +1,36 @@
 import { test, expect } from "@playwright/test";
 import { progressionFlow } from "./progression-flow";
+import { overviewFlow } from "./overview-flow";
 test.use({ actionTimeout: 10000 });
+
+test("Separate Studierendenübersicht zeigt freigegebene Termine mit Kursfiltern", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  await page.goto("/");
+  await page.getByLabel("Passwort", { exact: true }).fill("Campuszeit2026!");
+  await page.getByRole("button", { name: "Anmelden", exact: true }).click();
+  const { sharedUrl } = await overviewFlow(page);
+  const anonymous = await page.context().browser()!.newContext();
+  try {
+    const visitor = await anonymous.newPage();
+    await visitor.goto(sharedUrl);
+    await expect(
+      visitor.getByRole("heading", {
+        name: "Stundenplanübersicht",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(visitor.locator(".student-grid")).toContainText(
+      "Mathematik I",
+    );
+    await expect(visitor.getByLabel("Passwort", { exact: true })).toHaveCount(
+      0,
+    );
+  } finally {
+    await anonymous.close();
+  }
+});
 
 test("Jahrgangsverlauf wird geprüft, balanciert und separat gespeichert", async ({
   page,

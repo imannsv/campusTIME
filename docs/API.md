@@ -1,5 +1,15 @@
 # Interne Schnittstellen
 
+Die separate öffentliche Studierendenübersicht verwendet
+`GET /api/public/<token>/overview/`. `since` und `until` sind Zeitpunkte mit
+Zeitzone; `cohort`, `group` und `course` sind optionale kombinierte Filter.
+`course` verwendet `course:<id>` bzw. für Prüfungen ohne Kurs `exam:<id>`.
+Die Antwort enthält sichere öffentliche Terminangaben und einen `catalog`
+mit Jahrgängen, Gruppen und Kursen aus den ausgewählten Veröffentlichungen.
+Ungültige bzw. nicht verfügbare Filter liefern HTTP 400; deaktivierte oder
+unbekannte Links HTTP 404. Dieser Endpunkt bleibt unabhängig vom festgelegten
+Anzeigezeitraum eine Wochenübersicht. Details: [Studierendenübersicht](STUDENT_OVERVIEW.md).
+
 Alle Verwaltungsanfragen verwenden die Django-Sitzung. Schreibende Anfragen benötigen zusätzlich `X-CSRFToken` aus dem `csrftoken`-Cookie. Zuerst `GET /api/auth/me/` aufrufen. Der Server bestimmt die Einrichtung aus der Anmeldung; eine vom Client eingereichte Einrichtungs-ID wird nicht übernommen.
 
 | Schnittstelle | Verhalten |

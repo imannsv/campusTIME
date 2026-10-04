@@ -64,6 +64,7 @@ angelegt. Es enthält sechs Semester, 180 CP und Jahrgang dWI27.
 8. Prüfungen erhalten einen eigenen Zeitraum, Teilnehmer und Aufsichten. Nachschreibeklausuren erhalten ihre eigene Liste. Mehrraumprüfungen teilen die Teilnehmer deterministisch nach Raumkapazität auf; je Raum wird eine Aufsicht zugeordnet. Die Raumaufteilung liegt im internen Planungsergebnis unter `room_allocations`.
 9. Unter **Räume** Bereiche und Stockwerke anlegen und vorhandene Raumbezeichnungen verwenden. Raumkacheln zeigen Kapazität und Ausstattung; Raumdetails zeigen freigegebene Belegungen. Bereiche, Stockwerke und Räume lassen sich direkt dort bearbeiten. Geografische Positionen und Grundrisse werden für die Raumplanung nicht benötigt.
 10. Unter **Öffentliche Anzeige** Anzeigen mit ausgewählten Plänen und **Anzeigezeitraum: Woche, Heute oder Morgen** anlegen. Der Link funktioniert ohne Anmeldung; Aktualisierung erfolgt alle zehn Sekunden. Tagesanzeigen wechseln automatisch in der Einrichtungszeitzone das Datum. Jeder Anzeigelink bleibt bei seinem fest eingestellten Zeitraum; nur die Verwaltung kann diesen ändern. Scrollen lässt sich konfigurieren und pausieren. Namen/IDs einzelner Lernender werden nie ausgeliefert.
+11. Unter **Studierendenübersicht** den separaten Link öffnen oder teilen. Dort Jahrgang, Gruppe/Klasse und Kurs filtern und zwischen Wochen wechseln. Auf Handys erscheinen Termine als Tagesliste. Die Auswahl bleibt im Link erhalten; freigegebene Änderungen werden alle zehn Sekunden geladen. Details: [Studierendenübersicht](docs/STUDENT_OVERVIEW.md).
 
 ## Dateiimporte
 
@@ -104,7 +105,7 @@ Die Zuordnung zu `imannsv/campusTIME`, `imanabi/campustime` und Supabase sowie d
 
 ## Grenzen der ersten Version
 
-- Konkrete Fremdsystemanbindungen, individuelle Lernendenzugänge, persönliche Filteransichten, Handy-App, Regelbaukasten und automatische Online-Abrechnung sind wie vereinbart spätere Erweiterungen.
+- Konkrete Fremdsystemanbindungen, individuelle Lernendenzugänge mit persönlichen Belegungen, Handy-App, Regelbaukasten und automatische Online-Abrechnung sind wie vereinbart spätere Erweiterungen.
 - Die Automatik besitzt ein zehnminütiges Standardbudget und eine Begrenzung auf 500.000 mögliche Startpositionen. Größere Aufgaben müssen in Teilbereiche aufgeteilt werden. Die Oberfläche zeigt Arbeitsstatus statt eines erfundenen Fortschrittsprozentsatzes.
 - Fehlerberichte benennen Eingabefehler, Konflikte und offensichtlich fehlende Ressourcen. Bei komplexer Unlösbarkeit gibt es noch keine minimale mathematische Konfliktursache.
 - Die Raumverwaltung verwendet Bereiche → Stockwerke → Räume. Bestehende Gebäude-/Etagenzuordnungen bleiben erhalten; alte Geometriefelder sind nur noch zur Datenkompatibilität vorhanden.

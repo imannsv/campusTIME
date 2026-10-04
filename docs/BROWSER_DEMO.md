@@ -1,5 +1,11 @@
 # Browser-Demo auf Vercel
 
+Die separate [Studierendenübersicht](STUDENT_OVERVIEW.md) unter
+`/overview/<token>` unterstützt Jahrgangs-, Gruppen- und Kursfilter,
+Wochennavigation und teilbare Links. Auf Handys erscheint eine Terminliste.
+Die Filter gelten ausschließlich dort; Bildschirm-Anzeigen behalten ihre
+fest eingestellte Woche-/Heute-/Morgen-Ansicht.
+
 Für den vorläufigen Produkttest baut Vercel mit `npm run build:demo`.
 Diese Variante benötigt keinen Server und greift nicht auf Supabase zu.
 Sie wird sichtbar als Demo gekennzeichnet und öffnet ohne Anmeldung.

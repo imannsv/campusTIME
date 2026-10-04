@@ -1215,6 +1215,7 @@ tbody tr:hover {
 }
 .display-cards article > div:last-child {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
@@ -2054,6 +2055,133 @@ tbody tr:hover {
   color: #98a6b5;
   font-size: 10px;
   padding-top: 17px;
+}
+.student-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.6fr auto;
+  align-items: end;
+  gap: 14px;
+  margin-top: 24px;
+  padding: 18px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.student-filters label,
+.student-week label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.student-filters select {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  font-size: 13px;
+}
+.student-week {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+}
+.student-week .week-nav strong {
+  font-size: 13px;
+  margin: 0 8px;
+}
+.student-week label {
+  display: flex;
+  align-items: center;
+}
+.student-week input {
+  min-width: 0;
+  width: 150px;
+}
+.student-result {
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.student-overview .display-empty .button {
+  margin: 12px 0 0;
+  display: flex;
+}
+.student-agenda {
+  display: none;
+}
+.student-overview .student-grid {
+  max-height: none;
+}
+@media (max-width: 1100px) {
+  .student-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 720px) {
+  .student-filters {
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+  .student-overview .student-grid {
+    display: none;
+  }
+  .student-overview .public-toolbar,
+  .student-week {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .student-agenda {
+    display: grid;
+    gap: 22px;
+  }
+  .student-agenda h2 {
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+  .student-event {
+    border: 1px solid var(--line);
+    border-left: 4px solid #80a5bd;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 10px;
+    background: #fff;
+    overflow-wrap: anywhere;
+  }
+  .student-event.blocked {
+    border-left-color: #be6c51;
+    background: #fff8f4;
+  }
+  .student-event-time {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 9px;
+  }
+  .student-event h3 {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+  .student-event p {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    margin-top: 6px;
+    color: var(--muted);
+  }
+  .student-event svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .student-overview footer {
+    line-height: 1.6;
+  }
 }
 @media (min-width: 1600px) {
   .calendar-event strong {

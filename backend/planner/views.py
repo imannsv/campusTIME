@@ -21,6 +21,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from . import models as m
+from .overview import catalog_for, enrich_snapshot, matches_scope, overview_filters
 from .serializers import RESOURCES, schema, serializer_for
 from .services import (
     block_rows,
@@ -562,7 +563,7 @@ def plan_action(request, pk, operation):
                 )
                 + 1,
                 created_by=request.user,
-                snapshot=rows,
+                snapshot=enrich_snapshot(rows, institution.id),
             )
             bump(
                 request,
@@ -712,6 +713,16 @@ def jobs(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def public_display(request, token):
+    return Response(display_payload(request, token))
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def public_overview(request, token):
+    return Response(display_payload(request, token, overview=True))
+
+
+def display_payload(request, token, overview=False):
     display = get_object_or_404(m.Display, token=token, active=True)
     publications = [
         p
@@ -721,7 +732,17 @@ def public_display(request, token):
     rows = []
     selected = list(display.plans.select_related("period").all())
     # Display links always use the mode chosen by the administration.
-    view_mode = display.view_mode
+    view_mode = "week" if overview else display.view_mode
+    catalog, filters = {}, {}
+    if overview:
+        for publication in publications:
+            publication.snapshot = enrich_snapshot(
+                publication.snapshot, display.institution_id
+            )
+        catalog = catalog_for(
+            [row for publication in publications for row in publication.snapshot]
+        )
+        filters = overview_filters(request.query_params, catalog)
     zone = ZoneInfo(display.institution.timezone)
     if view_mode in {"today", "tomorrow"}:
         # Local midnights keep 23/25-hour days correct at daylight saving changes.
@@ -749,11 +770,23 @@ def public_display(request, token):
     for publication in publications:
         blocks = block_rows(display.institution, publication.plan.period)
         for row in publication.snapshot:
+            if overview and not matches_scope(row, filters):
+                continue
             if (since and dt(row["end"]) <= since) or (
                 until and dt(row["start"]) >= until
             ):
                 continue
             public = public_row(row, display.show_teachers)
+            if overview:
+                scope = row["overview_scope"]
+                public["course_key"] = scope["course"]
+                public["group_names"] = [
+                    group["name"] for group in scope["groups"]
+                ] or public["group_names"]
+                public["resit"] = bool(
+                    row.get("exam")
+                    and "Nachschreibeklausur" in row.get("group_names", [])
+                )
             public["blocked"] = any(
                 set(row["room_ids"]) & set(b["room_ids"])
                 and dt(row["start"]) < dt(b["end"])
@@ -761,40 +794,42 @@ def public_display(request, token):
                 for b in blocks
             )
             rows.append(public)
-    return Response(
-        {
-            "name": display.name,
-            "institution": display.institution.name,
-            "timezone": display.institution.timezone,
-            "view_mode": view_mode,
-            "window_start": since,
-            "window_end": until,
-            "revision": display.institution.revision,
-            "rows": rows,
-            "available_from": min(
-                (dt(r["start"]) for p in publications for r in p.snapshot), default=None
+    return {
+        "name": display.name,
+        "institution": display.institution.name,
+        "timezone": display.institution.timezone,
+        "view_mode": view_mode,
+        "window_start": since,
+        "window_end": until,
+        "revision": display.institution.revision,
+        "rows": rows,
+        "available_from": min(
+            (
+                dt(r["start"])
+                for p in publications
+                for r in p.snapshot
+                if not overview or matches_scope(r, filters)
             ),
-            "weekdays": sorted({d for p in selected for d in p.period.weekdays})
-            or [0, 1, 2, 3, 4],
-            "day_start": min(
-                (
-                    p.period.day_start.hour + p.period.day_start.minute / 60
-                    for p in selected
-                ),
-                default=8,
+            default=None,
+        ),
+        "weekdays": sorted({d for p in selected for d in p.period.weekdays})
+        or [0, 1, 2, 3, 4],
+        "day_start": min(
+            (
+                p.period.day_start.hour + p.period.day_start.minute / 60
+                for p in selected
             ),
-            "day_end": max(
-                (
-                    p.period.day_end.hour + p.period.day_end.minute / 60
-                    for p in selected
-                ),
-                default=18,
-            ),
-            "auto_scroll": display.auto_scroll,
-            "scroll_seconds": display.scroll_seconds,
-            "updated": max((p.created for p in publications), default=None),
-        }
-    )
+            default=8,
+        ),
+        "day_end": max(
+            (p.period.day_end.hour + p.period.day_end.minute / 60 for p in selected),
+            default=18,
+        ),
+        "auto_scroll": False if overview else display.auto_scroll,
+        "scroll_seconds": display.scroll_seconds,
+        "updated": max((p.created for p in publications), default=None),
+        **({"catalog": catalog, "filters": filters} if overview else {}),
+    }
 
 
 @api_view(["GET"])

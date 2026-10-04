@@ -110,3 +110,26 @@ Der Ausgleich ist eine begrenzte Heuristik mit höchstens 10.000 bewerteten
 Kandidaten und zwölf Verbesserungsrunden. Er ist kein Nachweis einer optimalen
 Verteilung und ersetzt keine fachliche Prüfung. CP-Anteile sind Planungswerte,
 keine erreichten Leistungen; Schwierigkeit ist administrativ gepflegt.
+
+## Ergänzung: Separate Studierendenübersicht (04.10.2026)
+
+- 51 Django-Tests bestanden, darunter acht Tests der öffentlichen Übersicht:
+  kombinierte Jahrgangs-/Gruppen-/Kursfilter, gemeinsame Veranstaltungen,
+  Wahlpflichtangebote, verknüpfte Nachschreibeklausuren, Veröffentlichungsgrenzen,
+  leere Zeiträume, ungültige Filter und Raumblockierungen. Die aktualisierte
+  Veröffentlichung eines zuvor bearbeiteten Entwurfs wurde zusätzlich geprüft.
+- Sieben lokale Browserprüfungen und sechs Demo-Browserprüfungen bestanden.
+  Die neue Übersicht wurde ohne Anmeldung, mit direktem geteiltem Link,
+  Neuladen, Filterwechsel, Wochenwechsel und auf 390 Pixel Breite geprüft.
+  Ein Timer-Test prüft das automatische Nachladen bei erhaltener Auswahl.
+- Desktop- und Mobil-Screenshots wurden visuell geprüft. Im mobilen Layout
+  werden die Termine als Tagesliste gezeigt, ohne Überbreite der Seite.
+- Bestehender Demo-Speicher wird unter Erhalt von Raumänderungen ergänzt.
+  Die bestehenden Bildschirmanzeigen behalten ihre festen Anzeigezeiträume.
+- TypeScript, normaler Build und Demo-Build bestanden. Migration 0009 wurde
+  nach lokalem Datenbankbackup angewendet; alle acht vorhandenen
+  Veröffentlichungssnapshots enthalten danach die Filtermetadaten.
+
+Vercel bleibt eine Browser-Demo. Diese Prüfung bestätigt keinen gemeinsamen
+Cloud-Datenbestand oder produktiven Mehrbenutzerbetrieb. Der neue Endpunkt
+und die Datenmigration wurden lokal auf SQLite getestet.
