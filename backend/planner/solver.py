@@ -193,7 +193,8 @@ def solve(plan, kind, cancelled, seconds=None):
             suitable = [
                 r
                 for r in rooms
-                if set(entity.equipment).issubset(r.equipment)
+                if r.capacity is not None
+                and set(entity.equipment).issubset(r.equipment)
                 and (is_exam or r.capacity >= data["count"])
             ]
             if not suitable or sum(r.capacity for r in suitable) < data["count"]:

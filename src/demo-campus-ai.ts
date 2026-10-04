@@ -241,6 +241,7 @@ export function demoAIContext(
         count &&
         !rooms.some(
           (room) =>
+            room.capacity != null &&
             room.capacity >= count &&
             course.equipment.every((item: string) =>
               room.equipment.includes(item),

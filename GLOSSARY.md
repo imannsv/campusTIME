@@ -24,4 +24,6 @@ Studienstrukturen bestimmen, was ein Jahrgang durchläuft. Semesterpläne bestim
 
 **Raumbereich**: Gebäude, Trakt oder anderer räumlicher Bereich, der Stockwerke und Räume enthält.
 
+**Raumkapazität**: Bestätigte Anzahl nutzbarer Plätze. Eine noch unbekannte Kapazität bleibt leer. Solche Räume werden angezeigt, aber erst nach Erfassung der Kapazität automatisch zugeteilt; eine Veröffentlichung mit ungeprüfter Kapazität wird verhindert.
+
 **Planungsbereich**: Organisatorischer Bereich, dessen Termine gemeinsam geplant werden.

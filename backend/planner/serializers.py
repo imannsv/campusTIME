@@ -263,7 +263,7 @@ class TenantSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     "Raumfläche benötigt mindestens drei Punkte zwischen 0 und 1000."
                 )
-        if model == m.Room and value("capacity", 30) < 1:
+        if model == m.Room and value("capacity") is not None and value("capacity") < 1:
             raise serializers.ValidationError("Raumkapazität muss positiv sein.")
         if model == m.Building and "geometry" in attrs and attrs["geometry"]:
             g = attrs["geometry"]

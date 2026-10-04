@@ -32,6 +32,11 @@ const KEY = "campustime-browser-demo-v1";
 const ZONE = "Europe/Berlin";
 function initial(): Store {
   const copy = structuredClone(example) as unknown as Store;
+  const capacity = copy.schema.rooms.find((field) => field.name === "capacity");
+  if (capacity) {
+    capacity.default = null;
+    capacity.required = false;
+  }
   // Preserve weekdays when moving the fictional semester to the current week.
   const weeks = Math.floor(
     DateTime.now()
@@ -80,6 +85,13 @@ function read(): Store {
       }
       if (!value.data || !value.schema || !Array.isArray(value.publications))
         throw new Error();
+      const capacity = value.schema.rooms.find(
+        (field: Field) => field.name === "capacity",
+      );
+      if (capacity) {
+        capacity.default = null;
+        capacity.required = false;
+      }
       if (!value.data.studyversions) {
         // Upgrade the earlier demo in place; preserve room and schedule edits.
         const fresh = initial();
@@ -327,7 +339,9 @@ function conflictsFor(state: Store, planId: number): string[] {
   const errors = new Set<string>();
   for (const row of own) {
     const rooms = row.room_ids.map((id: number) => get(state, "rooms", id));
-    if (
+    if (rooms.some((room: Row) => room.capacity == null))
+      errors.add(`${row.name}: Raumkapazität ist noch nicht erfasst.`);
+    else if (
       !rooms.length ||
       rooms.reduce((sum: number, room: Row) => sum + room.capacity, 0) <
         row.count
@@ -749,12 +763,14 @@ export async function demoApi(
     key ? get(state, resource, id) : undefined,
   );
   if (
-    ["rooms", "groups"].includes(resource) &&
-    (!Number.isInteger(record[resource === "rooms" ? "capacity" : "size"]) ||
-      record[resource === "rooms" ? "capacity" : "size"] < 0)
+    (resource === "rooms" &&
+      record.capacity != null &&
+      (!Number.isInteger(record.capacity) || record.capacity < 1)) ||
+    (resource === "groups" &&
+      (!Number.isInteger(record.size) || record.size < 0))
   )
     throw new Error(
-      "Kapazität und Gruppengröße müssen nichtnegative Ganzzahlen sein.",
+      "Kapazität muss positiv und Gruppengröße nichtnegativ sein. Unbekannte Kapazität kann leer bleiben.",
     );
   if (
     record.start &&

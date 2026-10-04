@@ -940,10 +940,15 @@ export function RecordForm({
                   <input
                     required={f.required}
                     type={f.type}
+                    placeholder={
+                      f.name === "capacity" ? "Noch nicht erfasst" : undefined
+                    }
                     min={
                       f.type === "number" &&
                       !["latitude", "longitude", "level"].includes(f.name)
-                        ? "0"
+                        ? f.name === "capacity"
+                          ? "1"
+                          : "0"
                         : undefined
                     }
                     step={

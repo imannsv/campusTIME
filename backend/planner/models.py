@@ -230,7 +230,7 @@ class Floor(TenantModel):
 
 class Room(TenantModel):
     floor = models.ForeignKey(Floor, on_delete=models.PROTECT)
-    capacity = models.PositiveIntegerField(default=30)
+    capacity = models.PositiveIntegerField(null=True, blank=True, default=None)
     equipment = models.JSONField(default=list, blank=True)
     polygon = models.JSONField(default=list, blank=True)
 

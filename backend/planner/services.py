@@ -69,8 +69,9 @@ def exam_allocation(row, rooms):
     learners = list(row["learner_ids"])
     allocation = []
     for index, room in enumerate(rooms):
-        assigned = learners[: room.capacity]
-        learners = learners[room.capacity :]
+        capacity = room.capacity or 0
+        assigned = learners[:capacity]
+        learners = learners[capacity:]
         allocation.append(
             {
                 "room_id": room.id,
@@ -320,7 +321,9 @@ def validate_rows(plan, rows, coverage=False):
         if not room_ids or any(i not in room_map for i in room_ids):
             problems.append(f"{label}: Räume fehlen oder sind ungültig.")
         else:
-            if sum(room_map[i].capacity for i in room_ids) < row["count"]:
+            if any(room_map[i].capacity is None for i in room_ids):
+                problems.append(f"{label}: Raumkapazität ist noch nicht erfasst.")
+            elif sum(room_map[i].capacity for i in room_ids) < row["count"]:
                 problems.append(f"{label}: Raumkapazität reicht nicht aus.")
             if any(
                 not set(entity.equipment).issubset(room_map[i].equipment)

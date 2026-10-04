@@ -232,7 +232,8 @@ def context_for(institution, plan=None, cohort=None, view=None):
             candidates = [
                 room
                 for room in rooms
-                if room.capacity >= count
+                if room.capacity is not None
+                and room.capacity >= count
                 and set(course.equipment) <= set(room.equipment)
             ]
             if count and not candidates:

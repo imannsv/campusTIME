@@ -12,7 +12,7 @@ from django.test import SimpleTestCase, TestCase, override_settings
 from rest_framework.test import APIClient
 
 from . import models as m
-from .services import attendance, plan_rows, session_row, validate_rows
+from .services import attendance, exam_allocation, plan_rows, session_row, validate_rows
 from .solver import solve
 
 
@@ -232,6 +232,43 @@ class PlatformTests(TestCase):
         m.Room.objects.all().update(capacity=1)
         state, message, _ = solve(self.plan, "teaching", lambda: False, seconds=1)
         self.assertEqual(state, "infeasible", message)
+
+    def test_unknown_capacity_can_be_saved_but_blocks_publication(self):
+        room = self.plan.sessions.first().rooms.first()
+        response = self.client.patch(
+            f"/api/rooms/{room.id}/", {"capacity": None}, format="json"
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        room.refresh_from_db()
+        self.assertIsNone(room.capacity)
+        errors = validate_rows(self.plan, plan_rows(self.plan), coverage=False)
+        self.assertTrue(
+            any("Raumkapazität ist noch nicht erfasst" in e for e in errors)
+        )
+        publications = self.plan.publication_set.count()
+        response = self.client.post(
+            f"/api/plans/{self.plan.id}/publish/", {}, format="json"
+        )
+        self.assertEqual(response.status_code, 400, response.data)
+        self.assertIn("Raumkapazität ist noch nicht erfasst", str(response.data))
+        self.assertEqual(self.plan.publication_set.count(), publications)
+        response = self.client.patch(
+            f"/api/rooms/{room.id}/", {"capacity": 0}, format="json"
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_solver_excludes_rooms_with_unknown_capacity(self):
+        m.Room.objects.all().update(capacity=None)
+        for kind in ["teaching", "exams"]:
+            state, message, _ = solve(self.plan, kind, lambda: False, seconds=1)
+            self.assertIn(state, ["infeasible", "invalid"], message)
+
+    def test_unknown_capacity_does_not_allocate_exam_candidates(self):
+        room = m.Room.objects.first()
+        room.capacity = None
+        row = {"exam": 1, "learner_ids": [1, 2, 3], "teacher_ids": []}
+        allocation = exam_allocation(row, [room])
+        self.assertEqual(allocation[0]["learner_ids"], [])
 
     def test_exam_solver_multi_room_and_gaps(self):
         floor = m.Floor.objects.first()

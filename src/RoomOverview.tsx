@@ -202,7 +202,9 @@ export default function RoomOverview({
                         <span className="room-tile-code">{room.code}</span>
                       )}
                       <span className="room-tile-capacity">
-                        {room.capacity} Plätze
+                        {room.capacity == null
+                          ? "Kapazität offen"
+                          : `${room.capacity} Plätze`}
                       </span>
                       <span className="room-tile-equipment">
                         {room.equipment?.length
@@ -237,7 +239,11 @@ export default function RoomOverview({
                     </div>
                     <div>
                       <dt>Kapazität</dt>
-                      <dd>{selected.capacity} Plätze</dd>
+                      <dd>
+                        {selected.capacity == null
+                          ? "Noch nicht erfasst"
+                          : `${selected.capacity} Plätze`}
+                      </dd>
                     </div>
                   </dl>
                   <div className="equipment-list">
