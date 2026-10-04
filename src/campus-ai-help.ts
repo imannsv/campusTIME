@@ -1,9 +1,30 @@
 import knowledge from "../shared/campus-ai-knowledge.json";
+import smalltalk from "../shared/campus-ai-smalltalk.json";
 import type { Row } from "./api";
 import { replyActions } from "./campus-ai-actions";
 
 export { knowledge };
 export function campusHelp(question: string, context: Row) {
+  const socialText = question
+    .trim()
+    .toLocaleLowerCase("de")
+    .replace(/[.!?]+$/, "")
+    .replace(/,/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const social = smalltalk.find((item) => item.phrases.includes(socialText));
+  if (social)
+    return {
+      answer: social.answer,
+      intent: social.intent,
+      mode: "help",
+      model: null,
+      sources: [],
+      actions: [],
+      auto_action: null,
+      changed: false,
+      revision: context.revision,
+    };
   const normalized = question.toLocaleLowerCase("de");
   const guides = knowledge
     .map((item) => ({

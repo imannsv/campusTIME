@@ -76,6 +76,28 @@ class CampusAITests(TestCase):
             ],
         )
 
+    def test_social_phrases_are_short_and_do_not_hide_real_questions(self):
+        for question, intent in [
+            ("Hallo, Freddy!", "greeting"),
+            ("Guten Morgen.", "greeting"),
+            ("Wie heißt du?", "identity"),
+            ("Danke!", "thanks"),
+        ]:
+            with (
+                self.subTest(question=question),
+                patch("planner.campus_ai.ollama_request") as model,
+            ):
+                response = self.ask(question=question, use_model=True)
+                self.assertEqual(response.data.get("intent"), intent)
+                self.assertEqual(response.data["actions"], [])
+                self.assertEqual(response.data["sources"], [])
+                self.assertFalse(response.data["changed"])
+                model.assert_not_called()
+        response = self.ask(question="Hi, wie lege ich einen neuen Jahrgang an?")
+        self.assertNotIn("intent", response.data)
+        self.assertIn("Schritt 5", response.data["answer"])
+        self.assertEqual(response.data["actions"][0]["id"], "cohorts")
+
     def test_context_is_tenant_scoped_and_does_not_return_person_names(self):
         other = m.Institution.objects.create(slug="ai-other", name="Andere Uni")
         m.Room.objects.create(
@@ -454,3 +476,30 @@ class CampusAITests(TestCase):
         self.assertEqual(result.data["facts"]["view_cohort"]["id"], cohort.id)
         self.assertEqual(len(result.data["semesters"]), 6)
         self.assertEqual(sum(item["credits"] for item in result.data["semesters"]), 180)
+
+    def test_greeting_keeps_freddy_identity_and_does_not_offer_setup_actions(self):
+        def wrong_model(path, body=None, **kwargs):
+            if path == "/api/tags":
+                return {"models": [{"name": "qwen3.5:2b"}]}
+            return {
+                "done": True,
+                "message": {"content": "Hallo Freddy. Wie kann ich dir helfen?"},
+            }
+
+        with patch(
+            "planner.campus_ai.ollama_request", side_effect=wrong_model
+        ) as model:
+            result = self.ask(
+                question="HI",
+                use_model=True,
+                history=[{"role": "assistant", "content": "Hallo Freddy."}],
+            )
+        self.assertEqual(
+            result.data["answer"],
+            "Hi! Ich bin Freddy, dein CampusAI-Assistent. Wie kann ich dir helfen?",
+        )
+        self.assertEqual(result.data["actions"], [])
+        self.assertEqual(result.data["sources"], [])
+        self.assertIsNone(result.data["auto_action"])
+        self.assertFalse(result.data["changed"])
+        model.assert_not_called()

@@ -141,6 +141,8 @@ ein Stockwerk muss zum angegebenen Bereich gehören. Kontextantworten enthalten
 `view`, `proactive` mit bis zu zwei passenden Hinweisen und Aktionen sowie
 `action_requirements`. Die Strukturprüfung verwendet die ausgewählte Lehrplanversion.
 Chatantworten enthalten `actions: [{id, label}]` und `auto_action: id|null`.
+Reine Begrüßungen, Namensfragen und Dank erhalten zusätzlich `intent:
+greeting|identity|thanks`, leere Aktionen und Quellen und keinen Modellaufruf.
 Nur eindeutige Befehle ergeben eine automatische UI-Aktion. Der Browser prüft
 die ID gegen `shared/campus-ai-actions.json` und öffnet eine Ansicht oder ein
 ungespeichertes Formular. `view_cohort` wählt für den Einrichtungsschritt Jahrgänge

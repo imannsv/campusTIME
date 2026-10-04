@@ -490,9 +490,11 @@ export default function CampusAI({
                 <strong>
                   {message.role === "user"
                     ? "Du"
-                    : message.mode === "local"
-                      ? "Freddy · lokale KI"
-                      : "Freddy · Schnellhilfe"}
+                    : message.intent
+                      ? "Freddy"
+                      : message.mode === "local"
+                        ? "Freddy · lokale KI"
+                        : "Freddy · Schnellhilfe"}
                 </strong>
                 <div className="campus-ai-answer">{message.content}</div>
                 {message.service_note && (
@@ -536,7 +538,7 @@ export default function CampusAI({
                     ))}
                   </div>
                 )}
-                {message.role === "assistant" && (
+                {message.role === "assistant" && !message.intent && (
                   <small>
                     Keine Daten geändert · Datenstand {message.revision}
                   </small>

@@ -235,3 +235,13 @@ Demo-Browserabläufe und die zwei lokalen Assistentenabläufe einschließlich
 echter Ollama-Antwort. Desktop und Mobilansicht wurden visuell geprüft.
 Das lokale Modell antwortete in diesem Durchlauf nach ungefähr 54 Sekunden;
 kleine Modelle können weiterhin sprachliche und inhaltliche Fehler enthalten.
+
+## Ergänzung: Begrüßung und Freddys Identität (04.10.2026)
+
+Der gemeldete Fall „HI“ → „Hallo Freddy“ wurde mit einer nachgebildeten
+Modellantwort reproduziert. Reine Begrüßungen, Namensfragen und Dank erhalten
+jetzt eine gemeinsame, feste Antwort ohne Modellaufruf, Aktionen, Quellen oder
+Datenstand-Zeile. Fachfragen mit vorangestelltem Gruß bleiben Fachfragen.
+27 Assistenten-Backend-Tests, die gezielten Demo- und lokalen Browserabläufe,
+beide Builds und die Codeprüfungen bestanden. Die Browserprüfung kontrolliert
+die genaue Antwort auf „HI“ und das Fehlen der unpassenden Einrichtungsknöpfe.

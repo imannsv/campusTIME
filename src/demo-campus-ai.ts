@@ -329,8 +329,11 @@ export function demoAIReply(body: Row, context: Row) {
     body.question.length > 2000
   )
     throw new Error("Eine Frage mit höchstens 2.000 Zeichen eingeben.");
+  const response = campusHelp(body.question, context);
   return {
-    ...campusHelp(body.question, context),
-    ...(body.use_model ? { service_note: demoAIStatus.reason } : {}),
+    ...response,
+    ...(body.use_model && !response.intent
+      ? { service_note: demoAIStatus.reason }
+      : {}),
   };
 }

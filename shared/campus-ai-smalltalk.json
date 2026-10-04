@@ -1,0 +1,42 @@
+[
+  {
+    "intent": "greeting",
+    "phrases": [
+      "hi",
+      "hi freddy",
+      "hallo",
+      "hallo freddy",
+      "hey",
+      "hey freddy",
+      "moin",
+      "servus",
+      "guten morgen",
+      "guten tag",
+      "guten abend"
+    ],
+    "answer": "Hi! Ich bin Freddy, dein CampusAI-Assistent. Wie kann ich dir helfen?"
+  },
+  {
+    "intent": "identity",
+    "phrases": [
+      "wer bist du",
+      "wie heißt du",
+      "wie heisst du",
+      "wie heißt du nochmal",
+      "wie heisst du nochmal"
+    ],
+    "answer": "Ich bin Freddy, dein CampusAI-Assistent. Ich helfe dir bei campusTIME, zeige passende Planungshinweise und kann Ansichten und Eingabeformulare öffnen."
+  },
+  {
+    "intent": "thanks",
+    "phrases": [
+      "danke",
+      "dankeschön",
+      "danke freddy",
+      "vielen dank",
+      "super danke",
+      "ok danke"
+    ],
+    "answer": "Sehr gerne!"
+  }
+]

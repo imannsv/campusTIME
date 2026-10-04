@@ -32,6 +32,10 @@ Die Schnellhilfe verwendet hinterlegte Anleitungen zu Einrichtung, Räumen,
 Lehrenden, Studienstruktur, Jahrgängen, Semesterbelastung, Wahlpflichtkursen,
 Prüfungen, Abgaben und öffentlichen Anzeigen. Sie benötigt kein Sprachmodell.
 Unbekannte Fragen werden ausdrücklich als solche gekennzeichnet.
+Reine Begrüßungen, Fragen nach Freddys Namen und Dank werden ohne Sprachmodell
+kurz beantwortet. Sie lösen keine Einrichtungsvorschläge, Hilfequellen oder
+Navigationsaktionen aus. Eine Begrüßung mit angehängter Fachfrage wird weiterhin
+als Fachfrage behandelt. Freddy ist der Name des Assistenten, nicht der Verwaltung.
 
 Das Backend berechnet Hinweise aus dem aktuellen Datenbestand: fehlende
 Lehrende und Verfügbarkeiten, fehlende Wahlpflichtbelegungen, ungeeignete

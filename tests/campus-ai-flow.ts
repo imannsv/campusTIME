@@ -93,6 +93,27 @@ export async function campusAIFlow(page: Page) {
       exact: true,
     }),
   ).toBeEnabled();
+  await page.getByLabel("Deine Frage an Freddy").fill("HI");
+  await chat.getByRole("button", { name: "Frage senden", exact: true }).click();
+  const answer = page.locator(".campus-ai-message.assistant");
+  await expect(answer.locator(".campus-ai-answer")).toHaveText(
+    "Hi! Ich bin Freddy, dein CampusAI-Assistent. Wie kann ich dir helfen?",
+  );
+  await expect(answer.getByRole("button")).toHaveCount(0);
+  await expect(answer.locator("strong")).toHaveText("Freddy");
+  await expect(answer.locator("small")).toHaveCount(0);
+  await page.screenshot({
+    path: "test-results/freddy-greeting.png",
+    fullPage: true,
+    animations: "disabled",
+  });
+  await chat
+    .getByRole("button", { name: "Chat-Optionen", exact: true })
+    .click();
+  await chat
+    .getByRole("button", { name: "Gespräch leeren", exact: true })
+    .click();
+  await expect(answer).toHaveCount(0);
 
   await page
     .getByRole("button", {
@@ -100,7 +121,6 @@ export async function campusAIFlow(page: Page) {
       exact: true,
     })
     .click();
-  const answer = page.locator(".campus-ai-message.assistant");
   await expect(answer).toContainText("Schnellhilfe");
   await expect(answer).toContainText("Schritt 5: Jahrgänge");
   await expect(answer).toContainText("Keine Daten geändert");
