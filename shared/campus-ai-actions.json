@@ -1,0 +1,185 @@
+[
+  {
+    "id": "rooms",
+    "label": "Räume öffnen",
+    "page": "map",
+    "targets": ["räume", "raumverwaltung"],
+    "guides": ["rooms"]
+  },
+  {
+    "id": "teachers",
+    "label": "Lehrende öffnen",
+    "page": "setup",
+    "step": 1,
+    "targets": ["lehrende", "dozenten", "verfügbarkeiten"],
+    "guides": ["teachers"]
+  },
+  {
+    "id": "programs",
+    "label": "Studiengänge öffnen",
+    "page": "setup",
+    "step": 2,
+    "targets": ["studiengänge", "studiengang"],
+    "guides": []
+  },
+  {
+    "id": "structure",
+    "label": "Studienstruktur öffnen",
+    "page": "setup",
+    "step": 3,
+    "targets": ["studienstruktur", "module", "lehrplan"],
+    "guides": ["study"]
+  },
+  {
+    "id": "cohorts",
+    "label": "Jahrgänge öffnen",
+    "page": "setup",
+    "step": 4,
+    "targets": ["jahrgänge", "jahrgang", "semesterbelastung", "studienverlauf"],
+    "guides": ["cohort", "progression"]
+  },
+  {
+    "id": "semester",
+    "label": "Semesterplanung öffnen",
+    "page": "setup",
+    "step": 5,
+    "targets": ["semesterplanung"],
+    "guides": []
+  },
+  {
+    "id": "setup",
+    "label": "Einrichtung öffnen",
+    "page": "setup",
+    "step": 0,
+    "targets": ["einrichtung"],
+    "guides": ["setup"]
+  },
+  {
+    "id": "schedule",
+    "label": "Stundenplanung öffnen",
+    "page": "schedule",
+    "plan": true,
+    "targets": ["stundenplanung", "stundenplan"],
+    "guides": ["schedule"]
+  },
+  {
+    "id": "exams",
+    "label": "Prüfungen öffnen",
+    "page": "exams",
+    "plan": true,
+    "targets": ["prüfungen", "klausuren", "abgaben"],
+    "guides": ["assessments"]
+  },
+  {
+    "id": "courses",
+    "label": "Veranstaltungen öffnen",
+    "page": "data",
+    "resource": "courses",
+    "plan": true,
+    "targets": ["veranstaltungen", "kurse"],
+    "guides": ["electives"]
+  },
+  {
+    "id": "blocks",
+    "label": "Raumblockierungen öffnen",
+    "page": "data",
+    "resource": "blocks",
+    "targets": ["raumblockierungen", "raumsperren"],
+    "guides": ["blocks"]
+  },
+  {
+    "id": "displays",
+    "label": "Öffentliche Anzeigen öffnen",
+    "page": "displays",
+    "targets": ["öffentliche anzeigen", "anzeigen"],
+    "guides": ["display"]
+  },
+  {
+    "id": "students",
+    "label": "Studierendenübersicht öffnen",
+    "page": "students",
+    "targets": ["studierendenübersicht"],
+    "guides": []
+  },
+  {
+    "id": "settings",
+    "label": "Einstellungen öffnen",
+    "page": "settings",
+    "targets": ["einstellungen"],
+    "guides": []
+  },
+  {
+    "id": "add_building",
+    "label": "Bereich hinzufügen",
+    "page": "map",
+    "create": "buildings",
+    "targets": ["einen bereich", "ein gebäude"],
+    "guides": []
+  },
+  {
+    "id": "add_floor",
+    "label": "Stockwerk hinzufügen",
+    "page": "map",
+    "create": "floors",
+    "requires": "buildings",
+    "targets": ["ein stockwerk", "eine etage"],
+    "guides": []
+  },
+  {
+    "id": "add_room",
+    "label": "Raum hinzufügen",
+    "page": "map",
+    "create": "rooms",
+    "requires": "floors",
+    "targets": ["einen raum"],
+    "guides": []
+  },
+  {
+    "id": "add_teacher",
+    "label": "Lehrende hinzufügen",
+    "page": "setup",
+    "step": 1,
+    "create": "people",
+    "targets": ["einen lehrenden", "eine lehrende", "einen dozenten"],
+    "guides": []
+  },
+  {
+    "id": "add_program",
+    "label": "Studiengang hinzufügen",
+    "page": "setup",
+    "step": 2,
+    "create": "programs",
+    "targets": ["einen studiengang"],
+    "guides": []
+  },
+  {
+    "id": "add_cohort",
+    "label": "Jahrgang hinzufügen",
+    "page": "setup",
+    "step": 4,
+    "create": "cohorts",
+    "requires": "approved_version",
+    "targets": ["einen jahrgang"],
+    "guides": []
+  },
+  {
+    "id": "add_exam",
+    "label": "Prüfung hinzufügen",
+    "page": "exams",
+    "plan": true,
+    "create": "exams",
+    "requires": "plan",
+    "targets": ["eine prüfung", "eine klausur", "eine nachschreibeklausur"],
+    "guides": []
+  },
+  {
+    "id": "add_block",
+    "label": "Raumblockierung hinzufügen",
+    "page": "data",
+    "resource": "blocks",
+    "create": "blocks",
+    "requires": "rooms",
+    "targets": ["eine raumblockierung", "eine raumsperre"],
+    "guides": []
+  }
+]

@@ -2,6 +2,8 @@ import type { Row } from "./api";
 import type { Store } from "./demo";
 import { cohortProgression } from "./demo-progression";
 import { campusHelp } from "./campus-ai-help";
+import { checkStructure } from "./demo-study";
+import { proactiveContext } from "./campus-ai-actions";
 
 export const demoAIStatus = {
   ready: false,
@@ -15,6 +17,27 @@ export function demoAIContext(
   selection: Row,
   conflicts: string[],
 ) {
+  if (
+    selection.page &&
+    ![
+      "setup",
+      "schedule",
+      "data",
+      "exams",
+      "map",
+      "students",
+      "displays",
+      "settings",
+    ].includes(selection.page)
+  )
+    throw new Error("Unbekannte Ansicht.");
+  if (
+    selection.step !== undefined &&
+    (!Number.isInteger(Number(selection.step)) ||
+      Number(selection.step) < 0 ||
+      Number(selection.step) > 5)
+  )
+    throw new Error("Gültigen Einrichtungsschritt auswählen.");
   const find = (resource: string, id: any) => {
     if (id === undefined || id === null || id === "") return null;
     if (!Number.isInteger(Number(id)) || Number(id) < 1)
@@ -24,14 +47,26 @@ export function demoAIContext(
     return row;
   };
   const plan = find("plans", selection.plan);
-  const cohort =
+  let cohort =
     find("cohorts", selection.cohort) || find("cohorts", plan?.cohort);
   if (plan && selection.cohort && cohort?.id !== plan.cohort)
     throw new Error("Jahrgang muss zum ausgewählten Semesterplan gehören.");
   const notices: Row[] = [];
-  const notice = (text: string, page: string, severity = "hint") => {
+  const notice = (
+    text: string,
+    page: string,
+    severity = "hint",
+    action?: string,
+    step = 4,
+  ) => {
     if (!notices.some((item) => item.text === text))
-      notices.push({ text, page, severity });
+      notices.push({
+        text,
+        page,
+        severity,
+        action,
+        ...(page === "setup" ? { step } : {}),
+      });
   };
   const rooms = state.data.rooms;
   const teachers = state.data.people.filter(
@@ -45,7 +80,83 @@ export function demoAIContext(
     unit_minutes: state.institution.unit_minutes,
   };
   if (!rooms.length) notice("Noch keine Räume eingerichtet.", "map");
-  if (!teachers.length) notice("Noch keine Lehrenden erfasst.", "setup");
+  if (!teachers.length)
+    notice("Noch keine Lehrenden erfasst.", "setup", "hint", "add_teacher", 1);
+  const building = find("buildings", selection.building);
+  const floor = find("floors", selection.floor);
+  if (building && floor && floor.building !== building.id)
+    throw new Error("Stockwerk muss zum ausgewählten Bereich gehören.");
+  const floors = state.data.floors.filter(
+    (item) => !building || item.building === building.id,
+  );
+  if (!state.data.buildings.length)
+    notice(
+      "Noch kein Bereich angelegt. Beginne mit einem Gebäude oder Campusbereich.",
+      "map",
+      "hint",
+      "add_building",
+    );
+  else if (!floors.length)
+    notice(
+      "In diesem Bereich fehlt noch ein Stockwerk.",
+      "map",
+      "hint",
+      "add_floor",
+    );
+  else if (floor && !rooms.some((room) => room.floor === floor.id))
+    notice(
+      "Auf dem ausgewählten Stockwerk sind noch keine Räume angelegt.",
+      "map",
+      "hint",
+      "add_room",
+    );
+  if (!facts.programs)
+    notice(
+      "Noch kein Studiengang angelegt.",
+      "setup",
+      "hint",
+      "add_program",
+      2,
+    );
+  if (!facts.cohorts)
+    notice("Noch kein Jahrgang angelegt.", "setup", "hint", "add_cohort", 4);
+  const unavailable = teachers.filter(
+    (person) =>
+      !(
+        person.availability?.windows ??
+        person.availability?.weekdays ?? [0, 1, 2, 3, 4]
+      ).length,
+  ).length;
+  if (unavailable)
+    notice(
+      `${unavailable} Lehrende haben keine verfügbaren Zeitfenster. Die Verwaltung sollte die abgestimmten Zeiten ergänzen.`,
+      "setup",
+      "hint",
+      "teachers",
+      1,
+    );
+  const version = find("studyversions", selection.study_version);
+  if (version) {
+    facts.study_version = {
+      id: version.id,
+      name: version.name,
+      status: version.status,
+    };
+    const report = checkStructure(state, version);
+    report.errors.forEach((text: string) =>
+      notice(text, "setup", "error", "structure", 3),
+    );
+    report.warnings.forEach((text: string) =>
+      notice(text, "setup", "hint", "structure", 3),
+    );
+  }
+  if (!state.data.displays.length)
+    notice(
+      "Noch keine öffentliche Anzeige eingerichtet. Prüfe zuerst die veröffentlichten Pläne.",
+      "displays",
+      "hint",
+      "displays",
+    );
   if (plan) {
     const period = find("periods", plan.period)!;
     facts.plan = {
@@ -88,6 +199,9 @@ export function demoAIContext(
       notice(
         "In diesem Semesterplan sind noch keine Veranstaltungen erfasst.",
         "setup",
+        "hint",
+        "semester",
+        5,
       );
     for (const course of courses) {
       if (!course.teachers.length)
@@ -104,6 +218,9 @@ export function demoAIContext(
         notice(
           `${course.name}: Mindestens eine zugeordnete Lehrperson hat keine Zeitfenster.`,
           "setup",
+          "hint",
+          "teachers",
+          1,
         );
       const roster = new Set<number>(course.learners);
       let unknown = 0;
@@ -153,13 +270,22 @@ export function demoAIContext(
       notice(
         "Dieser Plan hat keine Zuordnung zu einem Jahrgang mit Lehrplanversion. Prüfungsanforderungen können daher nicht übernommen werden.",
         "setup",
+        "hint",
+        "semester",
+        5,
       );
     notice(
       "Diese Browser-Demo prüft einfache Konflikte. Die vollständige Soll- und Verfügbarkeitsprüfung erfolgt im Backend.",
       "schedule",
     );
+    notices[notices.length - 1].context_only = true;
   }
   let semesters: Row[] = [];
+  const viewCohort = find("cohorts", selection.view_cohort);
+  if (selection.page === "setup" && Number(selection.step) >= 4 && viewCohort) {
+    cohort = viewCohort;
+    facts.view_cohort = { id: cohort.id, name: cohort.name };
+  }
   if (cohort) {
     facts.cohort = { id: cohort.id, name: cohort.name };
     if (
@@ -177,13 +303,23 @@ export function demoAIContext(
   notices.sort(
     (a, b) => Number(a.severity !== "error") - Number(b.severity !== "error"),
   );
-  return {
+  const result = {
     revision: state.institution.revision,
     facts,
     semesters,
     notices: notices.slice(0, 40),
     notice_count: notices.length,
+    action_requirements: {
+      buildings: !!state.data.buildings.length,
+      floors: !!floors.length,
+      rooms: !!rooms.length,
+      plan: !!plan,
+      approved_version: state.data.studyversions.some(
+        (item) => item.status === "approved",
+      ),
+    },
   };
+  return { ...result, ...proactiveContext({ ...result, notices }, selection) };
 }
 
 export function demoAIReply(body: Row, context: Row) {

@@ -8,17 +8,16 @@ import {
   LoaderCircle,
   RefreshCw,
   Send,
-  MessageCircle,
   X,
   ChevronDown,
 } from "lucide-react";
 import { api, type Row, DEMO_MODE } from "./api";
+import FreddyAvatar from "./FreddyAvatar";
+import { actionForGuide } from "./campus-ai-actions";
 
 const questions = [
-  "Was fehlt in diesem Plan?",
   "Wie lege ich einen neuen Jahrgang an?",
   "Wie prüfe ich die Semesterbelastung?",
-  "Wie plane ich Prüfungen und Abgaben?",
 ];
 
 export default function CampusAI({
@@ -26,11 +25,15 @@ export default function CampusAI({
   planId,
   refresh,
   onNavigate,
+  onAction,
+  view,
 }: {
   data: Record<string, Row[]>;
   planId: number | null;
   refresh: number;
   onNavigate: (page: string) => void;
+  onAction: (id: string, selection: Row) => string;
+  view: Row;
 }) {
   const [open, setOpen] = useState(false);
   const [activated, setActivated] = useState(false);
@@ -63,6 +66,7 @@ export default function CampusAI({
     [status, setStatus] = useState<Row | null>(null);
   const [question, setQuestion] = useState(""),
     [messages, setMessages] = useState<Row[]>([]);
+  const [actionFeedback, setActionFeedback] = useState("");
   const [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true),
     [error, setError] = useState("");
@@ -73,11 +77,15 @@ export default function CampusAI({
   const plan = data.plans?.find((item) => item.id === selectedPlanId);
   const cohort =
     plan?.cohort || (!selectedPlanId ? Number(cohortId) || null : null);
-  const selection = { plan: selectedPlanId, cohort };
+  const selection = { plan: selectedPlanId, cohort, ...view };
   const query = new URLSearchParams();
   if (selectedPlanId) query.set("plan", String(selectedPlanId));
   if (cohort) query.set("cohort", String(cohort));
   const selectionQuery = query.toString();
+  Object.entries(view).forEach(([key, value]) => {
+    if (value !== null && value !== undefined) query.set(key, String(value));
+  });
+  const contextQuery = query.toString();
   useEffect(() => {
     if (!activated) return;
     let active = true;
@@ -106,7 +114,7 @@ export default function CampusAI({
     setLoading(true);
     setError("");
     setContext(null);
-    api(`campusai/context/?${selectionQuery}`)
+    api(`campusai/context/?${contextQuery}`)
       .then((result) => {
         if (active) setContext(result);
       })
@@ -120,21 +128,33 @@ export default function CampusAI({
       active = false;
       generation.current++;
     };
-  }, [selectionQuery, refresh, reload, activated]);
+  }, [contextQuery, refresh, reload, activated]);
   useEffect(() => {
     setMessages([]);
     setQuestion("");
+    setActionFeedback("");
   }, [selectionQuery]);
   useEffect(() => {
     if (conversation.current)
-      conversation.current.scrollTop = conversation.current.scrollHeight;
+      conversation.current.scrollTop =
+        messages.length || busy ? conversation.current.scrollHeight : 0;
   }, [messages, busy, open]);
+  function runAction(id: string) {
+    setPicker(null);
+    try {
+      setActionFeedback(onAction(id, selection));
+      setError("");
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
   async function ask(value: string) {
     if (busy || loading || !context || !value.trim()) return;
     const current = generation.current;
     setBusy(true);
     setPicker(null);
     setError("");
+    setActionFeedback("");
     setQuestion("");
     const history = messages
       .slice(-4)
@@ -147,11 +167,18 @@ export default function CampusAI({
         history,
         use_model: useModel,
       });
-      if (generation.current === current)
+      if (generation.current === current) {
         setMessages((items) => [
           ...items,
-          { role: "assistant", content: result.answer, ...result },
+          {
+            role: "assistant",
+            content: result.answer,
+            view_label: context.view?.label,
+            ...result,
+          },
         ]);
+        if (result.auto_action) runAction(result.auto_action);
+      }
     } catch (err) {
       if (generation.current === current) {
         setError((err as Error).message);
@@ -182,7 +209,7 @@ export default function CampusAI({
           }
         }}
       >
-        {open ? <X size={24} /> : <MessageCircle size={25} />}
+        {open ? <X size={24} /> : <FreddyAvatar size={46} decorative />}
       </button>
       {activated && (
         <section
@@ -208,7 +235,7 @@ export default function CampusAI({
         >
           <header className="campus-ai-heading">
             <div className="campus-ai-identity">
-              <MessageCircle size={21} />
+              <FreddyAvatar size={39} busy={busy} active={open} />
               <div>
                 <h2 id="campus-ai-title">Freddy</h2>
                 <span>CampusAI-Assistent</span>
@@ -261,6 +288,9 @@ export default function CampusAI({
               </span>
               <ChevronDown size={14} />
             </button>
+          </div>
+          <div className="campus-ai-view" aria-live="polite">
+            {context?.view?.label || "Ansicht laden …"}
           </div>
           {picker === "plan" && (
             <div
@@ -364,6 +394,7 @@ export default function CampusAI({
                 onClick={() => {
                   setMessages([]);
                   setError("");
+                  setActionFeedback("");
                   setPicker(null);
                   optionsButton.current?.focus();
                 }}
@@ -392,6 +423,44 @@ export default function CampusAI({
                   Hi, ich bin Freddy, dein CampusAI-Assistent. Wie kann ich dir
                   helfen?
                 </p>
+                {loading ? (
+                  <div className="campus-ai-situation" role="status">
+                    Ich prüfe die aktuelle Ansicht …
+                  </div>
+                ) : (
+                  context && (
+                    <div className="campus-ai-situation">
+                      <span>Hier kann ich dir helfen</span>
+                      {context.proactive?.notices?.length ? (
+                        context.proactive.notices.map(
+                          (notice: Row, index: number) => (
+                            <p key={index}>{notice.text}</p>
+                          ),
+                        )
+                      ) : (
+                        <p>
+                          Für diese Ansicht liegen derzeit keine passenden
+                          Planungshinweise vor. Ich kann dir den nächsten
+                          Schritt zeigen.
+                        </p>
+                      )}
+                      <div
+                        className="campus-ai-actions"
+                        aria-label="Vorschläge zur aktuellen Seite"
+                      >
+                        {context.proactive?.actions?.map((action: Row) => (
+                          <button
+                            key={action.id}
+                            onClick={() => runAction(action.id)}
+                          >
+                            {action.label}
+                            <ArrowRight size={14} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                )}
                 <div
                   className="campus-ai-questions"
                   aria-label="Beispielfragen"
@@ -407,6 +476,11 @@ export default function CampusAI({
                   ))}
                 </div>
               </div>
+            )}
+            {actionFeedback && (
+              <p className="campus-ai-action-feedback" role="status">
+                {actionFeedback}
+              </p>
             )}
             {messages.map((message, index) => (
               <article
@@ -426,6 +500,22 @@ export default function CampusAI({
                     {message.service_note}
                   </p>
                 )}
+                {message.actions?.length > 0 && (
+                  <div
+                    className="campus-ai-actions"
+                    aria-label="Nächste Schritte"
+                  >
+                    {message.actions.map((action: Row) => (
+                      <button
+                        key={action.id}
+                        onClick={() => runAction(action.id)}
+                      >
+                        {action.label}
+                        <ArrowRight size={14} />
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {message.sources?.length > 0 && (
                   <div
                     className="campus-ai-sources"
@@ -434,7 +524,11 @@ export default function CampusAI({
                     {message.sources.map((source: Row) => (
                       <button
                         key={source.id}
-                        onClick={() => onNavigate(source.page)}
+                        onClick={() => {
+                          const action = actionForGuide(source.id);
+                          if (action) runAction(action.id);
+                          else onNavigate(source.page);
+                        }}
                       >
                         {source.title}
                         <ArrowRight size={12} />
@@ -449,6 +543,34 @@ export default function CampusAI({
                 )}
               </article>
             ))}
+            {!!messages.length &&
+              context &&
+              messages.at(-1)?.view_label !== context.view?.label &&
+              !busy && (
+                <div className="campus-ai-situation campus-ai-current-view">
+                  <span>Zur aktuellen Ansicht · {context.view?.label}</span>
+                  <p>
+                    {context.proactive?.notices?.[0]?.text ||
+                      "Ich kann dir hier die nächsten Schritte zeigen."}
+                  </p>
+                  <div
+                    className="campus-ai-actions"
+                    aria-label="Vorschläge zur aktuellen Seite"
+                  >
+                    {context.proactive?.actions
+                      ?.slice(0, 1)
+                      .map((action: Row) => (
+                        <button
+                          key={action.id}
+                          onClick={() => runAction(action.id)}
+                        >
+                          {action.label}
+                          <ArrowRight size={14} />
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
             {busy && (
               <p className="campus-ai-working" role="status">
                 <LoaderCircle className="spin" size={17} />

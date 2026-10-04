@@ -134,6 +134,19 @@ der Voraussetzungen, ungültige Zuordnungen und veraltete Stände sind Fehler.
 - `GET /api/campusai/context/?plan=<id>&cohort=<id>`: aktuelle Fakten, berechnete Hinweise, Semesterbelastung und Revision. Beide Filter sind optional; bei gemeinsamer Auswahl muss der Jahrgang zum Plan gehören.
 - `POST /api/campusai/chat/`: `{ "question": "Wie lege ich einen Jahrgang an?", "plan": 1, "use_model": false, "history": [] }`. `cohort` ist optional; Verlaufseinträge verwenden `role: user|assistant` und `content`.
 
+Beide Kontext-Endpunkte akzeptieren zusätzlich `page` (bekannte Verwaltungsseite),
+`step` (0–5), `resource` (bekannte Stammdatenkategorie), `study_version`, `view_cohort`, `building`
+und `floor`. Alle Datensatz-IDs werden auf die aktuelle Einrichtung geprüft;
+ein Stockwerk muss zum angegebenen Bereich gehören. Kontextantworten enthalten
+`view`, `proactive` mit bis zu zwei passenden Hinweisen und Aktionen sowie
+`action_requirements`. Die Strukturprüfung verwendet die ausgewählte Lehrplanversion.
+Chatantworten enthalten `actions: [{id, label}]` und `auto_action: id|null`.
+Nur eindeutige Befehle ergeben eine automatische UI-Aktion. Der Browser prüft
+die ID gegen `shared/campus-ai-actions.json` und öffnet eine Ansicht oder ein
+ungespeichertes Formular. `view_cohort` wählt für den Einrichtungsschritt Jahrgänge
+den tatsächlich sichtbaren Studienverlauf, unabhängig vom Hintergrundplan.
+Die Endpunkte selbst schreiben keine Datensätze.
+
 Die Antwort enthält `answer`, `mode: help|local`, `model`, `sources`,
 `revision` und stets `changed: false`. Bei Modellproblemen ist `mode: help`
 mit `service_note` gesetzt. Anmeldung, Mandantenzuordnung und beim POST

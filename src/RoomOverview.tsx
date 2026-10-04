@@ -3,13 +3,20 @@ import { DateTime } from "luxon";
 import { api, fmt, Row } from "./api";
 
 type Props = {
+  onContextChange: (context: Row) => void;
   data: Record<string, Row[]>;
   zone: string;
   query: string;
   onEdit: (resource: string, record?: Row, defaults?: Row) => void;
 };
 
-export default function RoomOverview({ data, zone, query, onEdit }: Props) {
+export default function RoomOverview({
+  data,
+  zone,
+  query,
+  onEdit,
+  onContextChange,
+}: Props) {
   const [areaId, setAreaId] = useState<number | null>(null);
   const [floorId, setFloorId] = useState<number | null>(null);
   const [roomId, setRoomId] = useState<number | null>(null);
@@ -23,6 +30,14 @@ export default function RoomOverview({ data, zone, query, onEdit }: Props) {
     .filter((item) => item.building === area?.id)
     .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name, "de"));
   const currentFloor = floors.find((item) => item.id === floorId);
+  useEffect(
+    () =>
+      onContextChange({
+        building: area?.id || null,
+        floor: currentFloor?.id || null,
+      }),
+    [area?.id, currentFloor?.id, onContextChange],
+  );
   const rooms = (data.rooms || [])
     .filter((room) => floors.some((floor) => floor.id === room.floor))
     .filter((room) => !currentFloor || room.floor === currentFloor.id)

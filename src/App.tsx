@@ -42,6 +42,7 @@ import StudySetup from "./StudySetup";
 import StudentOverview from "./StudentOverview";
 import AssessmentBoard from "./AssessmentBoard";
 import CampusAI from "./CampusAI";
+import { campusActions } from "./campus-ai-actions";
 
 type SessionState = {
   authenticated: boolean;
@@ -864,6 +865,9 @@ export default function App() {
   return <Workspace />;
 }
 function Workspace() {
+  const [setupStep, setSetupStep] = useState(0);
+  const [studyContext, setStudyContext] = useState<Row>({});
+  const [roomContext, setRoomContext] = useState<Row>({});
   const [session, setSession] = useState<SessionState | null>(null),
     [boot, setBoot] = useState<Row | null>(null),
     [data, setData] = useState<Record<string, Row[]>>({}),
@@ -975,6 +979,72 @@ function Workspace() {
     setMenu(false);
     if (id === "exams") setResource("exams");
     if (id === "displays") setResource("displays");
+  };
+  const assistantAction = (id: string, selection: Row) => {
+    const action = campusActions.find((item) => item.id === id);
+    if (!action || initial || !boot)
+      throw new Error("Diese Ansicht ist noch nicht verfügbar.");
+    if (modal)
+      throw new Error(
+        "Schließe zuerst das geöffnete Formular. Deine Eingaben bleiben erhalten.",
+      );
+    const selected = data.plans?.find((item) => item.id === selection.plan);
+    const floor =
+      data.floors?.find((item) => item.id === selection.floor) ||
+      data.floors?.find((item) => item.building === selection.building) ||
+      (!selection.building ? data.floors?.[0] : undefined);
+    const building =
+      data.buildings?.find((item) => item.id === selection.building) ||
+      data.buildings?.[0];
+    const version =
+      data.studyversions?.find(
+        (item) =>
+          item.id === selection.study_version && item.status === "approved",
+      ) || data.studyversions?.find((item) => item.status === "approved");
+    const prerequisites: Row = {
+      buildings: building,
+      floors: floor,
+      rooms: data.rooms?.length,
+      approved_version: version,
+      plan: selected,
+    };
+    if (action.requires && !prerequisites[action.requires])
+      throw new Error(
+        "Dafür fehlen noch Voraussetzungen. Richte zuerst die benötigten Stammdaten ein oder wähle einen Semesterplan aus.",
+      );
+    go(action.page);
+    if (action.step !== undefined) setSetupStep(action.step);
+    if (action.resource) setResource(action.resource);
+    if (action.plan && selected) {
+      setPlanId(selected.id);
+      if (selected.id !== planId) {
+        const period = data.periods?.find(
+          (item) => item.id === selected.period,
+        );
+        if (period)
+          setWeek(
+            DateTime.fromISO(period.start, { zone })
+              .startOf("week")
+              .toISODate()!,
+          );
+      }
+    }
+    if (action.create) {
+      const defaults: Row = { code: `NEU-${Date.now().toString(36)}` };
+      if (action.create === "people") defaults.kind = "teacher";
+      if (action.create === "floors") defaults.building = building.id;
+      if (action.create === "rooms" && floor) defaults.floor = floor.id;
+      if (action.create === "cohorts" && version)
+        Object.assign(defaults, {
+          program: version.program,
+          study_version: version.id,
+          entry_year: DateTime.now().year,
+        });
+      if (action.create === "exams" && selected) defaults.plan = selected.id;
+      edit(action.create, undefined, defaults);
+      return `Formular geöffnet: ${action.label}. Es wurde noch nichts gespeichert.`;
+    }
+    return `Ansicht geöffnet: ${action.label.replace(" öffnen", "")}.`;
   };
   async function publish() {
     if (!plan) return;
@@ -1193,6 +1263,9 @@ function Workspace() {
             </div>
           ) : page === "setup" ? (
             <StudySetup
+              step={setupStep}
+              onStepChange={setSetupStep}
+              onContextChange={setStudyContext}
               data={data}
               zone={zone}
               query={search}
@@ -1538,6 +1611,7 @@ function Workspace() {
             </>
           ) : page === "map" ? (
             <RoomOverview
+              onContextChange={setRoomContext}
               data={data}
               zone={zone}
               query={search}
@@ -1866,7 +1940,20 @@ function Workspace() {
           </span>
         </footer>
       </div>
-      <CampusAI data={data} planId={planId} refresh={refresh} onNavigate={go} />
+      <CampusAI
+        data={data}
+        planId={planId}
+        refresh={refresh}
+        onNavigate={go}
+        onAction={assistantAction}
+        view={{
+          page,
+          resource: page === "data" ? resource : "",
+          step: page === "setup" ? setupStep : 0,
+          ...(page === "setup" && setupStep >= 2 ? studyContext : {}),
+          ...(page === "map" ? roomContext : {}),
+        }}
+      />
       {toast && (
         <div className="toast" role="status">
           <CheckCircle2 size={18} />

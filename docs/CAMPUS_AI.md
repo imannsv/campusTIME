@@ -5,12 +5,26 @@
 „Hi, ich bin Freddy, dein CampusAI-Assistent. Wie kann ich dir helfen?“.
 Die kompakte Kontextzeile öffnet eine Auswahl von Plänen und Jahrgängen.
 Im Drei-Punkte-Menü liegen Antwortmodus, Aktualisieren und Gespräch leeren.
-Berechnete Planungshinweise erscheinen im Gespräch. Beispielfragen stehen
+Freddy verwendet einen lokal erzeugten [Blobatar](https://blobatar.dev/) als Avatar,
+ohne externen Avatarabruf. Seine Augen folgen dem Mauszeiger in der gesamten
+Ansicht; im Chat und im geschlossenen Start-Icon. Blobatars Bewegung berücksichtigt
+reduzierte Bewegung und bleibt auf Geräten ohne feinen Zeiger aus.
+Berechnete Planungshinweise erscheinen passend zur
+aktuellen Seite schon beim Öffnen. Einrichtungsschritt, ausgewählte Lehrplanversion
+sowie Bereich und Stockwerk werden dabei berücksichtigt. Beispielfragen stehen
 untereinander unter der Begrüßung und verschwinden nach der ersten Nachricht.
-Die Auswahl im Chat verändert nicht den Plan in der Arbeitsansicht; beim Wechsel
-des aktiven Arbeitsplans übernimmt der Chat den neuen Plan.
-Die erste Version liest Daten und erklärt; sie verändert keine Termine,
-Raumzuordnungen, Lehrpläne oder Veröffentlichungen.
+Die Kontextauswahl allein verändert nicht den Plan in der Arbeitsansicht. Eine
+anschließend ausgeführte Aktion zur Stundenplanung, zu Veranstaltungen oder
+Prüfungen öffnet den gewählten Plan. Beim Wechsel des aktiven Arbeitsplans
+übernimmt der Chat den neuen Plan.
+Freddy kann Ansichten öffnen, Einrichtungsschritte auswählen und Formulare mit
+passenden Vorgaben vorbereiten. „Öffne Prüfungen“, „Öffne die Jahrgänge“ und
+„Lege einen Raum an“ werden als eindeutige Befehle direkt ausgeführt. Bei
+Empfehlungen stehen Schaltflächen bereit. Voraussetzungen werden vorher geprüft;
+ein bereits geöffnetes Formular wird nicht überschrieben. Erst die Verwaltung
+speichert über das reguläre Formular. Freddy speichert, löscht, plant und
+veröffentlicht keine Daten selbstständig. Mehrteilige oder verneinte Befehle
+werden nicht automatisch ausgeführt.
 
 ## Schnellhilfe und Datenprüfung
 
@@ -87,7 +101,7 @@ Schnellhilfe. Gekürzte Modellantworten werden gekennzeichnet.
 ## Daten und Gespräch
 
 Alle echten Backend-Anfragen erfordern Anmeldung und eine zugeordnete Einrichtung.
-Der Kontext enthält Einrichtungszahlen, Plan-/Jahrgangsnamen, Semesterbelastung,
+Der Kontext enthält die aktuelle Ansicht, Einrichtungszahlen, Plan-/Jahrgangsnamen, Semesterbelastung,
 Planungshinweise sowie begrenzte Raum- und Veranstaltungslisten. Einzelne
 Studierenden- und Lehrendennamen sowie E-Mail-Adressen werden nicht in den
 Modellkontext übernommen. Raum-/Veranstaltungsnamen können dennoch interne
@@ -101,18 +115,22 @@ alte Chatantworten werden nicht nachträglich aktualisiert.
 
 Der Gesprächsverlauf liegt im Arbeitsspeicher. Schließen, Wiederöffnen und
 Wechsel zwischen Verwaltungsansichten erhalten das Gespräch, einschließlich
-einer noch laufenden Antwort. Der Chat lässt sich per Schließen-Button, Icon
+des bisherigen Verlaufs. Ein Ansichtswechsel verwirft eine noch laufende Antwort,
+damit sie keine Aktionen mit veraltetem Seitenkontext ausführt.
+Der Chat lässt sich per Schließen-Button, Icon
 oder Escape im Fenster schließen; der Fokus kehrt zum Icon zurück.
 Plan-/Jahrgangswechsel, Neuladen der Seite und Abmelden leeren den Verlauf.
 Er wird nicht als Chat in der Datenbank gespeichert. Für Anschlussfragen werden höchstens vier
 vorherige Nachrichten an das lokale Modell übergeben. Backend: 2.000 Zeichen
 pro Frage, maximal sechs Verlaufsnachrichten und 6.000 Zeichen Verlauf,
 zwölf Chat-Anfragen pro Minute je angemeldetem Benutzer. Es werden keine
-Schreibwerkzeuge an das Modell übergeben.
+Schreibwerkzeuge an das Modell übergeben. Navigationsaktionen stammen aus dem
+gemeinsamen, festgelegten Aktionskatalog; vom Modell gelieferte Aktionen oder
+Werkzeugaufrufe werden nicht ausgeführt.
 
 ## Vercel-Demo
 
-In der Browser-Demo funktioniert campusAI als Schnellhilfe mit einfachen Hinweisen
+In der Browser-Demo funktioniert Freddy mit Navigation, Formularvorbereitung und Schnellhilfe mit einfachen Hinweisen
 aus den Demo-Daten. Der Unterschied zum lokalen Sprachmodell wird sichtbar
 angezeigt. Es gibt keinen Modellaufruf, keine Verbindung zum privaten Rechner
 und weiterhin keinen gemeinsamen Cloud-Datenbestand. Die Demo ersetzt auch
@@ -125,7 +143,8 @@ Semesterbelastung?“ oder „Wie plane ich Prüfungen und Abgaben?“.
 
 Die Backend-Tests verwenden nachgebildete Modellantworten für Fehlerfälle,
 Zugriffsschutz, Kontextaufbereitung und Begrenzungen. Browserprüfungen testen
-Schnellhilfe, Planwechsel, unveränderte Daten und mobile Darstellung.
+Schnellhilfe, Planwechsel, Navigation, Formularvorgaben, verneinte Befehle,
+unveränderte Daten, lokal erzeugte Avatare und mobile Darstellung.
 Der echte lokale Modelldienst kann zusätzlich bei laufender Anwendung geprüft werden:
 
 ```powershell

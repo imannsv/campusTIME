@@ -17,6 +17,41 @@ export async function campusAIFlow(page: Page) {
   await launcher.click();
   const chat = page.getByRole("dialog", { name: "Freddy", exact: true });
   await expect(chat).toBeVisible();
+  const avatar = chat.getByRole("img", { name: "Freddy – Blobatar" });
+  await expect(avatar.locator(".mo-eyes")).toBeVisible();
+  const position = await avatar.boundingBox();
+  await page.mouse.move(position!.x - 150, position!.y + position!.height / 2);
+  await expect
+    .poll(() =>
+      avatar
+        .locator(".mo-eyes")
+        .evaluate((eye) =>
+          Number((eye as SVGElement).style.getPropertyValue("--mo-track-x")),
+        ),
+    )
+    .toBeLessThan(-0.5);
+  await page.mouse.move(position!.x + 180, position!.y + position!.height / 2);
+  await expect
+    .poll(() =>
+      avatar
+        .locator(".mo-eyes")
+        .evaluate((eye) =>
+          Number((eye as SVGElement).style.getPropertyValue("--mo-track-x")),
+        ),
+    )
+    .toBeGreaterThan(0.5);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect
+    .poll(() =>
+      avatar
+        .locator(".mo-eyes")
+        .evaluate((eye) =>
+          Number((eye as SVGElement).style.getPropertyValue("--mo-track-x")),
+        ),
+    )
+    .toBe(0);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect(chat.locator(".campus-ai-view")).toContainText("Stundenplanung");
   await expect(page.getByLabel("Deine Frage an Freddy")).toBeFocused();
   await expect(chat).toContainText(
     "Hi, ich bin Freddy, dein CampusAI-Assistent. Wie kann ich dir helfen?",
@@ -80,6 +115,16 @@ export async function campusAIFlow(page: Page) {
     .click();
   await expect(chat).not.toBeVisible();
   await expect(launcher).toBeFocused();
+  await page.mouse.move(100, 500);
+  await expect
+    .poll(() =>
+      launcher
+        .locator(".mo-eyes")
+        .evaluate((eye) =>
+          Number((eye as SVGElement).style.getPropertyValue("--mo-track-x")),
+        ),
+    )
+    .toBeLessThan(-0.5);
   await launcher.click();
   await expect(answer).toHaveCount(2);
   await answer
@@ -88,6 +133,57 @@ export async function campusAIFlow(page: Page) {
     .click();
   await expect(chat).toBeVisible();
   await expect(answer).toHaveCount(2);
+  await expect(
+    page.locator('.study-steps [aria-current="step"]'),
+  ).toContainText("Jahrgänge");
+  await expect(chat.locator(".campus-ai-view")).toContainText(
+    "Einrichtung · Jahrgänge",
+  );
+  const send = async (question: string) => {
+    await page.getByLabel("Deine Frage an Freddy").fill(question);
+    await expect(
+      chat.getByRole("button", { name: "Frage senden" }),
+    ).toBeEnabled();
+    await chat.getByRole("button", { name: "Frage senden" }).click();
+  };
+  await send("Öffne Räume");
+  await expect(
+    page.getByRole("region", { name: "Raumverwaltung" }),
+  ).toBeVisible();
+  await expect(chat.locator(".campus-ai-view")).toHaveText("Räume");
+  await expect(chat.getByRole("status")).toContainText(
+    "Ansicht geöffnet: Räume",
+  );
+  await send("Lege einen Raum an");
+  const roomForm = page.getByRole("dialog", {
+    name: "Räume hinzufügen",
+    exact: true,
+  });
+  await expect(roomForm).toBeVisible();
+  await expect(
+    roomForm.getByRole("combobox", { name: "Stockwerke", exact: true }),
+  ).not.toHaveValue("");
+  await roomForm
+    .getByRole("button", { name: "Schließen", exact: true })
+    .click();
+  await expect(roomForm).toHaveCount(0);
+  await send("Öffne Prüfungen nicht");
+  await expect(answer.last()).toContainText("Prüfungen");
+  await expect(
+    page.getByRole("region", { name: "Raumverwaltung" }),
+  ).toBeVisible();
+  await send("Öffne die Lehrende");
+  await expect(
+    page.locator('.study-steps [aria-current="step"]'),
+  ).toContainText("Lehrende");
+  await expect(chat.locator(".campus-ai-view")).toContainText(
+    "Einrichtung · Lehrende",
+  );
+  await page.screenshot({
+    path: "test-results/freddy-page-actions.png",
+    fullPage: true,
+    animations: "disabled",
+  });
   await page
     .getByRole("button", { name: "Kontext für Freddy auswählen" })
     .click();

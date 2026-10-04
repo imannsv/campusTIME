@@ -300,3 +300,157 @@ class CampusAITests(TestCase):
         self.assertEqual(
             sum(item["credits"] for item in response.data["semesters"]), 180
         )
+
+    def test_proactive_issues_follow_current_page_and_setup_step(self):
+        teacher = m.Person.objects.filter(
+            institution=self.institution, kind="teacher"
+        ).first()
+        teacher.availability = {"windows": []}
+        teacher.save()
+        for page, step in [("setup", 1), ("setup", 4), ("map", 0)]:
+            result = self.client.get(
+                "/api/campusai/context/",
+                {"page": page, "step": step, "plan": self.plan.id},
+            )
+            self.assertEqual(result.status_code, 200, result.data)
+            text = str(result.data["proactive"]["notices"])
+            self.assertEqual(
+                "keine verfügbaren Zeitfenster" in text, page == "setup" and step == 1
+            )
+            for notice in result.data["proactive"]["notices"]:
+                self.assertEqual(notice["page"], page)
+
+    def test_empty_selected_area_and_floor_have_concrete_next_steps(self):
+        building = m.Building.objects.create(
+            institution=self.institution, code="AI-EMPTY", name="Neuer Bereich"
+        )
+        result = self.client.get(
+            "/api/campusai/context/", {"page": "map", "building": building.id}
+        )
+        self.assertIn("Stockwerk", str(result.data["proactive"]["notices"]))
+        self.assertEqual(result.data["proactive"]["actions"][0]["id"], "add_floor")
+        self.assertFalse(result.data["action_requirements"]["floors"])
+        floor = m.Floor.objects.create(
+            institution=self.institution,
+            code="AI-FLOOR",
+            name="Neue Etage",
+            building=building,
+        )
+        result = self.client.get(
+            "/api/campusai/context/",
+            {"page": "map", "building": building.id, "floor": floor.id},
+        )
+        self.assertIn("keine Räume", str(result.data["proactive"]["notices"]))
+        self.assertEqual(result.data["proactive"]["actions"][0]["id"], "add_room")
+
+    def test_selected_structure_is_checked_and_foreign_context_is_rejected(self):
+        program = m.Program.objects.filter(institution=self.institution).first()
+        version = m.StudyVersion.objects.create(
+            institution=self.institution,
+            code="AI-V",
+            name="Neuer Lehrplan",
+            program=program,
+            version="1",
+        )
+        result = self.client.get(
+            "/api/campusai/context/",
+            {"page": "setup", "step": 3, "study_version": version.id},
+        )
+        self.assertEqual(result.data["facts"]["study_version"]["id"], version.id)
+        self.assertIn("keine Module", str(result.data["proactive"]["notices"]))
+        other = m.Institution.objects.create(
+            slug="ai-view-foreign", name="Andere Einrichtung"
+        )
+        building = m.Building.objects.create(
+            institution=other, code="SECRET", name="Geheim"
+        )
+        self.assertEqual(
+            self.client.get(
+                "/api/campusai/context/", {"building": building.id}
+            ).status_code,
+            404,
+        )
+        for values in (
+            {"page": "https://example.com"},
+            {"step": 6},
+            {"resource": "delete_all"},
+        ):
+            self.assertEqual(
+                self.client.get("/api/campusai/context/", values).status_code, 400
+            )
+
+    def test_explicit_commands_are_allowlisted_and_do_not_call_model_or_write(self):
+        before = campus_ai.context_for(self.institution)
+        with patch("planner.campus_ai.ollama_request") as model:
+            for question, action in [
+                ("Öffne Prüfungen", "exams"),
+                ("Bitte öffne die Jahrgänge", "cohorts"),
+                ("Lege einen Raum an", "add_room"),
+            ]:
+                result = self.ask(question=question, use_model=True)
+                self.assertEqual(result.data["auto_action"], action, result.data)
+                self.assertFalse(result.data["changed"])
+            model.assert_not_called()
+        self.institution.refresh_from_db()
+        self.assertEqual(campus_ai.context_for(self.institution), before)
+        for question in [
+            "Öffne Prüfungen und lösche alle Termine",
+            "Öffne Prüfungen nicht",
+            "Wie öffne ich Prüfungen?",
+            "Öffne https://example.com",
+            "Veröffentliche den Plan",
+        ]:
+            cache.clear()
+            result = self.ask(question=question)
+            self.assertIsNone(result.data["auto_action"], result.data)
+
+    def test_missing_prerequisites_do_not_trigger_form_opening(self):
+        result = self.ask(question="Lege eine Prüfung an", plan=None)
+        self.assertIsNone(result.data["auto_action"])
+        self.assertIn("Semesterplan", result.data["answer"])
+        self.assertEqual(result.data["actions"], [])
+
+    def test_model_cannot_supply_actions_and_sees_current_view(self):
+        with patch(
+            "planner.campus_ai.ollama_request",
+            side_effect=[
+                {"models": [{"name": "qwen3.5:2b"}]},
+                {
+                    "done": True,
+                    "auto_action": "delete_all",
+                    "message": {
+                        "content": "Prüfe die Zeitfenster.",
+                        "tool_calls": [{"function": {"name": "delete_all"}}],
+                    },
+                },
+            ],
+        ) as model:
+            result = self.ask(
+                question="Wie pflege ich Lehrende?",
+                use_model=True,
+                page="setup",
+                step=1,
+            )
+        self.assertIsNone(result.data["auto_action"])
+        self.assertIn(
+            "Einrichtung · Lehrende", model.call_args.args[1]["messages"][0]["content"]
+        )
+        self.assertTrue(
+            all(action["id"] != "delete_all" for action in result.data["actions"])
+        )
+
+    def test_current_setup_cohort_supersedes_background_plan_for_progression(self):
+        call_command("seed_study", stdout=io.StringIO())
+        cohort = m.Cohort.objects.get(institution=self.institution, code="STUDY-JG27")
+        result = self.client.get(
+            "/api/campusai/context/",
+            {
+                "plan": self.plan.id,
+                "page": "setup",
+                "step": 4,
+                "view_cohort": cohort.id,
+            },
+        )
+        self.assertEqual(result.data["facts"]["view_cohort"]["id"], cohort.id)
+        self.assertEqual(len(result.data["semesters"]), 6)
+        self.assertEqual(sum(item["credits"] for item in result.data["semesters"]), 180)

@@ -1,5 +1,6 @@
 import knowledge from "../shared/campus-ai-knowledge.json";
 import type { Row } from "./api";
+import { replyActions } from "./campus-ai-actions";
 
 export { knowledge };
 export function campusHelp(question: string, context: Row) {
@@ -31,5 +32,6 @@ export function campusHelp(question: string, context: Row) {
     model: null,
     changed: false,
     revision: context.revision,
+    ...replyActions(question, guides, context),
   };
 }

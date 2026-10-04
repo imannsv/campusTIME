@@ -34,6 +34,70 @@
 .campus-ai-launcher:hover {
   background: #183c61;
 }
+.freddy-avatar {
+  display: block;
+  flex-shrink: 0;
+}
+.campus-ai-view {
+  padding: 0 18px 10px;
+  color: #64778b;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+.campus-ai-situation {
+  margin-top: 18px;
+}
+.campus-ai-situation > span {
+  display: block;
+  font-size: 10px;
+  color: #64778b;
+  margin-bottom: 6px;
+}
+.campus-ai-welcome .campus-ai-situation p {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.campus-ai-current-view p {
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 6px 0;
+}
+.campus-ai-actions {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+.campus-ai-actions button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  white-space: normal;
+  padding: 9px 11px;
+  border-radius: 8px;
+  border: 1px solid #dce5ee;
+  background: white;
+  color: var(--navy);
+  font-size: 12px;
+  cursor: pointer;
+}
+.campus-ai-actions button svg {
+  flex-shrink: 0;
+}
+.campus-ai-actions button:hover {
+  background: #edf3f8;
+}
+.campus-ai-action-feedback {
+  font-size: 11px;
+  color: #2f7469;
+  padding: 9px 11px;
+  background: #eef7f4;
+  border-radius: 8px;
+  line-height: 1.6;
+}
 .campus-ai-launcher:focus-visible,
 .campus-ai button:focus-visible,
 .campus-ai summary:focus-visible {
@@ -221,7 +285,7 @@
   padding: 16px 14px;
 }
 .campus-ai-welcome {
-  padding: 16px 4px;
+  padding: 8px 4px;
 }
 .campus-ai-welcome p {
   font-size: 17px;

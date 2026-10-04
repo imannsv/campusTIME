@@ -6,6 +6,9 @@ import CohortProgression from "./CohortProgression";
 import { assessmentSummary } from "./assessment";
 
 type Props = {
+  step: number;
+  onStepChange: (step: number) => void;
+  onContextChange: (context: Row) => void;
   data: Record<string, Row[]>;
   zone: string;
   query: string;
@@ -18,6 +21,9 @@ type Props = {
 };
 
 export default function StudySetup({
+  step,
+  onStepChange: setStep,
+  onContextChange,
   data,
   zone,
   query,
@@ -28,8 +34,7 @@ export default function StudySetup({
   onOpenExams,
   onOpenStudents,
 }: Props) {
-  const [step, setStep] = useState(0),
-    [programId, setProgramId] = useState(0),
+  const [programId, setProgramId] = useState(0),
     [versionId, setVersionId] = useState(0),
     [cohortId, setCohortId] = useState(0);
   const [teachers, setTeachers] = useState<Row[]>([]),
@@ -50,6 +55,14 @@ export default function StudySetup({
       (!version || item.study_version === version.id),
   );
   const cohort = cohorts.find((item) => item.id === cohortId) || cohorts[0];
+  useEffect(
+    () =>
+      onContextChange({
+        study_version: version?.id || null,
+        view_cohort: cohort?.id || null,
+      }),
+    [version?.id, cohort?.id, onContextChange],
+  );
   const modules = data.modules.filter(
     (item) => item.study_version === version?.id,
   );

@@ -20,6 +20,51 @@ class ChatThrottle(SimpleRateThrottle):
 class Selection(serializers.Serializer):
     plan = serializers.IntegerField(min_value=1, required=False, allow_null=True)
     cohort = serializers.IntegerField(min_value=1, required=False, allow_null=True)
+    page = serializers.ChoiceField(
+        choices=[
+            "setup",
+            "schedule",
+            "data",
+            "exams",
+            "map",
+            "students",
+            "displays",
+            "settings",
+        ],
+        required=False,
+    )
+    step = serializers.IntegerField(min_value=0, max_value=5, required=False)
+    resource = serializers.ChoiceField(
+        choices=[
+            "",
+            "areas",
+            "programs",
+            "studyversions",
+            "modules",
+            "teachingunits",
+            "cohorts",
+            "groups",
+            "people",
+            "periods",
+            "buildings",
+            "floors",
+            "rooms",
+            "curricula",
+            "plans",
+            "courses",
+            "exams",
+            "blocks",
+            "displays",
+            "assessments",
+        ],
+        required=False,
+    )
+    study_version = serializers.IntegerField(
+        min_value=1, required=False, allow_null=True
+    )
+    view_cohort = serializers.IntegerField(min_value=1, required=False, allow_null=True)
+    building = serializers.IntegerField(min_value=1, required=False, allow_null=True)
+    floor = serializers.IntegerField(min_value=1, required=False, allow_null=True)
 
 
 class ChatMessage(serializers.Serializer):
@@ -57,7 +102,23 @@ def selected_context(request, values):
         raise serializers.ValidationError(
             "Jahrgang muss zum ausgewählten Semesterplan gehören."
         )
-    return campus_ai.context_for(institution, plan, cohort)
+    for field, model in (
+        ("study_version", m.StudyVersion),
+        ("view_cohort", m.Cohort),
+        ("building", m.Building),
+        ("floor", m.Floor),
+    ):
+        if values.get(field):
+            obj = get_object_or_404(model, institution=institution, id=values[field])
+            if (
+                field == "floor"
+                and values.get("building")
+                and obj.building_id != values["building"]
+            ):
+                raise serializers.ValidationError(
+                    "Stockwerk muss zum ausgewählten Bereich gehören."
+                )
+    return campus_ai.context_for(institution, plan, cohort, values)
 
 
 @api_view(["GET"])

@@ -15,8 +15,10 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@blobatar/react": "2.7.0",
     "@fontsource/dm-sans": "^5.3.0",
     "@fontsource/manrope": "^5.3.0",
+    "blobatar": "2.7.0",
     "lucide-react": "^1.51.0",
     "luxon": "^3.7.2",
     "react": "^19.3.0",

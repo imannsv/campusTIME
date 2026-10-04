@@ -55,6 +55,9 @@ angelegt. Es enthält sechs Semester, 180 CP und Jahrgang dWI27.
 ## Bedienung
 
 Das **Chat-Icon unten rechts** öffnet Freddy, den CampusAI-Assistenten, mit Bedienhilfe und aktuellen Planungshinweisen.
+Freddy hat einen Blobatar-Avatar, berücksichtigt die aktuelle Seite und öffnet
+passende Ansichten oder vorbereitete Formulare, etwa mit „Öffne Prüfungen“.
+Gespeichert wird über die regulären Eingabeformulare.
 Optional kann ein eigenes lokales Sprachmodell über Ollama Fragen formuliert
 beantworten, ohne kostenpflichtige Modell-API. Auf Vercel steht die Schnellhilfe
 zur Verfügung. Einrichtung, Datenschutz und Grenzen: [campusAI](docs/CAMPUS_AI.md).

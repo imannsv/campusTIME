@@ -210,3 +210,28 @@ Menübedienung mit Escape und Fokus-Rückgabe, erhaltenes Gespräch und unverän
 Daten. Die Vorschlagsliste hat auf Desktop und bei 390 Pixel Breite keinen
 horizontalen Überlauf. Desktop, mobile Begrüßung und die Kontextauswahl wurden
 visuell geprüft. Der Systemtext des lokalen Modells verwendet ebenfalls Freddy.
+
+## Ergänzung: Seitenkontext, Aktionen und Blobatar (04.10.2026)
+
+Freddy verwendet einen angepassten, runden Blobatar mit offenen Augen und
+Mintfarbe. Mausverfolgung und dezente Grundbewegung laufen lokal über Blobatars
+offizielle React- und Gaze-Anbindung. Reduzierte Bewegung wird berücksichtigt.
+
+Der Kontext berücksichtigt Seite, Einrichtungsschritt, Lehrplanversion, sichtbaren
+Jahrgang sowie Bereich und Stockwerk. Hinweise und Vorschläge sind auf diese
+Ansicht begrenzt. Ansichten und Formulare werden über einen gemeinsamen
+Aktionskatalog geöffnet; Speichern und Veröffentlichen bleiben reguläre Aktionen
+der Verwaltung. Verneinte, unbekannte oder mehrteilige Befehle lösen keine
+automatische Aktion aus. Modell-Werkzeugaufrufe werden nicht ausgeführt.
+
+Die 25 campusAI-Backend-Tests bestanden. Hinzugekommen sind Seitenbezug,
+Lehrplan-/Jahrgangsprüfung, Voraussetzungen, fremde Kontext-IDs und erlaubte
+Navigationsbefehle. Der Browserablauf prüft Augenbewegung links/rechts, reduzierte
+Bewegung, den Avatar im Start-Icon, Navigation zum richtigen Einrichtungsschritt,
+Formularöffnung mit Stockwerksvorgabe, Negation und unveränderte Daten.
+
+Abschließend bestanden alle 85 Backend-Tests, beide Builds, alle sieben
+Demo-Browserabläufe und die zwei lokalen Assistentenabläufe einschließlich
+echter Ollama-Antwort. Desktop und Mobilansicht wurden visuell geprüft.
+Das lokale Modell antwortete in diesem Durchlauf nach ungefähr 54 Sekunden;
+kleine Modelle können weiterhin sprachliche und inhaltliche Fehler enthalten.
