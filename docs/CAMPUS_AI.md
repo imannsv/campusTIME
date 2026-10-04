@@ -32,10 +32,24 @@ Die Schnellhilfe verwendet hinterlegte Anleitungen zu Einrichtung, Räumen,
 Lehrenden, Studienstruktur, Jahrgängen, Semesterbelastung, Wahlpflichtkursen,
 Prüfungen, Abgaben und öffentlichen Anzeigen. Sie benötigt kein Sprachmodell.
 Unbekannte Fragen werden ausdrücklich als solche gekennzeichnet.
-Reine Begrüßungen, Fragen nach Freddys Namen und Dank werden ohne Sprachmodell
-kurz beantwortet. Sie lösen keine Einrichtungsvorschläge, Hilfequellen oder
+Reine Begrüßungen (auch „Hi 👋“), Fragen nach Freddys Namen, Fähigkeiten und Dank
+werden direkt im Browser beantwortet, während Planungshinweise noch laden oder
+der Dienst nicht erreichbar ist. Sie lösen keine Einrichtungsvorschläge, Hilfequellen oder
 Navigationsaktionen aus. Eine Begrüßung mit angehängter Fachfrage wird weiterhin
 als Fachfrage behandelt. Freddy ist der Name des Assistenten, nicht der Verwaltung.
+
+Für häufige Bedienfragen gibt es geprüfte Fragevarianten und gezielte Antworten in
+`shared/campus-ai-faq.json`. Nach Laden des aktuellen Kontexts werden diese direkt
+im Browser beantwortet, einschließlich passender Hilfequellen und geprüfter
+Schaltflächen. Auch bei aktivierter lokaler KI wartet eine erkannte Standardfrage
+nicht auf das Modell. Andere Fragen laufen weiterhin über das Backend; unbekannte
+Varianten werden nicht als vermeintlich sichere Standardantwort ersetzt.
+Mehrteilige und verneinte Fragen werden nicht durch einen Teiltreffer abgefangen.
+Die Wissensbasis und Antwortsteuerung stimmen Freddy auf campusTIME ab; die
+Modellgewichte werden dabei nicht trainiert. Freie Modellantworten bleiben von der
+Rechenleistung des lokalen Rechners abhängig. Es kommen keine bezahlten APIs hinzu.
+„Was fehlt hier?“ und „Was empfiehlst du mir hier?“ verwenden die geprüften Hinweise
+und Handlungsvorschläge der aktuellen Ansicht statt einer allgemeinen Modellantwort.
 
 Das Backend berechnet Hinweise aus dem aktuellen Datenbestand: fehlende
 Lehrende und Verfügbarkeiten, fehlende Wahlpflichtbelegungen, ungeeignete
@@ -112,8 +126,12 @@ Modellkontext übernommen. Raum-/Veranstaltungsnamen können dennoch interne
 Informationen enthalten; der Modelldienst muss unter eigener Kontrolle bleiben.
 
 Der Modellkontext ist ein Ausschnitt: höchstens zehn Hinweise, acht Veranstaltungen
-und acht Räume. Die Datenprüfung zeigt bis zu 40 Hinweise mit Gesamtzahl an.
-Ein neuer Frageaufruf berechnet die Fakten erneut. **Hinweise aktualisieren**
+und acht Räume. Bei Bedienfragen mit „Wie …“ werden Raum- und Veranstaltungslisten
+weggelassen und höchstens vier Hinweise mitgeschickt. Ein geprüftes Frage-Antwort-
+Beispiel zum erkannten Thema zeigt dem Modell die gewünschten Begriffe und Schritte.
+Die Datenprüfung zeigt bis zu 40 Hinweise mit Gesamtzahl an.
+Ein Backend-Frageaufruf berechnet die Fakten erneut; Standardfragen im Browser
+verwenden den zuletzt geladenen Kontext. **Hinweise aktualisieren**
 lädt die sichtbaren Prüfungen neu. Antworten tragen den verwendeten Datenstand;
 alte Chatantworten werden nicht nachträglich aktualisiert.
 

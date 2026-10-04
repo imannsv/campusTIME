@@ -102,6 +102,34 @@ export async function campusAIFlow(page: Page) {
   await expect(answer.getByRole("button")).toHaveCount(0);
   await expect(answer.locator("strong")).toHaveText("Freddy");
   await expect(answer.locator("small")).toHaveCount(0);
+  // Both greetings and known FAQs should still work when the chat service fails.
+  const chatRequests: string[] = [];
+  await page.route("**/api/campusai/chat/", async (route) => {
+    chatRequests.push(route.request().url());
+    await route.abort();
+  });
+  await page.getByLabel("Deine Frage an Freddy").fill("Danke 🙂");
+  await chat.getByRole("button", { name: "Frage senden", exact: true }).click();
+  await expect(answer.last()).toContainText("Sehr gerne!");
+  await page
+    .getByLabel("Deine Frage an Freddy")
+    .fill("Was ist der Unterschied zwischen CP und Unterrichtsstunden?");
+  await chat.getByRole("button", { name: "Frage senden", exact: true }).click();
+  await expect(answer.last()).toContainText("beides getrennt");
+  await expect(answer.last()).toContainText("nicht doppelt gezählt");
+  await expect(
+    answer
+      .last()
+      .getByRole("button", { name: "Studienstruktur öffnen", exact: true }),
+  ).toBeVisible();
+  expect(chatRequests).toEqual([]);
+  await page.getByLabel("Deine Frage an Freddy").fill("Was fehlt hier?");
+  await chat.getByRole("button", { name: "Frage senden", exact: true }).click();
+  await expect(answer.last()).toContainText(
+    /Stundenplanung|keine passenden Planungshinweise/,
+  );
+  expect(chatRequests).toEqual([]);
+  await page.unroute("**/api/campusai/chat/");
   await page.screenshot({
     path: "test-results/freddy-greeting.png",
     fullPage: true,

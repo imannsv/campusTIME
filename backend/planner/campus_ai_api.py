@@ -78,7 +78,7 @@ class ChatInput(Selection):
     use_model = serializers.BooleanField(default=False)
 
 
-def selected_context(request, values):
+def selected_context(request, values, *, social=False):
     institution = tenant(request)
     plan = (
         get_object_or_404(
@@ -118,6 +118,9 @@ def selected_context(request, values):
                 raise serializers.ValidationError(
                     "Stockwerk muss zum ausgewählten Bereich gehören."
                 )
+    # Still validate tenant ownership above; greetings need no planning queries.
+    if social:
+        return {"revision": institution.revision}
     return campus_ai.context_for(institution, plan, cohort, values)
 
 
@@ -147,7 +150,9 @@ def chat(request):
     return Response(
         campus_ai.reply(
             values["question"],
-            selected_context(request, values),
+            selected_context(
+                request, values, social=bool(campus_ai.social_reply(values["question"]))
+            ),
             values.get("history"),
             values["use_model"],
         )

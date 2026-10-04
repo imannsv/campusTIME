@@ -76,12 +76,92 @@ class CampusAITests(TestCase):
             ],
         )
 
+    def test_greeting_does_not_wait_for_planning_checks(self):
+        with (
+            patch(
+                "planner.campus_ai.context_for",
+                side_effect=AssertionError("Greeting waited for planning"),
+            ) as planning,
+            patch("planner.campus_ai.ollama_request") as model,
+        ):
+            response = self.ask(question="Hi", use_model=True)
+            planning.assert_not_called()
+            model.assert_not_called()
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["intent"], "greeting")
+            self.assertEqual(response.data["revision"], self.institution.revision)
+
+    def test_curated_questions_bypass_model_without_inventing_actions(self):
+        with patch("planner.campus_ai.ollama_request") as model:
+            for entry in campus_ai.faq():
+                if entry.get("kind") == "issues":
+                    continue
+                with self.subTest(entry=entry["id"]):
+                    cache.clear()
+                    result = self.ask(question=entry["phrases"][0], use_model=True)
+                    self.assertEqual(result.data["answer"], entry["answer"])
+                    self.assertEqual(result.data["sources"][0]["id"], entry["guide"])
+                    self.assertEqual(result.data["mode"], "help")
+                    self.assertIsNone(result.data["auto_action"])
+                    self.assertFalse(result.data["changed"])
+            model.assert_not_called()
+        # A compound or negated request must not be replaced by a stock answer.
+        self.assertIsNone(
+            campus_ai.faq_for("Wie lege ich einen Raum an, aber ohne Stockwerk?")
+        )
+        self.assertIsNone(campus_ai.faq_for("Wie plane ich Prüfungen nicht?"))
+
+    def test_greeting_fast_path_still_validates_selection_and_auth(self):
+        other = m.Institution.objects.create(
+            slug="ai-social-foreign", name="Andere Uni"
+        )
+        building = m.Building.objects.create(
+            institution=other, code="OTHER", name="Andere"
+        )
+        self.assertEqual(self.ask(question="Hi", building=building.id).status_code, 404)
+        self.assertEqual(self.ask(question="Hi", plan=-1).status_code, 400)
+        self.client.force_authenticate(None)
+        self.assertEqual(self.ask(question="Hi").status_code, 403)
+
+    def test_quick_recommendations_follow_current_data_and_view(self):
+        teacher = m.Person.objects.filter(
+            institution=self.institution, kind="teacher"
+        ).first()
+        teacher.availability = {"windows": []}
+        teacher.save()
+        with patch("planner.campus_ai.ollama_request") as model:
+            response = self.ask(
+                question="Was fehlt hier?", page="setup", step=1, use_model=True
+            )
+            self.assertIn("Zeitfenster", response.data["answer"])
+            self.assertTrue(
+                all(
+                    action["id"] == "teachers" or action["id"] == "add_teacher"
+                    for action in response.data["actions"]
+                )
+            )
+            cache.clear()
+            response = self.ask(question="Was fehlt hier?", page="map", use_model=True)
+            self.assertNotIn("Zeitfenster", response.data["answer"])
+            self.assertTrue(
+                all(
+                    action["id"]
+                    in ("rooms", "add_room", "add_floor", "add_building", "blocks")
+                    for action in response.data["actions"]
+                )
+            )
+            self.assertFalse(response.data["changed"])
+            model.assert_not_called()
+
     def test_social_phrases_are_short_and_do_not_hide_real_questions(self):
         for question, intent in [
             ("Hallo, Freddy!", "greeting"),
+            ("Hi 👋", "greeting"),
+            ("Hiii!!", "greeting"),
             ("Guten Morgen.", "greeting"),
             ("Wie heißt du?", "identity"),
             ("Danke!", "thanks"),
+            ("Was kannst du?", "capabilities"),
         ]:
             with (
                 self.subTest(question=question),
@@ -154,7 +234,10 @@ class CampusAITests(TestCase):
         side_effect=campus_ai.LocalModelError("Modell nicht erreichbar."),
     )
     def test_unavailable_model_returns_explicit_help(self, request):
-        response = self.ask(use_model=True)
+        response = self.ask(
+            question="Wie lege ich einen Jahrgang an, wenn ich zwei Gruppen habe?",
+            use_model=True,
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["mode"], "help")
         self.assertIn("nicht erreichbar", response.data["service_note"])
@@ -175,7 +258,9 @@ class CampusAITests(TestCase):
 
         with patch("planner.campus_ai.ollama_request", side_effect=model):
             response = self.ask(
-                use_model=True, history=[{"role": "assistant", "content": "Alte Daten"}]
+                question="Wie lege ich einen Jahrgang an, wenn ich zwei Gruppen habe?",
+                use_model=True,
+                history=[{"role": "assistant", "content": "Alte Daten"}],
             )
         self.assertEqual(response.data["mode"], "local")
         self.assertNotIn("<think>", response.data["answer"])
@@ -186,6 +271,8 @@ class CampusAITests(TestCase):
         self.assertEqual(body["messages"][0]["role"], "system")
         self.assertIn("GEPRÜFTE FAKTEN", body["messages"][0]["content"])
         self.assertIn(self.plan.name, body["messages"][0]["content"])
+        self.assertIn("Schritt 5", body["messages"][2]["content"])
+        self.assertIn('"courses": []', body["messages"][0]["content"])
         self.assertFalse(response.data["changed"])
 
     @patch("planner.campus_ai.ollama_request")
@@ -211,7 +298,10 @@ class CampusAITests(TestCase):
                 {"message": {"content": ""}, "done": True},
             ],
         ):
-            response = self.ask(use_model=True)
+            response = self.ask(
+                question="Wie lege ich einen Jahrgang an, wenn ich zwei Gruppen habe?",
+                use_model=True,
+            )
         self.assertEqual(response.data["mode"], "help")
         self.assertIn("keine vollständige", response.data["service_note"])
         self.assertTrue(campus_ai.MODEL_LOCK.acquire(blocking=False))
@@ -232,7 +322,10 @@ class CampusAITests(TestCase):
                 "planner.campus_ai.model_status",
                 return_value={"ready": True, "model": "qwen3.5:2b"},
             ):
-                response = self.ask(use_model=True)
+                response = self.ask(
+                    question="Wie lege ich einen Jahrgang an, wenn ich zwei Gruppen habe?",
+                    use_model=True,
+                )
             self.assertEqual(response.data["mode"], "help")
             self.assertIn("andere Frage", response.data["service_note"])
         finally:
@@ -259,7 +352,10 @@ class CampusAITests(TestCase):
                 },
             ],
         ):
-            response = self.ask(use_model=True)
+            response = self.ask(
+                question="Wie lege ich einen Jahrgang an, wenn ich zwei Gruppen habe?",
+                use_model=True,
+            )
         self.assertEqual(response.data["mode"], "local")
         self.assertIn("gekürzt", response.data["service_note"])
 

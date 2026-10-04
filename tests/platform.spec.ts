@@ -6,6 +6,52 @@ import { assessmentFlow } from "./assessment-flow";
 import { campusAIFlow } from "./campus-ai-flow";
 test.use({ actionTimeout: 10000 });
 
+test("Freddy antwortet sofort auf Hi während Planungshinweise noch laden", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByLabel("Passwort", { exact: true }).fill("Campuszeit2026!");
+  await page.getByRole("button", { name: "Anmelden", exact: true }).click();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const requests: string[] = [];
+  await page.route("**/api/campusai/**", async (route) => {
+    requests.push(route.request().url());
+    if (route.request().url().includes("/context/")) await gate;
+    await route.abort();
+  });
+  try {
+    await page
+      .getByRole("button", { name: "Freddy öffnen", exact: true })
+      .click();
+    await expect(
+      page.getByText("Ich prüfe die aktuelle Ansicht …"),
+    ).toBeVisible();
+    await page.getByLabel("Deine Frage an Freddy").fill("Hi 👋");
+    const send = page.getByRole("button", {
+      name: "Frage senden",
+      exact: true,
+    });
+    await expect(send).toBeEnabled({ timeout: 1500 });
+    const started = Date.now();
+    await send.click();
+    await expect(page.locator(".campus-ai-message.assistant")).toContainText(
+      "Hi! Ich bin Freddy",
+      { timeout: 1500 },
+    );
+    console.log(`Freddy: Hi in ${Date.now() - started} ms, ohne Chat-Anfrage`);
+    expect(requests.some((url) => url.includes("/chat/"))).toBe(false);
+    await page
+      .getByLabel("Deine Frage an Freddy")
+      .fill("Wie plane ich Prüfungen?");
+    await expect(send).toBeDisabled();
+  } finally {
+    release();
+  }
+});
+
 test("campusAI erreicht das echte lokale Sprachmodell", async ({ page }) => {
   test.skip(
     process.env.CAMPUS_AI_LIVE_TEST !== "1",
@@ -43,11 +89,21 @@ test("campusAI erreicht das echte lokale Sprachmodell", async ({ page }) => {
     { timeout: 120000 },
   );
   await page
-    .getByRole("button", {
-      name: "Wie lege ich einen neuen Jahrgang an?",
-      exact: true,
-    })
-    .click();
+    .getByLabel("Deine Frage an Freddy")
+    .fill("Wie lege ich einen Jahrgang an, wenn ich zwei Gruppen habe?");
+  await page.getByRole("button", { name: "Frage senden", exact: true }).click();
+  await expect(
+    page.getByText("Lokale KI formuliert eine Antwort …"),
+  ).toBeVisible();
+  await page.getByLabel("Deine Frage an Freddy").fill("Hi");
+  await expect(
+    page.getByRole("button", { name: "Frage senden", exact: true }),
+  ).toBeEnabled();
+  await page.getByRole("button", { name: "Frage senden", exact: true }).click();
+  await expect(page.locator(".campus-ai-message.assistant")).toContainText(
+    "Hi! Ich bin Freddy",
+    { timeout: 1500 },
+  );
   const response = await responsePromise;
   expect(response.status()).toBe(200);
   const reply = await response.json();
@@ -55,9 +111,9 @@ test("campusAI erreicht das echte lokale Sprachmodell", async ({ page }) => {
   expect(reply.changed).toBe(false);
   expect(reply.service_note).toBeUndefined();
   expect(reply.answer).toMatch(/Schritt 5|Jahrgänge/);
-  await expect(page.locator(".campus-ai-message.assistant")).toContainText(
-    "lokale KI",
-  );
+  await expect(
+    page.locator(".campus-ai-message.assistant").last(),
+  ).toContainText("lokale KI");
   expect(
     await (await page.request.get("/api/campusai/context/")).json(),
   ).toEqual(before);

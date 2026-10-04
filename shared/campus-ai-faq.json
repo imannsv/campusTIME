@@ -1,0 +1,167 @@
+[
+  {
+    "id": "current-issues",
+    "kind": "issues",
+    "guide": "setup",
+    "phrases": [
+      "Was fehlt hier?",
+      "Welche Probleme gibt es hier?",
+      "Was empfiehlst du mir hier?",
+      "Was ist der nächste Schritt?"
+    ],
+    "answer": "Für diese Ansicht liegen derzeit keine passenden Planungshinweise vor. Das bestätigt noch keine vollständige Freigabe. Du kannst über die folgenden Schritte weiterarbeiten."
+  },
+  {
+    "id": "start",
+    "guide": "setup",
+    "phrases": [
+      "Wie fange ich an?",
+      "Wie richte ich campusTIME ein?",
+      "Was muss ich zuerst einpflegen?",
+      "Wo soll ich anfangen?"
+    ],
+    "answer": "Starte mit Bereichen, Stockwerken und Räumen. Danach folgen Lehrende mit Verfügbarkeiten, Studiengänge und Lehrplanversionen, Module und Lehrveranstaltungen, Jahrgänge mit Gruppen und Studierenden und schließlich Semesterpläne. Die Einrichtung führt dich durch diese sechs Schritte."
+  },
+  {
+    "id": "cohort",
+    "guide": "cohort",
+    "phrases": [
+      "Wie lege ich einen neuen Jahrgang an?",
+      "Wie lege ich einen Jahrgang an?",
+      "Wie füge ich einen Jahrgang hinzu?",
+      "Wie erstelle ich einen Jahrgang?",
+      "Wie kann ich einen neuen Jahrgang anlegen?"
+    ],
+    "answer": "Öffne Einrichtung & Studienstruktur → Schritt 5: Jahrgänge. Wähle für den neuen Jahrgang das Aufnahmejahr und eine freigegebene Lehrplanversion. Ergänze Gruppen und ihre Studierendenlisten. In Schritt 6 kannst du anschließend einen Semesterplan anlegen und die passenden Veranstaltungen übernehmen."
+  },
+  {
+    "id": "groups",
+    "guide": "cohort",
+    "phrases": [
+      "Wie teile ich einen Jahrgang auf?",
+      "Wie lege ich A1 und A2 an?",
+      "Wie füge ich Studierende hinzu?",
+      "Wie füge ich Studenten hinzu?"
+    ],
+    "answer": "In Schritt 5: Jahrgänge legst du unter demselben Jahrgang mehrere Gruppen an, beispielsweise A1 und A2. Über Studierendenliste verwalten ordnest du die tatsächlichen Personen zu. Die eingetragene Gruppengröße sollte zur Liste passen."
+  },
+  {
+    "id": "rooms",
+    "guide": "rooms",
+    "phrases": [
+      "Wie lege ich einen Raum an?",
+      "Wie füge ich Räume hinzu?",
+      "Wie richte ich Räume ein?",
+      "Wie erstelle ich einen Raum?"
+    ],
+    "answer": "Öffne Räume und lege zuerst einen Bereich und darin ein Stockwerk an. Danach kannst du Räume mit ihrer vorhandenen Bezeichnung, Kapazität und Ausstattung hinzufügen. Für die konkrete Planung werden zusätzlich Zeitbelegung und Raumsperren geprüft."
+  },
+  {
+    "id": "teachers",
+    "guide": "teachers",
+    "phrases": [
+      "Wie füge ich Lehrende hinzu?",
+      "Wie lege ich einen Dozenten an?",
+      "Wie erfasse ich Verfügbarkeiten?",
+      "Wo trage ich die Zeiten der Dozenten ein?"
+    ],
+    "answer": "In Einrichtung & Studienstruktur → Schritt 2: Lehrende erfasst die Verwaltung die Person und die abgestimmten Zeitfenster. Du kannst mehrere Zeitfenster pro Tag sowie datierte Sperrzeiten eintragen. Ohne Zeitfenster gilt die Person für die Planung als nicht verfügbar."
+  },
+  {
+    "id": "credits",
+    "guide": "study",
+    "phrases": [
+      "Sind CP Unterrichtsstunden?",
+      "Was ist der Unterschied zwischen CP und Unterrichtsstunden?",
+      "Wie werden Credit Points gezählt?",
+      "Wie werden Obermodule und Untermodule gezählt?"
+    ],
+    "answer": "CP beschreiben den Studienumfang; Unterrichtseinheiten beschreiben den zu planenden Unterricht. Deshalb erfasst campusTIME beides getrennt. Obermodule und Teilmodule werden bei den CP nicht doppelt gezählt. Die Version prüfst du in Schritt 4: Studienstruktur, bevor du sie freigibst."
+  },
+  {
+    "id": "versions",
+    "guide": "study",
+    "phrases": [
+      "Wie ändere ich einen Lehrplan?",
+      "Wie ändere ich eine freigegebene Lehrplanversion?",
+      "Was passiert mit bestehenden Jahrgängen bei Lehrplanänderungen?",
+      "Wie lege ich einen Studiengang an?"
+    ],
+    "answer": "Den Studiengang mit Regelstudienzeit, CP-Ziel und Lehrplanversion legst du in Schritt 3 an; Module und Lehrveranstaltungen folgen in Schritt 4. Eine bereits freigegebene Version änderst du über Neue Version aus Kopie. Bestehende Jahrgänge behalten ihre zugewiesene Version."
+  },
+  {
+    "id": "workload",
+    "guide": "progression",
+    "phrases": [
+      "Wie prüfe ich die Semesterbelastung?",
+      "Wie verschiebe ich ein Modul?",
+      "Wie kann ich Module verschieben?",
+      "Wie gleiche ich die Semesterbelastung aus?"
+    ],
+    "answer": "In Schritt 5 öffnest du für den Jahrgang Studienverlauf und Semesterbelastung. Dort prüfst du CP, Unterrichtseinheiten, Schwierigkeit und Voraussetzungen und kannst Semesterzuordnungen anpassen. Ausgleich vorschlagen erstellt eine Vorschau; erst Studienverlauf speichern übernimmt sie. Bereits übernommene Veranstaltungen und Prüfungsvorlagen schützen ihre Semesterzuordnung."
+  },
+  {
+    "id": "planning",
+    "guide": "schedule",
+    "phrases": [
+      "Wie erstelle ich einen Stundenplan?",
+      "Wie plane ich automatisch?",
+      "Wie übernehme ich Veranstaltungen?",
+      "Wie lege ich einen Semesterplan an?"
+    ],
+    "answer": "Lege in Schritt 6 einen Semesterplan mit Jahrgang, Fachsemester und Zeitraum an. Veranstaltungen übernehmen kopiert das passende Unterrichtssoll. Unter Stundenplanung erstellt Automatisch planen einen Vorschlag anhand von Verfügbarkeiten, Räumen, Ausstattung, Teilnehmenden und Sperren. Prüfe ihn vor Übernahme und Veröffentlichung. In der Browser-Demo ist die automatische Terminplanung nicht verfügbar."
+  },
+  {
+    "id": "exams",
+    "guide": "assessments",
+    "phrases": [
+      "Wie plane ich Prüfungen?",
+      "Wie lege ich eine Klausur an?",
+      "Wie plane ich eine Nachschreibeklausur?",
+      "Wo trage ich die Prüfungsart ein?"
+    ],
+    "answer": "Prüfungsart, Dauer und Hinweise hinterlegst du an Modulen oder Lehrveranstaltungen in der Studienstruktur. Unter Prüfungen übernimmst du diese Anforderungen in den ausgewählten Semesterplan und legst daraus Termine an. Prüfe Teilnehmende, Räume und Aufsichten. Nachschreiber erhalten einen separaten Termin mit eigener Teilnehmerliste."
+  },
+  {
+    "id": "deadlines",
+    "guide": "assessments",
+    "phrases": [
+      "Wie lege ich eine Hausarbeit an?",
+      "Wie plane ich Abgaben?",
+      "Wo trage ich eine Abgabefrist ein?"
+    ],
+    "answer": "Hinterlege Hausarbeit oder Abgabe als Prüfungsanforderung in der Studienstruktur. Nach Übernahme in den Semesterplan vergibst du unter Prüfungen → Abgaben & Fristen das Datum und die Uhrzeit. Dafür wird kein Raumtermin benötigt. Diese Fristen sind derzeit nur intern sichtbar."
+  },
+  {
+    "id": "electives",
+    "guide": "electives",
+    "phrases": [
+      "Wie plane ich Wahlpflichtkurse?",
+      "Wie plane ich gemeinsame Veranstaltungen?",
+      "Kann ein Kurs mehrere Lehrende haben?"
+    ],
+    "answer": "Eine Veranstaltung kann mehrere Gruppen und Lehrende haben. In der Lehrveranstaltung bestimmst du, ob die Semesterübernahme gemeinsame oder getrennte Gruppenkurse erzeugt. Bei Wahlpflichtkursen ordnest du ausdrücklich die tatsächlich belegenden Studierenden zu; die Gruppenliste allein reicht dafür nicht."
+  },
+  {
+    "id": "display",
+    "guide": "display",
+    "phrases": [
+      "Wie veröffentliche ich einen Stundenplan?",
+      "Wie teile ich den Stundenplan?",
+      "Wie zeige ich nur heute an?",
+      "Wie zeige ich nur morgen an?",
+      "Warum kann ich in der Wochenansicht nicht heute auswählen?"
+    ],
+    "answer": "Veröffentliche zuerst den geprüften Plan. Unter Öffentliche Anzeige legst du danach einen Link an, der fest auf Woche, Heute oder Morgen eingestellt ist. Die Wochenansicht hat keinen Tagesfilter. Die separate Studierendenübersicht bietet Jahrgangs-, Gruppen- und Kursfilter. In der Vercel-Demo bleiben Änderungen im jeweiligen Browserprofil."
+  },
+  {
+    "id": "blocks",
+    "guide": "blocks",
+    "phrases": [
+      "Wie sperre ich einen Raum?",
+      "Wie blockiere ich Räume?",
+      "Wie plane ich Bauarbeiten ein?"
+    ],
+    "answer": "Unter Stammdaten → Raumblockierungen wählst du die betroffenen Räume sowie Beginn und Ende. Bestehende Termine werden durch die Sperre nicht automatisch verschoben. Prüfe den betroffenen Stundenplan und plane kollidierende Termine anschließend neu."
+  }
+]

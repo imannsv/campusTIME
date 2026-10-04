@@ -2,6 +2,7 @@ import type { Row } from "./api";
 import type { Store } from "./demo";
 import { cohortProgression } from "./demo-progression";
 import { campusHelp } from "./campus-ai-help";
+import { faqFor } from "./campus-ai-language";
 import { checkStructure } from "./demo-study";
 import { proactiveContext } from "./campus-ai-actions";
 
@@ -332,7 +333,7 @@ export function demoAIReply(body: Row, context: Row) {
   const response = campusHelp(body.question, context);
   return {
     ...response,
-    ...(body.use_model && !response.intent
+    ...(body.use_model && !("intent" in response) && !faqFor(body.question)
       ? { service_note: demoAIStatus.reason }
       : {}),
   };

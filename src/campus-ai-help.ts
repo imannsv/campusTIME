@@ -1,30 +1,44 @@
 import knowledge from "../shared/campus-ai-knowledge.json";
-import smalltalk from "../shared/campus-ai-smalltalk.json";
+import { socialReply, faqFor } from "./campus-ai-language";
 import type { Row } from "./api";
 import { replyActions } from "./campus-ai-actions";
 
 export { knowledge };
 export function campusHelp(question: string, context: Row) {
-  const socialText = question
-    .trim()
-    .toLocaleLowerCase("de")
-    .replace(/[.!?]+$/, "")
-    .replace(/,/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  const social = smalltalk.find((item) => item.phrases.includes(socialText));
-  if (social)
+  const social = socialReply(question, context.revision);
+  if (social) return social;
+  const faq = faqFor(question);
+  if (faq) {
+    if (faq.kind === "issues") {
+      const notices = context.proactive?.notices || [];
+      return {
+        answer: notices.length
+          ? `Für ${context.view?.label || "die aktuelle Ansicht"} sehe ich folgende Hinweise:\n` +
+            notices
+              .slice(0, 3)
+              .map((item: Row) => "• " + item.text)
+              .join("\n")
+          : faq.answer,
+        mode: "help",
+        model: null,
+        changed: false,
+        revision: context.revision,
+        sources: [],
+        actions: context.proactive?.actions || [],
+        auto_action: null,
+      };
+    }
+    const guides = knowledge.filter((item) => item.id === faq.guide);
     return {
-      answer: social.answer,
-      intent: social.intent,
+      answer: faq.answer,
       mode: "help",
       model: null,
-      sources: [],
-      actions: [],
-      auto_action: null,
       changed: false,
       revision: context.revision,
+      sources: guides.map(({ id, title, page }) => ({ id, title, page })),
+      ...replyActions(question, guides, context),
     };
+  }
   const normalized = question.toLocaleLowerCase("de");
   const guides = knowledge
     .map((item) => ({

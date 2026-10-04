@@ -3,10 +3,13 @@
     "intent": "greeting",
     "phrases": [
       "hi",
+      "hii",
+      "hiii",
       "hi freddy",
       "hallo",
       "hallo freddy",
       "hey",
+      "heyy",
       "hey freddy",
       "moin",
       "servus",
@@ -26,6 +29,17 @@
       "wie heisst du nochmal"
     ],
     "answer": "Ich bin Freddy, dein CampusAI-Assistent. Ich helfe dir bei campusTIME, zeige passende Planungshinweise und kann Ansichten und Eingabeformulare öffnen."
+  },
+  {
+    "intent": "capabilities",
+    "phrases": [
+      "was kannst du",
+      "was kannst du machen",
+      "wobei kannst du mir helfen",
+      "hilfe",
+      "help"
+    ],
+    "answer": "Ich helfe dir bei Räumen, Lehrenden, Studiengängen, Jahrgängen, Stundenplänen und Prüfungen. Ich kann passende Hinweise zur geöffneten Seite zeigen und Ansichten oder Eingabeformulare öffnen. Änderungen prüfst und speicherst du selbst. Frag mich zum Beispiel: Wie lege ich einen neuen Jahrgang an?"
   },
   {
     "intent": "thanks",

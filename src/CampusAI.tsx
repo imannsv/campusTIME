@@ -14,6 +14,8 @@ import {
 import { api, type Row, DEMO_MODE } from "./api";
 import FreddyAvatar from "./FreddyAvatar";
 import { actionForGuide } from "./campus-ai-actions";
+import { socialReply, faqFor } from "./campus-ai-language";
+import { campusHelp } from "./campus-ai-help";
 
 const questions = [
   "Wie lege ich einen neuen Jahrgang an?",
@@ -149,7 +151,27 @@ export default function CampusAI({
     }
   }
   async function ask(value: string) {
-    if (busy || loading || !context || !value.trim()) return;
+    if (!value.trim() || value.length > 2000) return;
+    // Static greetings never wait for the server, planning checks or a model.
+    const social = socialReply(value, context?.revision);
+    if (social || (!loading && context && faqFor(value))) {
+      const result = social || campusHelp(value, context!);
+      setPicker(null);
+      setActionFeedback("");
+      setQuestion("");
+      setMessages((items) => [
+        ...items,
+        { role: "user", content: value.trim() },
+        {
+          ...result,
+          role: "assistant",
+          content: result.answer,
+          view_label: context?.view?.label,
+        },
+      ]);
+      return;
+    }
+    if (busy || loading || !context) return;
     const current = generation.current;
     setBusy(true);
     setPicker(null);
@@ -468,7 +490,7 @@ export default function CampusAI({
                   {questions.map((value) => (
                     <button
                       key={value}
-                      disabled={busy || loading || !context}
+                      disabled={loading || !context}
                       onClick={() => void ask(value)}
                     >
                       {value}
@@ -610,7 +632,13 @@ export default function CampusAI({
                 type="submit"
                 aria-label="Frage senden"
                 title="Frage senden"
-                disabled={busy || loading || !context || !question.trim()}
+                disabled={
+                  !question.trim() ||
+                  question.length > 2000 ||
+                  (!socialReply(question) &&
+                    !(!loading && context && faqFor(question)) &&
+                    (busy || loading || !context))
+                }
               >
                 <Send size={18} />
               </button>
@@ -620,7 +648,7 @@ export default function CampusAI({
                 {DEMO_MODE
                   ? "Schnellhilfe · kein Sprachmodell"
                   : useModel
-                    ? "KI-Antworten anhand der Hilfe prüfen"
+                    ? "Standardfragen sofort · KI-Antworten prüfen"
                     : "Anleitung und geprüfte Hinweise"}
               </small>
             </div>
