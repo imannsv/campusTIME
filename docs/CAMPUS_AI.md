@@ -38,18 +38,38 @@ der Dienst nicht erreichbar ist. Sie lösen keine Einrichtungsvorschläge, Hilfe
 Navigationsaktionen aus. Eine Begrüßung mit angehängter Fachfrage wird weiterhin
 als Fachfrage behandelt. Freddy ist der Name des Assistenten, nicht der Verwaltung.
 
-Für häufige Bedienfragen gibt es geprüfte Fragevarianten und gezielte Antworten in
-`shared/campus-ai-faq.json`. Nach Laden des aktuellen Kontexts werden diese direkt
-im Browser beantwortet, einschließlich passender Hilfequellen und geprüfter
-Schaltflächen. Auch bei aktivierter lokaler KI wartet eine erkannte Standardfrage
-nicht auf das Modell. Andere Fragen laufen weiterhin über das Backend; unbekannte
-Varianten werden nicht als vermeintlich sichere Standardantwort ersetzt.
+Für Bedienfragen gibt es geprüfte Fragevarianten und gezielte Antworten in
+`shared/campus-ai-faq.json`. Die Anleitungen in `shared/campus-ai-knowledge.json`
+decken zusätzlich Importe, Kennungen, manuelle Termine, Fixierung, Entwurf und
+Veröffentlichung, Kalender, Begriffserklärungen, Schulen und Funktionsgrenzen ab.
+Dieses Wissen gilt für alle Einrichtungen; es enthält keine LFH-spezifischen Vorgaben.
+Im Modus **Schnellhilfe** werden bekannte Fragen direkt im Browser beantwortet,
+einschließlich passender Quellen und Schaltflächen. Höfliche Formulierungen,
+Umlautumschreibungen, bestimmte Synonyme und ein einzelner kleiner Tippfehler
+werden vorsichtig erkannt. Zusätzliche Bedingungen und Verneinungen werden nicht
+entfernt. Kurze Anschlussfragen beziehen sich auf das letzte bekannte Thema;
+bei unbekanntem Bezug fragt Freddy nach. Dabei werden frühere Befehle nicht ausgeführt.
+
+Im Modus **Lokale KI** laufen auch bekannte Bedienfragen und Anschlussfragen über
+das Sprachmodell. Es erhält passende allgemeine Anleitungen, den Gesprächsverlauf
+und den frisch geprüften Kontext der angemeldeten Einrichtung. Es formuliert eine
+eigene Antwort und wählt hilfreiche nächste Schritte aus. Häufige einfache
+Bedienfragen verwenden das Modell ohne zusätzlichen Thinking-Durchgang; bei
+freien, komplexen, begründenden Fragen und Empfehlungen kann dieser bei einem
+geeigneten Modell über `CAMPUS_AI_THINK=1` aktiviert werden. Auf dem derzeitigen
+Rechner überschritt der zusätzliche Durchgang im Praxistest das Zeitlimit, deshalb
+ist er standardmäßig aus. Die normale KI-Antwort wird weiterhin vom Sprachmodell
+aus Frage, Anleitung, Gespräch und Kontext erzeugt; sie ist keine feste Textantwort.
+Ein Thinking-Durchgang ist keine Garantie für korrekte
+Antworten. Reine Begrüßungen bleiben sofort verfügbar. Ist das Modell beschäftigt,
+nicht erreichbar oder zu langsam, wird die Schnellhilfe mit einem Hinweis angezeigt.
 Mehrteilige und verneinte Fragen werden nicht durch einen Teiltreffer abgefangen.
 Die Wissensbasis und Antwortsteuerung stimmen Freddy auf campusTIME ab; die
 Modellgewichte werden dabei nicht trainiert. Freie Modellantworten bleiben von der
 Rechenleistung des lokalen Rechners abhängig. Es kommen keine bezahlten APIs hinzu.
-„Was fehlt hier?“ und „Was empfiehlst du mir hier?“ verwenden die geprüften Hinweise
-und Handlungsvorschläge der aktuellen Ansicht statt einer allgemeinen Modellantwort.
+„Was fehlt hier?“ und „Was empfiehlst du mir hier?“ verwenden in der Schnellhilfe
+die geprüften Hinweise der aktuellen Ansicht. Im KI-Modus kann das Modell diese
+Hinweise anhand des Toolwissens erklären und passende nächste Schritte vorschlagen.
 
 Das Backend berechnet Hinweise aus dem aktuellen Datenbestand: fehlende
 Lehrende und Verfügbarkeiten, fehlende Wahlpflichtbelegungen, ungeeignete
@@ -89,11 +109,13 @@ mit diesen Einstellungen neu starten. Nach einem Rechnerneustart muss
 Ollama wieder laufen. Den Dienst nicht öffentlich ins Internet freigeben.
 [Lokaler Betrieb und Cloud-Einstellungen](https://docs.ollama.com/faq).
 
-Standardmodell ist [Qwen3.5 2B](https://ollama.com/library/qwen3.5:2b),
-unter Apache 2.0, mit etwa 2,7 GB Download. Installation in einem zweiten Terminal:
+Standardmodell ist [Qwen3.5 2B Q4_K_M](https://ollama.com/library/qwen3.5:2b-q4_K_M),
+mit etwa 1,9 GB Download. Die stärker komprimierte Variante desselben Modells wurde
+auf dem Entwicklungsrechner installiert und benötigt weniger Speicher als die
+bisherige Q8-Variante. Installation in einem zweiten Terminal:
 
 ```powershell
-ollama pull qwen3.5:2b
+ollama pull qwen3.5:2b-q4_K_M
 ```
 
 Das konfigurierte Modell muss vorab mit `ollama pull <Modellname>` installiert
@@ -108,13 +130,19 @@ Backend-Einstellungen:
 |---|---|
 | `CAMPUS_AI_ENABLED` | Bei `DEBUG=1` standardmäßig aktiv; im Produktionsbetrieb standardmäßig aus. |
 | `CAMPUS_AI_URL` | Standard: `http://127.0.0.1:11434`. |
-| `CAMPUS_AI_MODEL` | Standard: `qwen3.5:2b`; installierter lokaler Modellname. |
+| `CAMPUS_AI_MODEL` | Standard: `qwen3.5:2b-q4_K_M`; installierter lokaler Modellname. Bestehende andere lokale Modelle bleiben konfigurierbar. |
 | `CAMPUS_AI_TIMEOUT` | Standard 90 Sekunden; erlaubter Bereich 5–120 Sekunden. |
+| `CAMPUS_AI_THINK` | Standard `0`: Antworten stammen vom Sprachmodell ohne zusätzlichen Thinking-Durchgang. `1` aktiviert ihn bei anspruchsvolleren Fragen, sofern das Modell dies unterstützt. Auf CPU kann das erheblich länger dauern. |
 
 Es wird höchstens eine Modellantwort pro Backend-Prozess gleichzeitig erzeugt.
 Bei mehreren Serverprozessen ist dies keine globale Warteschlange. Nicht
 erreichbare, beschäftigte oder zu langsame Modelle führen zur gekennzeichneten
 Schnellhilfe. Gekürzte Modellantworten werden gekennzeichnet.
+Das Modell bleibt zehn Minuten geladen, damit Folgefragen keinen erneuten
+Kaltstart benötigen. Auf einem Rechner ohne geeignete GPU können KI-Antworten
+trotzdem deutlich länger dauern als die Schnellhilfe. Thinking und JSON-Antworten
+verwenden die offiziellen [Thinking](https://docs.ollama.com/capabilities/thinking)-
+und [Structured-Outputs](https://docs.ollama.com/capabilities/structured-outputs)-Schnittstellen.
 
 ## Daten und Gespräch
 
@@ -122,12 +150,16 @@ Alle echten Backend-Anfragen erfordern Anmeldung und eine zugeordnete Einrichtun
 Der Kontext enthält die aktuelle Ansicht, Einrichtungszahlen, Plan-/Jahrgangsnamen, Semesterbelastung,
 Planungshinweise sowie begrenzte Raum- und Veranstaltungslisten. Einzelne
 Studierenden- und Lehrendennamen sowie E-Mail-Adressen werden nicht in den
-Modellkontext übernommen. Raum-/Veranstaltungsnamen können dennoch interne
+Modellkontext übernommen. Die aktuell angemeldete Einrichtung liefert den Kontext;
+fremde Plan-, Jahrgangs-, Versions-, Bereichs- und Etagenauswahlen werden abgewiesen,
+bevor das Modell aufgerufen wird. Raum-/Veranstaltungsnamen können dennoch interne
 Informationen enthalten; der Modelldienst muss unter eigener Kontrolle bleiben.
 
-Der Modellkontext ist ein Ausschnitt: höchstens zehn Hinweise, acht Veranstaltungen
-und acht Räume. Bei Bedienfragen mit „Wie …“ werden Raum- und Veranstaltungslisten
-weggelassen und höchstens vier Hinweise mitgeschickt. Ein geprüftes Frage-Antwort-
+Der Modellkontext ist ein Ausschnitt: höchstens vier allgemeine Hinweise und zwei
+Hinweise zur aktuellen Ansicht, acht Semester, acht Veranstaltungen und acht Räume.
+Hinweistexte werden auf 300 Zeichen begrenzt. Bei Bedienfragen mit „Wie …“ werden
+Raum- und Veranstaltungslisten weggelassen; es werden nur Hinweise zur aktuellen
+Ansicht mitgeschickt. Ein geprüftes Frage-Antwort-
 Beispiel zum erkannten Thema zeigt dem Modell die gewünschten Begriffe und Schritte.
 Die Datenprüfung zeigt bis zu 40 Hinweise mit Gesamtzahl an.
 Ein Backend-Frageaufruf berechnet die Fakten erneut; Standardfragen im Browser
@@ -142,13 +174,19 @@ damit sie keine Aktionen mit veraltetem Seitenkontext ausführt.
 Der Chat lässt sich per Schließen-Button, Icon
 oder Escape im Fenster schließen; der Fokus kehrt zum Icon zurück.
 Plan-/Jahrgangswechsel, Neuladen der Seite und Abmelden leeren den Verlauf.
-Er wird nicht als Chat in der Datenbank gespeichert. Für Anschlussfragen werden höchstens vier
+Er wird nicht als Chat in der Datenbank gespeichert. Für Anschlussfragen werden höchstens sechs
 vorherige Nachrichten an das lokale Modell übergeben. Backend: 2.000 Zeichen
 pro Frage, maximal sechs Verlaufsnachrichten und 6.000 Zeichen Verlauf,
 zwölf Chat-Anfragen pro Minute je angemeldetem Benutzer. Es werden keine
-Schreibwerkzeuge an das Modell übergeben. Navigationsaktionen stammen aus dem
-gemeinsamen, festgelegten Aktionskatalog; vom Modell gelieferte Aktionen oder
-Werkzeugaufrufe werden nicht ausgeführt.
+Schreibwerkzeuge an das Modell übergeben. Das Modell liefert die finale Antwort
+und bis zu drei vorgeschlagene Aktionskennungen als JSON. Nur bekannte Kennungen
+aus dem gemeinsamen Aktionskatalog mit erfüllten Voraussetzungen erscheinen als
+Schaltflächen. Das Modell bekommt nur Aktionen passend zum Fragethema und bei
+freien Empfehlungen zur aktuellen Ansicht angeboten. Unbekannte Kennungen und
+Werkzeugaufrufe werden verworfen. Diese
+Empfehlungen werden nie automatisch ausgeführt. Eindeutige Navigationsbefehle
+verwenden weiterhin den geprüften Befehlsweg. Interne Thinking-Texte werden nicht
+an den Browser zurückgegeben; Nutzer sehen die Antwort und Handlungsvorschläge.
 
 ## Vercel-Demo
 

@@ -1,10 +1,13 @@
 """Deterministic, allowlisted UI instructions. These never write records."""
 
 import json
+import re
 from functools import lru_cache
 from pathlib import Path
 
 from django.conf import settings
+
+from .campus_ai_language import language, normalize
 
 
 @lru_cache(maxsize=1)
@@ -17,27 +20,16 @@ def catalog():
 
 
 def requested_action(question):
-    text = question.strip().casefold().removesuffix(".").removesuffix("!")
+    text = normalize(re.sub(r"\bbitte\b", "", normalize(question)))
+    text = re.sub(r"^freddy\s+", "", text)
     for action in catalog():
         for target in action["targets"]:
-            commands = (
-                [
-                    f"erstelle {target}",
-                    f"lege {target} an",
-                    f"öffne das formular für {target}",
-                ]
-                if action.get("create")
-                else [
-                    f"öffne {target}",
-                    f"öffne die {target}",
-                    f"zeige {target}",
-                    f"zeige die {target}",
-                    f"geh zu {target}",
-                ]
-            )
+            templates = language()[
+                "creation_templates" if action.get("create") else "navigation_templates"
+            ]
             if any(
-                text in (command, f"bitte {command}", f"{command} bitte")
-                for command in commands
+                text == template.replace("{target}", normalize(target))
+                for template in templates
             ):
                 return action
     return None

@@ -14,7 +14,12 @@ import {
 import { api, type Row, DEMO_MODE } from "./api";
 import FreddyAvatar from "./FreddyAvatar";
 import { actionForGuide } from "./campus-ai-actions";
-import { socialReply, faqFor } from "./campus-ai-language";
+import {
+  socialReply,
+  faqFor,
+  resolveFAQ,
+  isFollowup,
+} from "./campus-ai-language";
 import { campusHelp } from "./campus-ai-help";
 
 const questions = [
@@ -154,8 +159,17 @@ export default function CampusAI({
     if (!value.trim() || value.length > 2000) return;
     // Static greetings never wait for the server, planning checks or a model.
     const social = socialReply(value, context?.revision);
-    if (social || (!loading && context && faqFor(value))) {
-      const result = social || campusHelp(value, context!);
+    const history = messages
+      .slice(-6)
+      .map(({ role, content }) => ({ role, content: content.slice(0, 950) }));
+    if (
+      social ||
+      (!useModel &&
+        !loading &&
+        context &&
+        (resolveFAQ(value, history) || isFollowup(value)))
+    ) {
+      const result = social || campusHelp(value, context!, history);
       setPicker(null);
       setActionFeedback("");
       setQuestion("");
@@ -178,9 +192,6 @@ export default function CampusAI({
     setError("");
     setActionFeedback("");
     setQuestion("");
-    const history = messages
-      .slice(-4)
-      .map(({ role, content }) => ({ role, content: content.slice(0, 1400) }));
     setMessages((items) => [...items, { role: "user", content: value.trim() }]);
     try {
       const result = await api("campusai/chat/", "POST", {
@@ -599,7 +610,7 @@ export default function CampusAI({
               <p className="campus-ai-working" role="status">
                 <LoaderCircle className="spin" size={17} />
                 {useModel
-                  ? "Lokale KI formuliert eine Antwort …"
+                  ? "Freddy prüft deine Frage und überlegt …"
                   : "Hilfe zusammenstellen …"}
               </p>
             )}
@@ -636,7 +647,12 @@ export default function CampusAI({
                   !question.trim() ||
                   question.length > 2000 ||
                   (!socialReply(question) &&
-                    !(!loading && context && faqFor(question)) &&
+                    !(
+                      !useModel &&
+                      !loading &&
+                      context &&
+                      (faqFor(question) || isFollowup(question))
+                    ) &&
                     (busy || loading || !context))
                 }
               >
@@ -648,7 +664,7 @@ export default function CampusAI({
                 {DEMO_MODE
                   ? "Schnellhilfe · kein Sprachmodell"
                   : useModel
-                    ? "Standardfragen sofort · KI-Antworten prüfen"
+                    ? "Lokale KI · Antworten prüfen"
                     : "Anleitung und geprüfte Hinweise"}
               </small>
             </div>

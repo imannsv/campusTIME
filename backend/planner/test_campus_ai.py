@@ -13,7 +13,12 @@ from . import campus_ai
 from . import models as m
 
 
-@override_settings(DEBUG=True, CAMPUS_AI_ENABLED=True, CAMPUS_AI_MODEL="qwen3.5:2b")
+@override_settings(
+    DEBUG=True,
+    CAMPUS_AI_ENABLED=True,
+    CAMPUS_AI_MODEL="qwen3.5:2b",
+    CAMPUS_AI_THINK=True,
+)
 class CampusAITests(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -91,14 +96,14 @@ class CampusAITests(TestCase):
             self.assertEqual(response.data["intent"], "greeting")
             self.assertEqual(response.data["revision"], self.institution.revision)
 
-    def test_curated_questions_bypass_model_without_inventing_actions(self):
+    def test_quick_help_uses_curated_questions_without_inventing_actions(self):
         with patch("planner.campus_ai.ollama_request") as model:
             for entry in campus_ai.faq():
                 if entry.get("kind") == "issues":
                     continue
                 with self.subTest(entry=entry["id"]):
                     cache.clear()
-                    result = self.ask(question=entry["phrases"][0], use_model=True)
+                    result = self.ask(question=entry["phrases"][0], use_model=False)
                     self.assertEqual(result.data["answer"], entry["answer"])
                     self.assertEqual(result.data["sources"][0]["id"], entry["guide"])
                     self.assertEqual(result.data["mode"], "help")
@@ -131,7 +136,7 @@ class CampusAITests(TestCase):
         teacher.save()
         with patch("planner.campus_ai.ollama_request") as model:
             response = self.ask(
-                question="Was fehlt hier?", page="setup", step=1, use_model=True
+                question="Was fehlt hier?", page="setup", step=1, use_model=False
             )
             self.assertIn("Zeitfenster", response.data["answer"])
             self.assertTrue(
@@ -141,7 +146,7 @@ class CampusAITests(TestCase):
                 )
             )
             cache.clear()
-            response = self.ask(question="Was fehlt hier?", page="map", use_model=True)
+            response = self.ask(question="Was fehlt hier?", page="map", use_model=False)
             self.assertNotIn("Zeitfenster", response.data["answer"])
             self.assertTrue(
                 all(
@@ -266,13 +271,18 @@ class CampusAITests(TestCase):
         self.assertNotIn("<think>", response.data["answer"])
         body = calls[-1][1]
         self.assertFalse(body["stream"])
-        self.assertFalse(body["think"])
+        self.assertIsInstance(body["think"], bool)
         self.assertNotIn("tools", body)
         self.assertEqual(body["messages"][0]["role"], "system")
         self.assertIn("GEPRÜFTE FAKTEN", body["messages"][0]["content"])
         self.assertIn(self.plan.name, body["messages"][0]["content"])
         self.assertIn("Schritt 5", body["messages"][2]["content"])
-        self.assertIn('"courses": []', body["messages"][0]["content"])
+        facts = json.loads(
+            body["messages"][0]["content"]
+            .split("GEPRÜFTE FAKTEN:\n", 1)[1]
+            .split("\nANGEBOTENE AKTIONEN:", 1)[0]
+        )
+        self.assertEqual(facts["courses"], [])
         self.assertFalse(response.data["changed"])
 
     @patch("planner.campus_ai.ollama_request")
@@ -599,3 +609,348 @@ class CampusAITests(TestCase):
         self.assertIsNone(result.data["auto_action"])
         self.assertFalse(result.data["changed"])
         model.assert_not_called()
+
+    def test_ai_mode_reasons_even_for_known_tool_questions(self):
+        with patch(
+            "planner.campus_ai.ollama_request",
+            side_effect=[
+                {"models": [{"name": "qwen3.5:2b", "capabilities": ["thinking"]}]},
+                {
+                    "done": True,
+                    "message": {
+                        "thinking": "Private internal reasoning",
+                        "content": json.dumps(
+                            {
+                                "answer": "Öffne Schritt 5 und wähle die freigegebene Version.",
+                                "suggested_actions": ["cohorts"],
+                            }
+                        ),
+                    },
+                },
+            ],
+        ) as model:
+            result = self.ask(use_model=True)
+        self.assertEqual(result.data["mode"], "local")
+        self.assertIn("freigegebene Version", result.data["answer"])
+        self.assertFalse(model.call_args.args[1]["think"])
+        self.assertEqual(model.call_args.args[1]["format"]["type"], "object")
+        self.assertEqual(result.data["actions"][0]["id"], "cohorts")
+        offered = model.call_args.args[1]["format"]["properties"]["suggested_actions"][
+            "items"
+        ]["enum"]
+        self.assertIn("cohorts", offered)
+        self.assertNotIn("rooms", offered)
+        self.assertIsNone(result.data["auto_action"])
+        self.assertNotIn("Private internal reasoning", str(result.data))
+        self.assertFalse(result.data["changed"])
+
+    def test_model_suggestions_are_allowlisted_and_check_requirements(self):
+        before = m.Audit.objects.count()
+        with patch(
+            "planner.campus_ai.ollama_request",
+            side_effect=[
+                {"models": [{"name": "qwen3.5:2b", "capabilities": ["thinking"]}]},
+                {
+                    "done": True,
+                    "message": {
+                        "content": json.dumps(
+                            {
+                                "answer": "Prüfe zunächst die Räume.",
+                                "suggested_actions": [
+                                    "delete_all",
+                                    "add_cohort",
+                                    "rooms",
+                                    "rooms",
+                                ],
+                            }
+                        ),
+                        "tool_calls": [{"function": {"name": "delete_all"}}],
+                    },
+                },
+            ],
+        ):
+            result = self.ask(
+                question="Was empfiehlst du mir hier?", page="map", use_model=True
+            )
+        self.assertEqual(
+            result.data["actions"], [{"id": "rooms", "label": "Räume öffnen"}]
+        )
+        self.assertIsNone(result.data["auto_action"])
+        self.assertEqual(m.Audit.objects.count(), before)
+
+    def test_incomplete_structured_model_reply_falls_back_to_tool_help(self):
+        with patch(
+            "planner.campus_ai.ollama_request",
+            side_effect=[
+                {"models": [{"name": "qwen3.5:2b"}]},
+                {
+                    "done": True,
+                    "done_reason": "length",
+                    "message": {"content": '{"answer":"Not finished'},
+                },
+            ],
+        ):
+            result = self.ask(use_model=True)
+        self.assertEqual(result.data["mode"], "help")
+        self.assertIn("Schritt 5", result.data["answer"])
+        self.assertIn("unvollständig", result.data["service_note"])
+        self.assertTrue(campus_ai.MODEL_LOCK.acquire(blocking=False))
+        campus_ai.MODEL_LOCK.release()
+
+    def test_natural_question_variants_and_typos_preserve_qualifiers(self):
+        for phrase in [
+            "Wo kann ich bitte einen neuen Jahrgang anlegen?",
+            "Freddy, wie erstelle ich bitte einen Jahrgang?",
+            "Wie lege ich einen Jahrgag an?",
+            "Wie fuege ich einen Jahrgang hinzu?",
+        ]:
+            with self.subTest(phrase=phrase):
+                self.assertEqual(campus_ai.faq_for(phrase)["id"], "cohort")
+        for phrase in [
+            "Lege einen Jahrgang an",
+            "Wie lege ich einen Jahrgang ohne Lehrplan an?",
+            "Wie lege ich einen Jahrgang an wenn ich zwei Gruppen habe?",
+            "Wie plane ich Prüfungen nicht?",
+            "Wie lege ich einen Jahrgang und einen Raum an?",
+        ]:
+            with self.subTest(phrase=phrase):
+                self.assertIsNone(campus_ai.faq_for(phrase))
+
+    def test_followups_use_the_latest_topic_without_running_old_commands(self):
+        result = self.ask(
+            question="Wo genau?",
+            history=[
+                {"role": "user", "content": "Wie lege ich einen Raum an?"},
+                {"role": "assistant", "content": "Öffne Räume."},
+            ],
+        )
+        self.assertIn("Stockwerk", result.data["answer"])
+        self.assertIsNone(result.data["auto_action"])
+        cache.clear()
+        result = self.ask(
+            question="Wie mache ich das?",
+            history=[
+                {"role": "user", "content": "Wie lege ich einen Raum an?"},
+                {"role": "user", "content": "Frage zu einer unbekannten Funktion"},
+            ],
+        )
+        self.assertIn("Auf welche Funktion", result.data["answer"])
+
+    def test_expanded_tool_help_covers_features_and_reports_limits(self):
+        for question, expected in [
+            ("Wie importiere ich Daten?", "CSV-Vorlage"),
+            ("Wie ändere ich einen Termin?", "Entwurf"),
+            ("Was ist ein Planungsbereich?", "organisatorische"),
+            ("Warum sehe ich meine Änderung nicht in der Anzeige?", "zehn Sekunden"),
+            ("Gibt es persönliche Studierendenkonten?", "spätere Erweiterungen"),
+        ]:
+            cache.clear()
+            with (
+                self.subTest(question=question),
+                patch("planner.campus_ai.ollama_request") as model,
+            ):
+                result = self.ask(question=question, use_model=False)
+                self.assertIn(expected, result.data["answer"])
+                model.assert_not_called()
+
+    def test_ai_mode_uses_followup_topic_and_current_tenant_facts(self):
+        self.institution.name = "Hochschule Beispiel"
+        self.institution.save()
+        with patch(
+            "planner.campus_ai.ollama_request",
+            side_effect=[
+                {"models": [{"name": "qwen3.5:2b"}]},
+                {
+                    "done": True,
+                    "message": {
+                        "content": json.dumps(
+                            {
+                                "answer": "Prüfe die Importvorschau und übernimm sie danach.",
+                                "suggested_actions": [],
+                            }
+                        )
+                    },
+                },
+            ],
+        ) as model:
+            result = self.ask(
+                question="Erklär mir das nochmal",
+                use_model=True,
+                history=[{"role": "user", "content": "Wie importiere ich Daten?"}],
+            )
+        system = model.call_args.args[1]["messages"][0]["content"]
+        self.assertIn("CSV", system)
+        self.assertIn("Hochschule Beispiel", system)
+        self.assertNotIn("Leibniz", system)
+        self.assertEqual(result.data["mode"], "local")
+
+    def test_complex_tool_question_enables_supported_thinking(self):
+        with patch(
+            "planner.campus_ai.ollama_request",
+            side_effect=[
+                {"models": [{"name": "qwen3.5:2b", "capabilities": ["thinking"]}]},
+                {
+                    "done": True,
+                    "message": {
+                        "content": json.dumps(
+                            {
+                                "answer": "Ergänze zunächst eine Lehrplanversion und ihre Module.",
+                                "suggested_actions": ["programs"],
+                            }
+                        )
+                    },
+                },
+            ],
+        ) as model:
+            result = self.ask(
+                question="Ich habe Räume, aber noch keinen Lehrplan. Wie mache ich weiter?",
+                use_model=True,
+            )
+        self.assertTrue(model.call_args.args[1]["think"])
+        self.assertEqual(result.data["mode"], "local")
+
+    def test_context_notices_for_unknown_capacity_follow_selected_floor(self):
+        floors = list(m.Floor.objects.filter(institution=self.institution))
+        room = m.Room.objects.filter(
+            institution=self.institution, floor=floors[0]
+        ).first()
+        room.capacity = None
+        room.save()
+        context = campus_ai.context_for(
+            self.institution, view={"page": "map", "floor": floors[0].id}
+        )
+        self.assertIn(
+            "keine bestätigte Kapazität", str(context["proactive"]["notices"])
+        )
+        if len(floors) > 1:
+            context = campus_ai.context_for(
+                self.institution, view={"page": "map", "floor": floors[1].id}
+            )
+            self.assertNotIn(
+                "keine bestätigte Kapazität", str(context["proactive"]["notices"])
+            )
+
+    def test_natural_navigation_is_exact_and_never_runs_negated_or_combined_commands(
+        self,
+    ):
+        from .campus_ai_actions import requested_action
+
+        for question, action in [
+            ("Zeig mir bitte Räume", "rooms"),
+            ("Freddy, kannst du mir Stammdaten zeigen?", "data"),
+            ("Kannst du bitte einen Raum anlegen?", "add_room"),
+            ("Bring mich zu Planungszeiträume", "periods"),
+        ]:
+            with self.subTest(question=question):
+                self.assertEqual(requested_action(question)["id"], action)
+        for question in [
+            "Zeig mir Räume nicht",
+            "Zeig mir Räume und Prüfungen",
+            "Kannst du einen Raum anlegen und speichern?",
+            "Öffne Räume ohne meinen Plan zu ändern",
+        ]:
+            self.assertIsNone(requested_action(question))
+
+    def test_thinking_can_be_disabled_without_switching_to_static_help(self):
+        with (
+            override_settings(CAMPUS_AI_THINK=False),
+            patch(
+                "planner.campus_ai.ollama_request",
+                side_effect=[
+                    {"models": [{"name": "qwen3.5:2b", "capabilities": ["thinking"]}]},
+                    {
+                        "done": True,
+                        "message": {"content": "Ergänze die Lehrplanversion."},
+                    },
+                ],
+            ) as model,
+        ):
+            cache.clear()
+            result = self.ask(
+                question="Ich habe Räume, aber noch keinen Lehrplan. Wie mache ich weiter?",
+                use_model=True,
+            )
+        self.assertFalse(model.call_args.args[1]["think"])
+        self.assertEqual(result.data["mode"], "local")
+
+    def test_known_false_claims_do_not_override_tool_rules(self):
+        for answer in [
+            "Ohne Lehrplan ist manuelle Planung unmöglich.",
+            "Ich habe deinen Plan veröffentlicht.",
+            "Konkrete Veranstaltungen entstehen in Schritt 4.",
+        ]:
+            with (
+                self.subTest(answer=answer),
+                patch(
+                    "planner.campus_ai.ollama_request",
+                    side_effect=[
+                        {"models": [{"name": "qwen3.5:2b"}]},
+                        {
+                            "done": True,
+                            "message": {
+                                "content": json.dumps(
+                                    {"answer": answer, "suggested_actions": []}
+                                )
+                            },
+                        },
+                    ],
+                ),
+            ):
+                cache.clear()
+                result = self.ask(
+                    question="Kann ich mit einem unvollständigen Lehrplan planen?",
+                    use_model=True,
+                )
+                self.assertEqual(result.data["mode"], "help")
+                self.assertIn("manuell erfassen", result.data["answer"])
+                self.assertIn("Schnellhilfe", result.data["service_note"])
+                self.assertFalse(result.data["changed"])
+
+    def test_model_context_is_bounded_without_losing_current_view_issues(self):
+        context = campus_ai.context_for(
+            self.institution, self.plan, view={"page": "map"}
+        )
+        context["notices"] = [
+            {"text": f"Hinweis {index}: " + "x" * 500, "severity": "error"}
+            for index in range(20)
+        ]
+        context["proactive"]["notices"] = [
+            {"text": "Aktuelles Stockwerk: Kapazität offen", "severity": "hint"}
+        ]
+        with patch(
+            "planner.campus_ai.ollama_request",
+            side_effect=[
+                {"models": [{"name": "qwen3.5:2b"}]},
+                {"done": True, "message": {"content": "Prüfe die Kapazitäten."}},
+            ],
+        ) as model:
+            campus_ai.reply("Was sollte ich hier prüfen?", context, use_model=True)
+        facts = json.loads(
+            model.call_args.args[1]["messages"][0]["content"]
+            .split("GEPRÜFTE FAKTEN:\n", 1)[1]
+            .split("\nANGEBOTENE AKTIONEN:", 1)[0]
+        )
+        self.assertEqual(len(facts["notices"]), 4)
+        self.assertTrue(all(len(item["text"]) <= 300 for item in facts["notices"]))
+        self.assertEqual(
+            facts["current_view_issues"][0]["text"],
+            "Aktuelles Stockwerk: Kapazität offen",
+        )
+
+    def test_publication_does_not_make_a_room_available(self):
+        with patch(
+            "planner.campus_ai.ollama_request",
+            side_effect=[
+                {"models": [{"name": "qwen3.5:2b"}]},
+                {
+                    "done": True,
+                    "message": {
+                        "content": "Ein Raum wird erst nach der Veröffentlichung freigegeben."
+                    },
+                },
+            ],
+        ):
+            result = self.ask(question="Wann ist ein Raum frei?", use_model=True)
+        self.assertEqual(result.data["mode"], "help")
+        self.assertIn("Raumblockierungen", result.data["answer"])
+        self.assertIn("Raumverfügbarkeit", result.data["service_note"])

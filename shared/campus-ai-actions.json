@@ -20,7 +20,7 @@
     "page": "setup",
     "step": 2,
     "targets": ["studiengänge", "studiengang"],
-    "guides": []
+    "guides": ["schools"]
   },
   {
     "id": "structure",
@@ -28,7 +28,7 @@
     "page": "setup",
     "step": 3,
     "targets": ["studienstruktur", "module", "lehrplan"],
-    "guides": ["study"]
+    "guides": ["study", "definitions"]
   },
   {
     "id": "cohorts",
@@ -60,7 +60,7 @@
     "page": "schedule",
     "plan": true,
     "targets": ["stundenplanung", "stundenplan"],
-    "guides": ["schedule"]
+    "guides": ["schedule", "manual", "publication"]
   },
   {
     "id": "exams",
@@ -106,7 +106,7 @@
     "label": "Einstellungen öffnen",
     "page": "settings",
     "targets": ["einstellungen"],
-    "guides": []
+    "guides": ["settings"]
   },
   {
     "id": "add_building",
@@ -181,5 +181,20 @@
     "requires": "rooms",
     "targets": ["eine raumblockierung", "eine raumsperre"],
     "guides": []
+  },
+  {
+    "id": "data",
+    "label": "Stammdaten öffnen",
+    "page": "data",
+    "targets": ["stammdaten", "datenverwaltung", "dateiimporte"],
+    "guides": ["imports"]
+  },
+  {
+    "id": "periods",
+    "label": "Planungszeiträume öffnen",
+    "page": "data",
+    "resource": "periods",
+    "targets": ["planungszeiträume", "zeiträume", "unterrichtskalender"],
+    "guides": ["periods"]
   }
 ]

@@ -158,5 +158,112 @@
     "keywords": ["sperr", "block", "bauarbeit", "wartung", "projekt"],
     "page": "data",
     "answer": "Unter Stammdaten → Raumblockierungen wählst du Räume sowie Beginn und Ende der Sperre. Damit lassen sich Bauarbeiten, Wartung und Projektbelegungen berücksichtigen. Vorhandene Termine werden dadurch nicht automatisch verschoben. Prüfe den betroffenen Stundenplan und plane konfliktbehaftete Termine neu."
+  },
+  {
+    "id": "imports",
+    "title": "Dateiimporte und Kennungen",
+    "keywords": [
+      "import",
+      "csv",
+      "xlsx",
+      "excel",
+      "kennung",
+      "code",
+      "datei",
+      "vorlage"
+    ],
+    "page": "data",
+    "answer": "Unter Stammdaten wählst du die Datenart und Importieren. Lade dort die CSV-Vorlage und nutze ihre Spalten. Unterstützt werden UTF-8-CSV und XLSX bis 10 MB und 30.000 Zeilen. Erst prüfen, dann übernehmen; bei Fehlern wird nichts übernommen. code ist die stabile Kennung innerhalb der Einrichtung: wiederholte Importe aktualisieren gleiche Kennungen. Beziehungen nutzen Kennungen, Mehrfachzuordnungen trennt |. Abhängigkeiten zuerst: Bereiche → Stockwerke → Räume, Studiengänge → Jahrgänge → Gruppen → Personen, Zeiträume und Planungsbereiche → Pläne → Veranstaltungen. Eine Vorschau verfällt nach einer Stunde oder einer Datenänderung. In der Browser-Demo sind Dateiimporte nicht verfügbar."
+  },
+  {
+    "id": "manual",
+    "title": "Termine manuell bearbeiten und fixieren",
+    "keywords": [
+      "manuell",
+      "fixier",
+      "gesperrt",
+      "verschieben",
+      "termin ändern",
+      "bearbeiten",
+      "löschen"
+    ],
+    "page": "schedule",
+    "answer": "Unter Stundenplanung wählst du den Plan. Über Termin legst du einen Termin an; ein Klick auf einen Kalendereintrag öffnet die Bearbeitung. Beginn, Ende, Räume und Lehrende müssen zur Veranstaltung passen. Fixiert schützt einen Termin bei der automatischen Neuplanung. Gespeicherte Änderungen betreffen zunächst den Entwurf. Die öffentliche Anzeige bekommt Terminänderungen erst nach erneuter Veröffentlichung. Stammdaten bearbeitest du durch Öffnen des entsprechenden Eintrags. Verknüpfte Daten können eine Löschung verhindern; prüfe zuerst ihre Verwendung, statt wahllos zu löschen. Freddy öffnet Ansichten und Formulare, speichert oder löscht aber keine Daten selbst."
+  },
+  {
+    "id": "publication",
+    "title": "Entwurf, Vorschlag und Veröffentlichung",
+    "keywords": [
+      "entwurf",
+      "vorschlag",
+      "freigabe",
+      "veröffentlichen",
+      "veröffentlichung",
+      "aktualisieren",
+      "nicht sichtbar"
+    ],
+    "page": "schedule",
+    "answer": "Der Entwurf ist der intern bearbeitete Plan. Die automatische Planung erzeugt einen Vorschlag; Vorschlag übernehmen ersetzt den Entwurf unter Erhalt fixierter Termine. Eine Veröffentlichung prüft Ressourcen, Unterrichtssoll und andere veröffentlichte Pläne erneut und erzeugt eine freigegebene Version. Bei offenen Konflikten ist sie gesperrt. Datenänderungen seit einer Berechnung verhindern die Übernahme eines veralteten Vorschlags. Anzeigen und Studierendenübersicht zeigen veröffentlichte Versionen und aktualisieren sich alle zehn Sekunden. Änderungen am Entwurf benötigen eine erneute Veröffentlichung. Raumblockierungen markieren betroffene veröffentlichte Termine als gesperrt."
+  },
+  {
+    "id": "periods",
+    "title": "Planungszeitraum und Unterrichtssoll",
+    "keywords": [
+      "zeitraum",
+      "ferien",
+      "feiertag",
+      "unterrichtsfrei",
+      "wochentag",
+      "zeitraster",
+      "unterrichtseinheit",
+      "termindauer",
+      "blocktage",
+      "a-woche",
+      "b-woche"
+    ],
+    "page": "data",
+    "answer": "Unter Stammdaten → Planungszeiträume erfasst du Beginn und Ende, Unterrichtstage, Tageszeiten, Zeitraster und unterrichtsfreie Daten. Der Semesterplan verwendet diesen Kalender. Eine Unterrichtseinheit hat die in Einstellungen festgelegte Minutenzahl. In Veranstaltungen ist das Soll pro Woche oder als Gesamtumfang angegeben; die Termindauer legt die Aufteilung fest. A-/B-Wochen und aufeinanderfolgende Mehrtagesblöcke sind möglich. Für Mehrtagesblöcke werden Gesamtumfang und Blocktage benötigt. CP sind keine Unterrichtseinheiten."
+  },
+  {
+    "id": "definitions",
+    "title": "Begriffe und die beiden Arten von Bereichen",
+    "keywords": [
+      "begriffe",
+      "planungsbereich",
+      "raumbereich",
+      "lehrveranstaltung",
+      "fachsemester",
+      "studienstruktur"
+    ],
+    "page": "setup",
+    "answer": "Ein Studiengang enthält Dauer und CP-Ziel. Die Lehrplanversion enthält seine Module und semesterbezogenen Lehrveranstaltungen. Ein Modul ist eine fachliche Einheit mit CP und gegebenenfalls Teilmodulen. Die Lehrveranstaltung definiert das Unterrichtssoll eines Fachsemesters. Ein Jahrgang umfasst das Aufnahmejahr, den Studiengang, seine Lehrplanversion und Gruppen. Im Semesterplan entstehen daraus konkrete Veranstaltungen, für die Termine mit Räumen und Lehrenden geplant werden. Fachsemester bezeichnet die Position im Studium; Planungszeitraum die Kalenderdaten. Ein Planungsbereich ist organisatorisch; ein Raumbereich enthält räumlich Stockwerke und Räume."
+  },
+  {
+    "id": "settings",
+    "title": "Einstellungen, Demo und Funktionsgrenzen",
+    "keywords": [
+      "einstellung",
+      "zeitzone",
+      "demo",
+      "vercel",
+      "app",
+      "anmeldung",
+      "kosten",
+      "domain",
+      "sso",
+      "benutzerkonto",
+      "mobile",
+      "ki",
+      "freddy"
+    ],
+    "page": "settings",
+    "answer": "Einstellungen enthalten Einrichtungsdaten, Zeitzone, Unterrichtseinheiten und Prüfungsgrenzen. Die Browser-Demo speichert Änderungen nur im jeweiligen Browser und bietet weder automatische Terminplanung noch Dateiimporte oder ein lokales Sprachmodell. Die lokale Anwendung kann Ollama nutzen; es entstehen dafür keine Modell-API-Kosten. Persönliche Lernendenkonten, eine eigene Handy-App, Fremdsystemanbindungen und automatische Online-Abrechnung sind spätere Erweiterungen. Hosting, kundeneigene Domains und Anmeldesysteme sind kein bereits fertiger Verwaltungsdialog. Freddy erklärt die vorhandenen Funktionen, stellt bei fehlenden Angaben Rückfragen und schlägt nächste Schritte vor. Nur eindeutige Navigationsbefehle werden automatisch ausgeführt; empfohlene Schritte öffnest du über Schaltflächen, Datensätze speicherst du selbst."
+  },
+  {
+    "id": "schools",
+    "title": "Schulen und Bildungsgänge",
+    "keywords": ["schule", "schüler", "klasse", "schuljahr", "bildungsgang"],
+    "page": "setup",
+    "answer": "Für Schulen sind Studien- und Bildungsgänge ohne Credit Points möglich. Gruppen dienen als Klassen oder Teilgruppen, Zeiträume als Schuljahr oder Halbjahr. Unterrichtsumfang, Räume, Lehrende, Belegungen und Sperren werden genauso erfasst. Die Oberfläche enthält derzeit auch Hochschulbegriffe wie Jahrgang und Fachsemester; ein vollständiger separater Schulmodus ist noch nicht vorhanden."
   }
 ]

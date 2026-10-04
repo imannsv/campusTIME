@@ -1,13 +1,17 @@
 import knowledge from "../shared/campus-ai-knowledge.json";
-import { socialReply, faqFor } from "./campus-ai-language";
+import { socialReply, resolveFAQ, isFollowup } from "./campus-ai-language";
 import type { Row } from "./api";
 import { replyActions } from "./campus-ai-actions";
 
 export { knowledge };
-export function campusHelp(question: string, context: Row) {
+export function campusHelp(
+  question: string,
+  context: Row,
+  history: { role: string; content: string }[] = [],
+) {
   const social = socialReply(question, context.revision);
   if (social) return social;
-  const faq = faqFor(question);
+  const faq = resolveFAQ(question, history);
   if (faq) {
     if (faq.kind === "issues") {
       const notices = context.proactive?.notices || [];
@@ -39,6 +43,18 @@ export function campusHelp(question: string, context: Row) {
       ...replyActions(question, guides, context),
     };
   }
+  if (isFollowup(question))
+    return {
+      answer:
+        "Auf welche Funktion beziehst du dich? Nenne mir kurz das Thema, zum Beispiel Räume, Prüfungen oder die Veröffentlichung.",
+      mode: "help",
+      model: null,
+      changed: false,
+      revision: context.revision,
+      sources: [],
+      actions: [],
+      auto_action: null,
+    };
   const normalized = question.toLocaleLowerCase("de");
   const guides = knowledge
     .map((item) => ({

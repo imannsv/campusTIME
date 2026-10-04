@@ -2,7 +2,7 @@ import type { Row } from "./api";
 import type { Store } from "./demo";
 import { cohortProgression } from "./demo-progression";
 import { campusHelp } from "./campus-ai-help";
-import { faqFor } from "./campus-ai-language";
+import { resolveFAQ, isFollowup } from "./campus-ai-language";
 import { checkStructure } from "./demo-study";
 import { proactiveContext } from "./campus-ai-actions";
 
@@ -74,6 +74,7 @@ export function demoAIContext(
     (person) => person.kind === "teacher",
   );
   const facts: Row = {
+    institution: state.institution.name,
     rooms: rooms.length,
     teachers: teachers.length,
     programs: state.data.programs.length,
@@ -90,6 +91,19 @@ export function demoAIContext(
   const floors = state.data.floors.filter(
     (item) => !building || item.building === building.id,
   );
+  const unknownCapacities = rooms.filter(
+    (room) =>
+      floors.some((item) => item.id === room.floor) &&
+      (!floor || room.floor === floor.id) &&
+      room.capacity == null,
+  ).length;
+  if (unknownCapacities)
+    notice(
+      `${unknownCapacities} Räume haben noch keine bestätigte Kapazität. Ergänze die Plätze vor automatischer Zuteilung und Veröffentlichung.`,
+      "map",
+      "hint",
+      "rooms",
+    );
   if (!state.data.buildings.length)
     notice(
       "Noch kein Bereich angelegt. Beginne mit einem Gebäude oder Campusbereich.",
@@ -331,10 +345,13 @@ export function demoAIReply(body: Row, context: Row) {
     body.question.length > 2000
   )
     throw new Error("Eine Frage mit höchstens 2.000 Zeichen eingeben.");
-  const response = campusHelp(body.question, context);
+  const response = campusHelp(body.question, context, body.history);
   return {
     ...response,
-    ...(body.use_model && !("intent" in response) && !faqFor(body.question)
+    ...(body.use_model &&
+    !("intent" in response) &&
+    !resolveFAQ(body.question, body.history) &&
+    !isFollowup(body.question)
       ? { service_note: demoAIStatus.reason }
       : {}),
   };

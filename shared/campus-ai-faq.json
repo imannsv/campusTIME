@@ -120,7 +120,7 @@
       "Wie plane ich eine Nachschreibeklausur?",
       "Wo trage ich die Prüfungsart ein?"
     ],
-    "answer": "Prüfungsart, Dauer und Hinweise hinterlegst du an Modulen oder Lehrveranstaltungen in der Studienstruktur. Unter Prüfungen übernimmst du diese Anforderungen in den ausgewählten Semesterplan und legst daraus Termine an. Prüfe Teilnehmende, Räume und Aufsichten. Nachschreiber erhalten einen separaten Termin mit eigener Teilnehmerliste."
+    "answer": "Prüfungsart, Dauer und Hinweise hinterlegst du an Modulen oder Teilmodulen in der Studienstruktur. Unter Prüfungen übernimmst du diese Anforderungen in den ausgewählten Semesterplan und legst daraus Termine an. Prüfe Teilnehmende, Räume und Aufsichten. Nachschreiber erhalten einen separaten Termin mit eigener Teilnehmerliste."
   },
   {
     "id": "deadlines",
@@ -163,5 +163,276 @@
       "Wie plane ich Bauarbeiten ein?"
     ],
     "answer": "Unter Stammdaten → Raumblockierungen wählst du die betroffenen Räume sowie Beginn und Ende. Bestehende Termine werden durch die Sperre nicht automatisch verschoben. Prüfe den betroffenen Stundenplan und plane kollidierende Termine anschließend neu."
+  },
+  {
+    "id": "tool-overview",
+    "guide": "setup",
+    "phrases": [
+      "Wie funktioniert campusTIME?",
+      "Erkläre mir campusTIME",
+      "Was macht das Tool?",
+      "Wie hängen die Bereiche zusammen?"
+    ],
+    "answer": "In Einrichtung & Studienstruktur legst du die wiederverwendbaren Grundlagen fest. Daraus entstehen für jeden Jahrgang Semesterpläne mit konkreten Veranstaltungen. Unter Stundenplanung ordnest du Termine, Räume und Lehrende zu. Prüfungen verwaltest du separat; veröffentlichte Pläne werden über Öffentliche Anzeige und Studierendenübersicht geteilt."
+  },
+  {
+    "id": "module-unit",
+    "guide": "definitions",
+    "phrases": [
+      "Was ist der Unterschied zwischen Modul und Veranstaltung?",
+      "Was ist eine Lehrveranstaltung?",
+      "Was ist ein Modul?",
+      "Was ist der Unterschied zwischen Lehrveranstaltung und Veranstaltung?"
+    ],
+    "answer": "Das Modul beschreibt eine fachliche Einheit mit CP und Prüfungsanforderungen. Die Lehrveranstaltung in der Studienstruktur legt Semester und Unterrichtssoll fest. Die konkrete Veranstaltung gehört zu einem Semesterplan und enthält Gruppen, Teilnehmende und Lehrende. Erst ihre Termine haben Datum, Uhrzeit und Räume."
+  },
+  {
+    "id": "area-types",
+    "guide": "definitions",
+    "phrases": [
+      "Was ist ein Planungsbereich?",
+      "Was ist ein Raumbereich?",
+      "Was ist der Unterschied zwischen Planungsbereich und Raumbereich?"
+    ],
+    "answer": "Ein Raumbereich bildet ein Gebäude, einen Trakt oder einen Campusbereich ab; darunter liegen Stockwerke und Räume. Ein Planungsbereich ist die organisatorische Zuordnung eines Stundenplans. Die Raumbelegung wird trotzdem gemeinsam mit anderen veröffentlichten Planbereichen geprüft."
+  },
+  {
+    "id": "semester-period",
+    "guide": "periods",
+    "phrases": [
+      "Was ist ein Fachsemester?",
+      "Was ist der Unterschied zwischen Fachsemester und Zeitraum?",
+      "Wo lege ich das Wintersemester an?",
+      "Wie lege ich einen Zeitraum an?"
+    ],
+    "answer": "Das Fachsemester ist die Position im Studienverlauf, etwa Semester 3. Der Planungszeitraum legt die tatsächlichen Kalenderdaten, Wochentage und Tageszeiten fest. Diesen erfasst du unter Stammdaten → Planungszeiträume und wählst ihn anschließend im Semesterplan aus."
+  },
+  {
+    "id": "holidays",
+    "guide": "periods",
+    "phrases": [
+      "Wie trage ich Ferien ein?",
+      "Wie berücksichtige ich Feiertage?",
+      "Wo trage ich unterrichtsfreie Tage ein?",
+      "Wie ändere ich die Unterrichtstage?"
+    ],
+    "answer": "Öffne unter Stammdaten → Planungszeiträume den verwendeten Zeitraum. Dort pflegst du Wochentage, Tagesbeginn, Tagesende und Unterrichtsfreie Tage. Prüfe bestehende Termine nach einer Änderung; sie werden durch Kalenderänderungen nicht automatisch verschoben."
+  },
+  {
+    "id": "workload-units",
+    "guide": "periods",
+    "phrases": [
+      "Was bedeutet Soll?",
+      "Was ist eine Unterrichtseinheit?",
+      "Was ist der Unterschied zwischen Soll und Termindauer?",
+      "Wie lege ich Blockunterricht an?"
+    ],
+    "answer": "Das Soll ist die benötigte Anzahl Unterrichtseinheiten pro Woche oder insgesamt. Eine Einheit hat die unter Einstellungen festgelegte Minutenzahl. Die Termindauer beschreibt die Länge eines einzelnen Termins. Für Unterricht an mehreren aufeinanderfolgenden Tagen verwendest du Gesamtumfang und Blocktage."
+  },
+  {
+    "id": "capacity-unknown",
+    "guide": "rooms",
+    "phrases": [
+      "Was bedeutet Kapazität offen?",
+      "Warum muss ich die Raumkapazität eintragen?",
+      "Kann ich einen Raum ohne Kapazität anlegen?"
+    ],
+    "answer": "Du kannst einen Raum mit unbekannter Kapazität zunächst anlegen. Seine Plätze bleiben dann leer. Für automatische Raumzuteilung und Veröffentlichung wird eine bestätigte Kapazität benötigt; campusTIME erfindet keine Platzanzahl. Ergänze sie durch Bearbeiten des Raums unter Räume."
+  },
+  {
+    "id": "room-availability",
+    "guide": "rooms",
+    "phrases": [
+      "Wann ist ein Raum frei?",
+      "Ist ein passender Raum automatisch verfügbar?",
+      "Reicht die Kapazität für einen freien Raum?"
+    ],
+    "answer": "Die Kapazität beschreibt die Größe, nicht die freie Zeit eines Raums. Prüfe für den gewünschten Zeitraum vorhandene Unterrichtstermine, Prüfungen und Raumblockierungen sowie die benötigte Ausstattung. Die Planung prüft diese Belegungen. Veröffentlichung gibt einen Stundenplan für die Anzeige frei und macht keinen Raum verfügbar."
+  },
+  {
+    "id": "floor-create",
+    "guide": "rooms",
+    "phrases": [
+      "Wie lege ich ein Stockwerk an?",
+      "Wie füge ich eine Etage hinzu?",
+      "Wie lege ich einen Bereich an?",
+      "Brauche ich einen Grundriss?"
+    ],
+    "answer": "Unter Räume legst du mit Bereich hinzufügen den räumlichen Bereich an. Wähle ihn und nutze Stockwerk hinzufügen. Räume ordnest du anschließend einem Stockwerk zu. Vorhandene Raumbezeichnungen reichen aus; ein Grundriss ist nicht erforderlich."
+  },
+  {
+    "id": "manual-term",
+    "guide": "manual",
+    "phrases": [
+      "Wie lege ich einen Termin an?",
+      "Wie ändere ich einen Termin?",
+      "Wie verschiebe ich einen Termin?",
+      "Wie plane ich manuell?"
+    ],
+    "answer": "Öffne Stundenplanung und wähle den Semesterplan. Termin öffnet das Formular für einen neuen Eintrag; ein Klick auf einen Kalendereintrag öffnet seine Bearbeitung. Passe Beginn, Ende, Räume und Lehrende an und speichere den Entwurf. Prüfe anschließend die Konflikte und veröffentliche den geänderten Plan erneut, damit die Anzeige die Änderung erhält."
+  },
+  {
+    "id": "locked-term",
+    "guide": "manual",
+    "phrases": [
+      "Was bedeutet fixiert?",
+      "Wie fixiere ich einen Termin?",
+      "Wie verhindere ich dass ein Termin verschoben wird?"
+    ],
+    "answer": "Öffne den Termin in der Stundenplanung und aktiviere Fixiert. Die automatische Neuplanung erhält diesen Termin. Fixierung hebt Konflikte nicht auf; auch fixierte Termine müssen vor der Veröffentlichung gültig sein."
+  },
+  {
+    "id": "plan-states",
+    "guide": "publication",
+    "phrases": [
+      "Was ist der Unterschied zwischen Entwurf und Veröffentlichung?",
+      "Was ist ein Planungsvorschlag?",
+      "Was passiert bei Vorschlag übernehmen?"
+    ],
+    "answer": "Der Entwurf ist dein intern bearbeiteter Plan. Ein automatisch berechneter Vorschlag ändert ihn zunächst nicht. Vorschlag übernehmen ersetzt den Entwurf und erhält fixierte Termine. Veröffentlichen prüft den Entwurf und erzeugt die Version, die Anzeigen und Studierendenübersicht sehen."
+  },
+  {
+    "id": "publication-errors",
+    "guide": "publication",
+    "phrases": [
+      "Warum kann ich nicht veröffentlichen?",
+      "Warum ist Veröffentlichen gesperrt?",
+      "Was muss ich vor der Veröffentlichung prüfen?",
+      "Warum kann ich den Vorschlag nicht übernehmen?"
+    ],
+    "answer": "Prüfe die eingeblendeten Konflikte: Unterrichtssoll, Überschneidungen, Räume samt Kapazitäten und Ausstattung, Lehrendenzeiten und Sperren müssen passen. Ein Vorschlag kann nach zwischenzeitlichen Datenänderungen veraltet sein und muss neu berechnet werden. Ohne die konkrete Meldung lässt sich die Ursache nicht sicher bestimmen."
+  },
+  {
+    "id": "public-refresh",
+    "guide": "publication",
+    "phrases": [
+      "Warum sehe ich meine Änderung nicht in der Anzeige?",
+      "Aktualisiert sich der Stundenplan automatisch?",
+      "Wann sehen Studierende die Änderungen?"
+    ],
+    "answer": "Anzeigen und Studierendenübersicht zeigen die zuletzt veröffentlichte Version und laden Änderungen alle zehn Sekunden nach. Eine gespeicherte Terminänderung bleibt zunächst im Entwurf. Veröffentliche den geprüften Plan erneut und kontrolliere, dass die Anzeige diesen Plan enthält. In der Browser-Demo bleiben Änderungen auf dasselbe Browserprofil beschränkt."
+  },
+  {
+    "id": "student-filter",
+    "guide": "display",
+    "phrases": [
+      "Wo können Studierende ihren Kurs filtern?",
+      "Wie filtere ich nach einem Kurs?",
+      "Was ist der Unterschied zwischen Anzeige und Studierendenübersicht?"
+    ],
+    "answer": "Die Öffentliche Anzeige dient etwa einem Bildschirm im Foyer und bleibt fest auf Woche, Heute oder Morgen eingestellt. Die separate Studierendenübersicht bietet Jahrgangs-, Gruppen- und Kursfilter sowie Wochenwechsel. Ihre Auswahl bleibt im teilbaren Link erhalten. Beide zeigen veröffentlichte Termine."
+  },
+  {
+    "id": "display-scroll",
+    "guide": "display",
+    "phrases": [
+      "Wie aktiviere ich automatisches Scrollen?",
+      "Wie schalte ich Scrollen aus?",
+      "Wie pausiere ich die Anzeige?"
+    ],
+    "answer": "Bearbeite die Anzeige unter Öffentliche Anzeige. Dort legst du automatisches Scrollen und das Scrollintervall fest. In der geöffneten Anzeige kann das Scrollen pausiert und wieder gestartet werden. Diese Einstellung gehört zur jeweiligen Anzeige."
+  },
+  {
+    "id": "import-files",
+    "guide": "imports",
+    "phrases": [
+      "Wie importiere ich Daten?",
+      "Kann ich Excel importieren?",
+      "Welche Dateien kann ich importieren?",
+      "Wie importiere ich eine CSV?"
+    ],
+    "answer": "Wähle unter Stammdaten die Datenart und Importieren. Nutze die dort angebotene CSV-Vorlage; auch XLSX-Dateien werden unterstützt. Nach Hochladen prüfst du die Vorschau und übernimmst sie erst bei fehlerfreier Prüfung. In der Browser-Demo sind Dateiimporte nicht verfügbar."
+  },
+  {
+    "id": "import-codes",
+    "guide": "imports",
+    "phrases": [
+      "Was ist die Kennung?",
+      "Was bedeutet code beim Import?",
+      "Wie verknüpfe ich Daten beim Import?",
+      "Entstehen beim erneuten Import doppelte Einträge?"
+    ],
+    "answer": "Die Kennung ist der stabile code eines Datensatzes innerhalb deiner Einrichtung. Derselbe code wird bei erneutem Import aktualisiert. Beziehungen verwenden die Kennungen der bereits vorhandenen Einträge; mehrere Zuordnungen trennt |. Importiere deshalb zuerst die benötigten Grundlagen."
+  },
+  {
+    "id": "import-preview",
+    "guide": "imports",
+    "phrases": [
+      "Warum ist meine Importvorschau abgelaufen?",
+      "Was passiert bei Importfehlern?",
+      "Wie groß darf eine Importdatei sein?"
+    ],
+    "answer": "Eine Vorschau verfällt nach einer Stunde oder nach einer Datenänderung. Prüfe die Datei dann erneut. Bei Fehlern wird kein Datensatz übernommen. Dateien dürfen höchstens 10 MB und 30.000 Zeilen enthalten."
+  },
+  {
+    "id": "assessment-sharing",
+    "guide": "assessments",
+    "phrases": [
+      "Wie hinterlege ich eine gemeinsame Modulprüfung?",
+      "Wie verhindere ich doppelte Prüfungen für Teilmodule?",
+      "Wann wird eine Modulprüfung vorgeschlagen?"
+    ],
+    "answer": "Hinterlege eine gemeinsame Prüfungsanforderung am Obermodul; Teilmodule ohne eigene Prüfung erhalten Keine eigene Prüfung. Beim Übernehmen wird die Vorgabe im letzten zum Modul gehörenden Fachsemester vorgeschlagen. Prüfe die übernommenen Anforderungen, bevor du konkrete Prüfungen anlegst."
+  },
+  {
+    "id": "teacher-teams",
+    "guide": "teachers",
+    "phrases": [
+      "Wie wechseln sich Lehrende ab?",
+      "Müssen mehrere Lehrende gleichzeitig da sein?",
+      "Wo lege ich Lehrendenteams fest?"
+    ],
+    "answer": "Mehrere zugeordnete Lehrende unterrichten ohne einzelne Lehrendenteams gemeinsam. In der konkreten Veranstaltung können Lehrendenteams für die chronologische Terminfolge festgelegt werden. Bei wechselnden Lehrenden muss die Zuordnung zu den jeweiligen Terminen passen; die Verfügbarkeiten pflegt die Verwaltung."
+  },
+  {
+    "id": "draft-curriculum",
+    "guide": "study",
+    "phrases": [
+      "Warum kann ich die Lehrplanversion nicht freigeben?",
+      "Kann ich mit einem unvollständigen Lehrplan planen?",
+      "Warum kann ich die Lehrplanversion nicht auswählen?"
+    ],
+    "answer": "Prüfe die Lehrplanversion in Schritt 4: Studienstruktur und ergänze die gemeldeten Lücken bei Modulen, CP, Semestern und Voraussetzungen. Jahrgänge werden an freigegebene Versionen gebunden. Ein unvollständiger Lehrplan verhindert die strukturierte Übernahme, aber du kannst Veranstaltungen und Termine weiterhin manuell erfassen."
+  },
+  {
+    "id": "editing",
+    "guide": "manual",
+    "phrases": [
+      "Wie bearbeite ich Stammdaten?",
+      "Warum kann ich einen Eintrag nicht löschen?",
+      "Kann Freddy Daten für mich speichern?"
+    ],
+    "answer": "Öffne unter Stammdaten die Datenart und den Eintrag, ändere die Angaben und speichere. Eine Löschung kann durch noch bestehende Verknüpfungen verhindert werden. Freddy kann die passende Ansicht oder ein Formular öffnen; Änderungen und Löschungen erfolgen über die reguläre Verwaltung."
+  },
+  {
+    "id": "school-use",
+    "guide": "schools",
+    "phrases": [
+      "Kann ich campusTIME für eine Schule nutzen?",
+      "Wie bilde ich Klassen ab?",
+      "Brauchen Schulen Credit Points?"
+    ],
+    "answer": "Bildungsgänge können ohne Credit Points angelegt werden. Gruppen bilden Klassen und Teilgruppen ab; ein Planungszeitraum kann ein Schuljahr oder Halbjahr sein. Räume, Lehrende, Unterrichtssoll und Sperren werden genauso erfasst. Einige Oberflächenbegriffe sind derzeit noch auf Hochschulen ausgerichtet."
+  },
+  {
+    "id": "tool-limits",
+    "guide": "settings",
+    "phrases": [
+      "Gibt es eine Handy App?",
+      "Gibt es persönliche Studierendenkonten?",
+      "Ist SSO schon verfügbar?",
+      "Kann ich meine eigene Domain in den Einstellungen verbinden?"
+    ],
+    "answer": "Persönliche Lernendenkonten, eine eigene Handy-App und konkrete Fremdsystemanbindungen sind noch spätere Erweiterungen. Die Studierendenübersicht lässt sich bereits auf dem Handy im Browser nutzen. Eigene Domains und Anmeldesysteme gehören zur betreuten Einrichtung des Betriebs; dafür gibt es derzeit keinen fertigen Verwaltungsdialog."
+  },
+  {
+    "id": "demo-limits",
+    "guide": "settings",
+    "phrases": [
+      "Was ist der Unterschied zwischen Demo und lokaler Anwendung?",
+      "Warum funktioniert die automatische Planung auf Vercel nicht?",
+      "Wo werden meine Änderungen in der Demo gespeichert?"
+    ],
+    "answer": "Die Browser-Demo speichert Änderungen in deinem Browserprofil. Sie bietet Schnellhilfe und einfache Prüfungen, aber keine automatische Terminplanung, Dateiimporte oder lokale KI. Die lokale Anwendung verwendet das Backend mit vollständigen Planungsprüfungen und kann ein eigenes Ollama-Sprachmodell verbinden."
   }
 ]

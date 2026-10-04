@@ -1,5 +1,7 @@
 import catalog from "../shared/campus-ai-actions.json";
 import type { Row } from "./api";
+import language from "../shared/campus-ai-language.json";
+import { normalizeQuestion } from "./campus-ai-language";
 
 export const campusActions: Row[] = catalog;
 export const actionForGuide = (id: string) =>
@@ -7,24 +9,17 @@ export const actionForGuide = (id: string) =>
 
 // Whole-sentence matching: questions, negation and compound commands never execute.
 export function requestedAction(question: string) {
-  const text = question.trim().toLocaleLowerCase("de").replace(/[.!]$/, "");
+  const text = normalizeQuestion(
+    normalizeQuestion(question).replace(/\bbitte\b/g, ""),
+  ).replace(/^freddy\s+/, "");
   return campusActions.find((action) =>
     action.targets.some((target: string) => {
-      const endings = action.create
-        ? [
-            `erstelle ${target}`,
-            `lege ${target} an`,
-            `öffne das formular für ${target}`,
-          ]
-        : [
-            `öffne ${target}`,
-            `öffne die ${target}`,
-            `zeige ${target}`,
-            `zeige die ${target}`,
-            `geh zu ${target}`,
-          ];
-      return endings.some((command) =>
-        [command, `bitte ${command}`, `${command} bitte`].includes(text),
+      const templates = action.create
+        ? language.creation_templates
+        : language.navigation_templates;
+      return templates.some(
+        (template) =>
+          template.replace("{target}", normalizeQuestion(target)) === text,
       );
     }),
   );
