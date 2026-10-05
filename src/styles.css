@@ -961,6 +961,12 @@ small {
 .page-actions > h1 {
   margin-right: auto;
 }
+.availability-assumption {
+  padding: 10px 12px;
+  border-radius: 7px;
+  background: #fcf4e3;
+  color: #84662f;
+}
 .overview-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

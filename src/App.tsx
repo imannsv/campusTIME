@@ -366,13 +366,15 @@ function PublicDisplay({ token }: { token: string }) {
             </button>
           )}
         </div>
-        <button
-          className="button secondary"
-          onClick={() => setPaused((p) => !p)}
-        >
-          {paused ? <Play size={16} /> : <Pause size={16} />}Scrollen{" "}
-          {paused ? "fortsetzen" : "pausieren"}
-        </button>
+        {data.auto_scroll && (
+          <button
+            className="button secondary"
+            onClick={() => setPaused((p) => !p)}
+          >
+            {paused ? <Play size={16} /> : <Pause size={16} />}Scrollen{" "}
+            {paused ? "fortsetzen" : "pausieren"}
+          </button>
+        )}
       </div>
       {day && !data.rows.length && (
         <div className="display-empty" role="status">

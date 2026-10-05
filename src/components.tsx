@@ -395,6 +395,9 @@ function AvailabilityEditor({
         ein. Mehrere Zeitfenster je Tag sind möglich. Ohne Zeitfenster ist die
         Person nicht verfügbar.
       </small>
+      {a.test_assumption && (
+        <small className="availability-assumption">{a.test_assumption}</small>
+      )}
       {windows.map((window, index) => (
         <div className="availability-window" key={index}>
           <select
