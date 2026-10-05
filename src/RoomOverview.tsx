@@ -84,34 +84,8 @@ export default function RoomOverview({
 
   return (
     <section className="room-overview" aria-label="Raumverwaltung">
-      <div className="page-actions room-actions">
-        <button
-          className="button secondary"
-          onClick={() => onEdit("buildings")}
-        >
-          Bereich hinzufügen
-        </button>
-        <button
-          className="button secondary"
-          disabled={!area}
-          onClick={() => onEdit("floors", undefined, { building: area.id })}
-        >
-          Stockwerk hinzufügen
-        </button>
-        <button
-          className="button primary"
-          disabled={!floors.length}
-          onClick={() =>
-            onEdit("rooms", undefined, {
-              floor: currentFloor?.id || floors[0]?.id,
-            })
-          }
-        >
-          Raum hinzufügen
-        </button>
-      </div>
-      {areas.length ? (
-        <>
+      <div className="room-header">
+        {areas.length > 0 && (
           <div className="room-area-tabs" role="group" aria-label="Bereiche">
             {areas.map((item) => (
               <button
@@ -124,6 +98,40 @@ export default function RoomOverview({
               </button>
             ))}
           </div>
+        )}
+        <div
+          className="page-actions room-actions"
+          role="group"
+          aria-label="Räume verwalten"
+        >
+          <button
+            className="button secondary"
+            onClick={() => onEdit("buildings")}
+          >
+            Bereich hinzufügen
+          </button>
+          <button
+            className="button secondary"
+            disabled={!area}
+            onClick={() => onEdit("floors", undefined, { building: area.id })}
+          >
+            Stockwerk hinzufügen
+          </button>
+          <button
+            className="button primary"
+            disabled={!floors.length}
+            onClick={() =>
+              onEdit("rooms", undefined, {
+                floor: currentFloor?.id || floors[0]?.id,
+              })
+            }
+          >
+            Raum hinzufügen
+          </button>
+        </div>
+      </div>
+      {areas.length ? (
+        <>
           <div className="room-floor-bar">
             <div
               className="room-floor-tabs"

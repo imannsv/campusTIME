@@ -950,6 +950,17 @@ small {
   font-size: 12px;
   margin-top: 9px;
 }
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.page-actions > h1 {
+  margin-right: auto;
+}
 .overview-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -2138,9 +2149,19 @@ tbody tr:hover {
   color: #214b76;
   box-shadow: 0 1px 4px #17395a0a;
 }
+.room-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 24px;
+}
 .room-actions {
   justify-content: flex-end;
   flex-wrap: wrap;
+  margin-bottom: 0;
+  margin-left: auto;
 }
 .room-area-tabs,
 .room-floor-tabs {
@@ -2149,7 +2170,8 @@ tbody tr:hover {
   flex-wrap: wrap;
 }
 .room-area-tabs {
-  margin: 8px 0 20px;
+  min-width: 0;
+  flex: 1 1 200px;
 }
 .room-area-tabs button {
   border: 1px solid #eaeaea;
@@ -2322,12 +2344,24 @@ tbody tr:hover {
   }
 }
 @media (max-width: 600px) {
+  .room-header {
+    align-items: stretch;
+    gap: 16px;
+  }
   .room-actions {
-    justify-content: stretch;
-    gap: 8px;
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
   .room-actions button {
-    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 40px;
+    white-space: normal;
+    padding: 9px;
+  }
+  .room-actions .primary {
+    grid-column: 1 / -1;
   }
   .room-area-tabs button {
     flex: 1 1 auto;
@@ -2617,6 +2651,27 @@ tbody tr:hover {
   padding: 20px;
   background: #fff;
 }
+.assessment-board .study-heading > div {
+  flex: 1 1 300px;
+  min-width: 0;
+}
+.assessment-board .study-heading > .button {
+  max-width: 100%;
+  white-space: normal;
+}
+.assessment-board .study-heading p {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.assessment-cards .study-inline-actions {
+  gap: 12px;
+  margin-top: 14px;
+}
+.assessment-cards .study-inline-actions .button {
+  max-width: 100%;
+  white-space: normal;
+}
 .assessment-board .resource-tabs {
   margin: 18px 0;
   flex-wrap: wrap;
@@ -2667,15 +2722,46 @@ tbody tr:hover {
   color: var(--muted);
 }
 .assessment-plan-select select {
-  max-width: min(430px, 100%);
+  width: 100%;
+  min-width: 0;
+}
+.assessment-actions {
+  align-items: flex-end;
+  gap: 20px;
+}
+.assessment-actions .assessment-plan-select {
+  flex: 1 1 300px;
+  max-width: 520px;
+  margin-right: auto;
+}
+.assessment-actions > .button {
+  flex-shrink: 0;
+  min-height: 38px;
 }
 @media (max-width: 720px) {
+  .assessment-actions {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .assessment-actions .assessment-plan-select {
+    flex: initial;
+    max-width: none;
+    width: 100%;
+  }
+  .assessment-cards .study-inline-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
   .assessment-board {
     padding: 14px;
   }
   .assessment-board .study-heading {
     align-items: stretch;
     flex-direction: column;
+  }
+  .assessment-board .study-heading > div {
+    flex: initial;
   }
 }
 .student-filters label,

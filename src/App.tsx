@@ -1752,7 +1752,7 @@ function Workspace() {
           ) : (
             <>
               {page === "exams" && (
-                <div className="page-actions">
+                <div className="page-actions assessment-actions">
                   <label className="assessment-plan-select">
                     Semesterplan für Prüfungen
                     <select
