@@ -950,13 +950,6 @@ small {
   font-size: 12px;
   margin-top: 9px;
 }
-.page-actions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
 .overview-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1021,6 +1014,7 @@ small {
 }
 .schedule-panel-top {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -1032,6 +1026,7 @@ small {
   align-items: center;
   gap: 9px;
   min-width: 0;
+  flex: 1 1 240px;
 }
 .plan-dot {
   height: 9px;
@@ -1045,12 +1040,15 @@ small {
   font-weight: 600;
   border: 0;
   padding: 5px 20px 5px 0;
-  max-width: 310px;
+  width: 100%;
+  min-width: 0;
   background: transparent;
   box-shadow: none;
 }
 .plan-actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
 }
 .plan-actions .button {
@@ -1102,8 +1100,9 @@ small {
   border-color: #e8edf2;
 }
 .calendar-scroll {
-  max-height: 800px;
+  max-height: min(800px, 75vh);
   overflow: auto;
+  scrollbar-gutter: stable;
 }
 .timetable {
   min-width: 730px;
@@ -1149,6 +1148,9 @@ small {
   background: #fafcfe;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 6;
 }
 .calendar-heading > div {
   display: flex;
@@ -1164,6 +1166,10 @@ small {
   border: 0;
   font-size: 9px;
   color: #a2acb8;
+  position: sticky;
+  left: 0;
+  background: #fafcfe;
+  z-index: 7;
 }
 .calendar-heading strong {
   font-size: 18px;
@@ -1188,7 +1194,10 @@ small {
   position: relative;
 }
 .time-axis {
-  position: relative;
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: white;
   color: #96a2b1;
 }
 .time-axis > span {
@@ -1227,10 +1236,10 @@ small {
 .calendar-event {
   position: absolute;
   z-index: 3;
-  padding: 9px 10px;
+  padding: 9px 8px;
   border: 1px solid transparent;
   border-left: 3px solid;
-  border-radius: 5px;
+  border-radius: 7px;
   text-align: left;
   display: flex;
   flex-direction: column;
@@ -1240,6 +1249,14 @@ small {
   color: #44648a;
   min-width: 0;
   transition: filter 0.15s;
+}
+.calendar-event > * {
+  min-width: 0;
+  flex-shrink: 0;
+}
+.calendar-event:focus-visible {
+  outline: 2px solid #214b76;
+  outline-offset: 1px;
 }
 .calendar-event.blue {
   background: #e8effa;
@@ -1278,6 +1295,36 @@ small {
   font-weight: 650;
   line-height: 1.35;
   letter-spacing: -0.1px;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+.calendar-event.brief strong {
+  -webkit-line-clamp: 3;
+}
+.calendar-event.compact {
+  gap: 4px;
+  padding: 7px 8px;
+}
+.calendar-event.compact strong {
+  -webkit-line-clamp: 2;
+}
+.calendar-event.tiny {
+  padding: 4px 6px;
+  gap: 2px;
+}
+.calendar-event.tiny strong {
+  -webkit-line-clamp: 1;
+  font-size: 10px;
+}
+.calendar-event.tiny .event-time {
+  font-size: 9px;
+}
+.timetable.agenda .calendar-event strong {
+  display: block;
+  overflow: visible;
 }
 .event-time {
   font-size: 10px;
@@ -1285,6 +1332,11 @@ small {
   display: flex;
   justify-content: space-between;
   white-space: nowrap;
+  gap: 4px;
+  align-items: center;
+}
+.event-time svg {
+  flex-shrink: 0;
 }
 .event-group,
 .event-room,
@@ -1298,6 +1350,76 @@ small {
 }
 .event-teacher {
   font-size: 8px;
+}
+.event-group > span,
+.event-room > span,
+.event-teacher > span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.timetable.agenda .event-group > span,
+.timetable.agenda .event-room > span,
+.timetable.agenda .event-teacher > span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.event-preview {
+  position: fixed;
+  z-index: 45;
+  padding: 17px;
+  border: 1px solid #dce5ef;
+  border-radius: 12px;
+  background: white;
+  color: #263e57;
+  box-shadow: 0 10px 32px #21374b24;
+  pointer-events: none;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+.event-preview > strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1.45;
+  margin: 7px 0;
+}
+.event-preview-date,
+.event-preview-hint {
+  font-size: 10px;
+  color: #71849b;
+}
+.event-preview-time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  margin-bottom: 13px;
+}
+.event-preview-time > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #71849b;
+}
+.event-preview p {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 7px 0;
+}
+.event-preview p svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.event-preview-hint {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
 }
 .event-group svg,
 .event-room svg,
@@ -2721,9 +2843,6 @@ tbody tr:hover {
   .overview-strip span:not(.stat-icon) {
     font-size: 9px;
   }
-  .plan-actions .button.ghost {
-    display: none;
-  }
   .schedule-toolbar {
     flex-wrap: wrap;
   }
@@ -2861,7 +2980,17 @@ tbody tr:hover {
   }
   .plan-actions {
     width: 100%;
-    justify-content: flex-end;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .plan-actions .button {
+    min-width: 0;
+    min-height: 40px;
+    padding: 7px;
+    white-space: normal;
+  }
+  .plan-actions .button svg {
+    flex-shrink: 0;
   }
   .schedule-toolbar {
     padding: 13px;

@@ -1,6 +1,31 @@
 import { DateTime } from "luxon";
+import {
+  useEffect,
+  useId,
+  useState,
+  type CSSProperties,
+  type SyntheticEvent,
+} from "react";
+import { createPortal } from "react-dom";
 import { LockKeyhole, MapPin, Users, GraduationCap } from "lucide-react";
 import { Row, fmt } from "./api";
+import { layoutEvents } from "./timetable-layout";
+
+const HOUR_HEIGHT = 76;
+function previewPosition(rect: DOMRect): CSSProperties {
+  const width = Math.min(320, window.innerWidth - 24);
+  const below = window.innerHeight - rect.bottom >= 250;
+  return {
+    width,
+    left: Math.max(12, Math.min(rect.left, window.innerWidth - width - 12)),
+    ...(below
+      ? { top: rect.bottom + 8 }
+      : { bottom: Math.max(12, window.innerHeight - rect.top + 8) }),
+    maxHeight: below
+      ? window.innerHeight - rect.bottom - 20
+      : Math.max(160, rect.top - 20),
+  };
+}
 export default function Timetable({
   rows,
   week,
@@ -22,12 +47,59 @@ export default function Timetable({
   weekdays?: number[];
   date?: string;
 }) {
+  const previewId = useId();
+  const [preview, setPreview] = useState<{
+    row: Row;
+    style: CSSProperties;
+    keyboard: boolean;
+  } | null>(null);
+  useEffect(() => {
+    const dismiss = () => setPreview(null);
+    const scroll = () =>
+      setPreview((current) => {
+        const focused = document.activeElement;
+        if (
+          current?.keyboard &&
+          focused instanceof HTMLElement &&
+          focused.matches(".calendar-event")
+        )
+          return {
+            ...current,
+            style: previewPosition(focused.getBoundingClientRect()),
+          };
+        return null;
+      });
+    const key = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dismiss();
+    };
+    window.addEventListener("scroll", scroll, true);
+    window.addEventListener("resize", dismiss);
+    window.addEventListener("keydown", key);
+    return () => {
+      window.removeEventListener("scroll", scroll, true);
+      window.removeEventListener("resize", dismiss);
+      window.removeEventListener("keydown", key);
+    };
+  }, []);
+  useEffect(() => setPreview(null), [week, date, rows.length]);
+  const showPreview = (
+    row: Row,
+    event: SyntheticEvent<HTMLButtonElement>,
+    keyboard = false,
+  ) => {
+    if (publicMode) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    setPreview({
+      row,
+      keyboard,
+      style: previewPosition(rect),
+    });
+  };
   const start = DateTime.fromISO(week, { zone }).startOf("week");
   const days = date
     ? [DateTime.fromISO(date, { zone })]
     : [...weekdays].sort((a, b) => a - b).map((i) => start.plus({ days: i }));
-  const columns = `58px repeat(${days.length}, minmax(0, 1fr))`;
-  const height = (dayEnd - dayStart) * 76;
+  const height = (dayEnd - dayStart) * HOUR_HEIGHT;
   const eventsOn = (day: DateTime) =>
     rows.filter(
       (r) =>
@@ -47,120 +119,224 @@ export default function Timetable({
         let active = 0;
         return edges.some(([, change]) => (active += change) > 3);
       }));
+  const layouts = days.map((day) => layoutEvents(eventsOn(day)));
+  // Give simultaneous events enough horizontal space. Only the calendar itself
+  // scrolls on smaller screens, never the surrounding page or its actions.
+  const dayWidths = layouts.map((events) =>
+    Math.max(180, ...events.map((event) => event.lanes * 156)),
+  );
+  const columns = agenda
+    ? `58px repeat(${days.length}, minmax(0, 1fr))`
+    : `58px ${dayWidths.map((width) => `minmax(${width}px, 1fr)`).join(" ")}`;
   return (
-    <div
-      className={
-        "timetable" + (date ? " single-day" : "") + (agenda ? " agenda" : "")
-      }
-    >
+    <>
       <div
-        className="calendar-heading"
-        style={{ gridTemplateColumns: columns }}
+        className={
+          "timetable" + (date ? " single-day" : "") + (agenda ? " agenda" : "")
+        }
+        style={
+          agenda
+            ? undefined
+            : {
+                minWidth: 58 + dayWidths.reduce((sum, width) => sum + width, 0),
+              }
+        }
       >
-        <div className="time-label">{agenda ? "Termine" : "Zeit"}</div>
-        {days.map((day) => (
-          <div
-            key={day.toISODate()}
-            className={
-              day.toISODate() === DateTime.now().setZone(zone).toISODate()
-                ? "today"
-                : ""
-            }
-          >
-            <span>{day.setLocale("de").toFormat("cccc")}</span>
-            <strong>{day.toFormat("dd")}</strong>
-            {day.toISODate() === DateTime.now().setZone(zone).toISODate() && (
-              <i />
-            )}
-          </div>
-        ))}
-      </div>
-      <div
-        className="calendar-body"
-        style={{ height, gridTemplateColumns: columns }}
-      >
-        <div className="time-axis">
-          {Array.from({ length: Math.ceil(dayEnd - dayStart) + 1 }, (_, i) => (
-            <span key={i} style={{ top: i * 76 }}>
-              {DateTime.fromObject({ hour: 0 })
-                .plus({ minutes: (dayStart + i) * 60 })
-                .toFormat("HH:mm")}
-            </span>
+        <div
+          className="calendar-heading"
+          style={{ gridTemplateColumns: columns }}
+        >
+          <div className="time-label">{agenda ? "Termine" : "Zeit"}</div>
+          {days.map((day) => (
+            <div
+              key={day.toISODate()}
+              className={
+                day.toISODate() === DateTime.now().setZone(zone).toISODate()
+                  ? "today"
+                  : ""
+              }
+            >
+              <span>{day.setLocale("de").toFormat("cccc")}</span>
+              <strong>{day.toFormat("dd")}</strong>
+              {day.toISODate() === DateTime.now().setZone(zone).toISODate() && (
+                <i />
+              )}
+            </div>
           ))}
         </div>
-        {days.map((day) => {
-          const events = eventsOn(day).sort((a, b) =>
-            a.start.localeCompare(b.start),
-          );
-          const placed: Row[] = [],
-            ends: number[] = [];
-          events.forEach((row) => {
-            const s = DateTime.fromISO(row.start, { zone }).toMillis(),
-              e = DateTime.fromISO(row.end, { zone }).toMillis();
-            let lane = ends.findIndex((end) => end <= s);
-            if (lane < 0) lane = ends.length;
-            ends[lane] = e;
-            placed.push({ ...row, lane });
-          });
-          const lanes = Math.max(1, ends.length);
-          return (
-            <div className="day-column" key={day.toISODate()}>
-              {Array.from({ length: Math.ceil(dayEnd - dayStart) }, (_, i) => (
-                <div key={i} className="hour-line" style={{ top: i * 76 }} />
-              ))}
-              {placed.map((row, i) => {
-                const s = DateTime.fromISO(row.start, { zone }),
-                  e = DateTime.fromISO(row.end, { zone });
-                const top = (s.hour + s.minute / 60 - dayStart) * 76,
-                  eventHeight = Math.max(
-                    38,
-                    (e.diff(s, "minutes").minutes / 60) * 76 - 5,
-                  );
-                return (
-                  <button
-                    key={row.id || `${row.start}-${i}`}
-                    disabled={publicMode}
-                    className={`calendar-event ${row.color || "blue"} ${row.blocked ? "blocked" : ""}`}
-                    onClick={() => onSelect?.(row)}
-                    style={{
-                      top,
-                      height: eventHeight,
-                      left: `calc(${(row.lane / lanes) * 100}% + 5px)`,
-                      width: `calc(${100 / lanes}% - 10px)`,
-                    }}
-                  >
-                    <div className="event-time">
-                      {fmt(row.start, zone)} – {fmt(row.end, zone)}
-                      {row.locked && <LockKeyhole size={11} />}
-                    </div>
-                    <strong>{row.name}</strong>
-                    <span className="event-group">
-                      <Users size={12} />
-                      {row.group_names?.join(" & ") || "Teilnehmerauswahl"}
-                    </span>
-                    <span className="event-room">
-                      <MapPin size={12} />
-                      {row.room_names?.join(", ")}
-                    </span>
-                    {(agenda || eventHeight > 98) &&
-                      row.teacher_names?.length > 0 && (
-                        <span className="event-teacher">
-                          <GraduationCap size={12} />
-                          {row.teacher_names.join(", ")}
+        <div
+          className="calendar-body"
+          style={{ height, gridTemplateColumns: columns }}
+        >
+          <div className="time-axis">
+            {Array.from(
+              { length: Math.ceil(dayEnd - dayStart) + 1 },
+              (_, i) => (
+                <span key={i} style={{ top: i * HOUR_HEIGHT }}>
+                  {DateTime.fromObject({ hour: 0 })
+                    .plus({ minutes: (dayStart + i) * 60 })
+                    .toFormat("HH:mm")}
+                </span>
+              ),
+            )}
+          </div>
+          {days.map((day, dayIndex) => {
+            const placed = layouts[dayIndex];
+            return (
+              <div className="day-column" key={day.toISODate()}>
+                {Array.from(
+                  { length: Math.ceil(dayEnd - dayStart) },
+                  (_, i) => (
+                    <div
+                      key={i}
+                      className="hour-line"
+                      style={{ top: i * HOUR_HEIGHT, height: HOUR_HEIGHT }}
+                    />
+                  ),
+                )}
+                {placed.map(({ row, lane, lanes, span }, i) => {
+                  const s = DateTime.fromISO(row.start, { zone }),
+                    e = DateTime.fromISO(row.end, { zone });
+                  const top = (s.hour + s.minute / 60 - dayStart) * HOUR_HEIGHT,
+                    eventHeight = Math.max(
+                      38,
+                      (e.diff(s, "minutes").minutes / 60) * HOUR_HEIGHT - 5,
+                    );
+                  const compact = !agenda && eventHeight < 116;
+                  const brief = !agenda && eventHeight < 190;
+                  const details = [
+                    row.name,
+                    `${fmt(row.start, zone)} – ${fmt(row.end, zone)}`,
+                    row.group_names?.join(" & "),
+                    row.room_names?.join(", "),
+                    row.teacher_names?.join(", "),
+                    row.locked ? "Termin fixiert" : "",
+                    row.blocked ? "Raum gesperrt · Änderung ausstehend" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ");
+                  return (
+                    <button
+                      type="button"
+                      key={row.id || `${row.start}-${i}`}
+                      disabled={publicMode}
+                      className={`calendar-event ${row.color || "blue"} ${compact ? "compact" : brief ? "brief" : ""} ${!agenda && eventHeight < 64 ? "tiny" : ""} ${row.blocked ? "blocked" : ""}`}
+                      aria-label={details}
+                      aria-describedby={
+                        preview?.row === row ? previewId : undefined
+                      }
+                      onMouseEnter={(event) => showPreview(row, event)}
+                      onMouseLeave={() =>
+                        setPreview((current) =>
+                          current?.keyboard ? current : null,
+                        )
+                      }
+                      onFocus={(event) => showPreview(row, event, true)}
+                      onBlur={() => setPreview(null)}
+                      onClick={() => {
+                        setPreview(null);
+                        onSelect?.(row);
+                      }}
+                      style={{
+                        top,
+                        height: eventHeight,
+                        left: `calc(${(lane / lanes) * 100}% + 5px)`,
+                        width: `calc(${(span / lanes) * 100}% - 10px)`,
+                      }}
+                    >
+                      <div className="event-time">
+                        <span>
+                          {fmt(row.start, zone)} – {fmt(row.end, zone)}
+                        </span>
+                        {row.locked && <LockKeyhole size={11} />}
+                      </div>
+                      <strong>{row.name}</strong>
+                      {(agenda || !compact) && (
+                        <span className="event-group">
+                          <Users size={12} />
+                          <span>
+                            {row.group_names?.join(" & ") ||
+                              "Teilnehmerauswahl"}
+                          </span>
                         </span>
                       )}
-                    {row.blocked && (
-                      <span className="blocked-label">
-                        Raum gesperrt · Änderung ausstehend
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })}
+                      {(agenda || eventHeight >= 92) && (
+                        <span className="event-room">
+                          <MapPin size={12} />
+                          <span>{row.room_names?.join(", ")}</span>
+                        </span>
+                      )}
+                      {(agenda || !brief) && row.teacher_names?.length > 0 && (
+                        <span className="event-teacher">
+                          <GraduationCap size={12} />
+                          <span>{row.teacher_names.join(", ")}</span>
+                        </span>
+                      )}
+                      {row.blocked && !compact && (
+                        <span className="blocked-label">
+                          Raum gesperrt · Änderung ausstehend
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
+      {preview &&
+        createPortal(
+          <div
+            id={previewId}
+            role="tooltip"
+            className="event-preview"
+            style={preview.style}
+          >
+            <div className="event-preview-date">
+              {DateTime.fromISO(preview.row.start, { zone })
+                .setLocale("de")
+                .toFormat("cccc, dd. MMMM")}
+            </div>
+            <strong>{preview.row.name}</strong>
+            <div className="event-preview-time">
+              {fmt(preview.row.start, zone)} – {fmt(preview.row.end, zone)}
+              {preview.row.locked && (
+                <span>
+                  <LockKeyhole size={12} /> Fixiert
+                </span>
+              )}
+            </div>
+            <p>
+              <Users size={14} />
+              <span>
+                {preview.row.group_names?.join(" & ") || "Teilnehmerauswahl"}
+              </span>
+            </p>
+            <p>
+              <MapPin size={14} />
+              <span>
+                {preview.row.room_names?.join(", ") ||
+                  "Noch kein Raum zugeordnet"}
+              </span>
+            </p>
+            {preview.row.teacher_names?.length > 0 && (
+              <p>
+                <GraduationCap size={14} />
+                <span>{preview.row.teacher_names.join(", ")}</span>
+              </p>
+            )}
+            {preview.row.blocked && (
+              <p className="blocked-label">
+                Raum gesperrt · Änderung ausstehend
+              </p>
+            )}
+            {onSelect && (
+              <div className="event-preview-hint">Anklicken zum Bearbeiten</div>
+            )}
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }

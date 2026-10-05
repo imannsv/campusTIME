@@ -1298,21 +1298,6 @@ function Workspace() {
             />
           ) : page === "schedule" ? (
             <>
-              <div className="page-actions">
-                <button
-                  className="button primary"
-                  disabled={!plan || DEMO_MODE}
-                  title={
-                    DEMO_MODE
-                      ? "Die automatische Planung ist lokal verfügbar und benötigt das echte Backend."
-                      : undefined
-                  }
-                  onClick={() => setModal({ type: "solver", kind: "teaching" })}
-                >
-                  <Sparkles size={17} />
-                  Automatisch planen
-                </button>
-              </div>
               <div className="overview-strip">
                 <div>
                   <span className="stat-icon blue-stat">
@@ -1387,6 +1372,21 @@ function Workspace() {
                   </div>
                   <div className="plan-actions">
                     <button
+                      className="button secondary"
+                      disabled={!plan || DEMO_MODE}
+                      title={
+                        DEMO_MODE
+                          ? "Die automatische Planung ist lokal verfügbar und benötigt das echte Backend."
+                          : undefined
+                      }
+                      onClick={() =>
+                        setModal({ type: "solver", kind: "teaching" })
+                      }
+                    >
+                      <Sparkles size={15} />
+                      Automatisch planen
+                    </button>
+                    <button
                       className="button ghost"
                       onClick={() => setModal({ type: "template", groups: [] })}
                       disabled={!plan || DEMO_MODE}
@@ -1457,11 +1457,24 @@ function Workspace() {
                     </button>
                     <strong>
                       {DateTime.fromISO(week)
+                        .plus({
+                          days: Math.min(
+                            ...(period?.weekdays?.length
+                              ? period.weekdays
+                              : [0, 1, 2, 3, 4]),
+                          ),
+                        })
                         .setLocale("de")
                         .toFormat("dd. MMM")}{" "}
                       –{" "}
                       {DateTime.fromISO(week)
-                        .plus({ days: 4 })
+                        .plus({
+                          days: Math.max(
+                            ...(period?.weekdays?.length
+                              ? period.weekdays
+                              : [0, 1, 2, 3, 4]),
+                          ),
+                        })
                         .setLocale("de")
                         .toFormat("dd. MMM yyyy")}
                     </strong>
