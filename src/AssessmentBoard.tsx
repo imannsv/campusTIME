@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { DateTime } from "luxon";
-import { FileText, GraduationCap } from "lucide-react";
+import { FileText, GraduationCap, Info } from "lucide-react";
 import { all, api, fmt, type Row } from "./api";
 import { assessmentSummary, timedAssessment } from "./assessment";
 
@@ -117,26 +117,24 @@ export default function AssessmentBoard({
       className="assessment-board"
       aria-label="Prüfungsanforderungen des Semesterplans"
     >
-      <div className="study-heading">
-        <div>
-          <h2>Prüfungsanforderungen</h2>
-          <p>
-            Vorgaben aus dem Lehrplan für diesen Jahrgang und dieses
-            Fachsemester.
-          </p>
-        </div>
+      <div className="assessment-heading">
+        <h2>Prüfungsanforderungen</h2>
         <button
           className="button secondary"
           disabled={!plan || !hasStructure || busy || loading}
           onClick={prepare}
+          aria-label="Prüfungsanforderungen übernehmen"
         >
-          Prüfungsanforderungen übernehmen
+          Lehrplan übernehmen
         </button>
       </div>
       {!hasStructure && (
-        <p className="info-note">
-          Dieser Semesterplan hat keine freigegebene Lehrplanversion. Prüfungen
-          können unten manuell angelegt werden.
+        <p className="assessment-structure-note">
+          <Info size={16} aria-hidden="true" />
+          <span>
+            Kein freigegebener Lehrplan zugeordnet. Prüfungen können unten
+            manuell angelegt werden.
+          </span>
         </p>
       )}
       {error && (
@@ -174,11 +172,18 @@ export default function AssessmentBoard({
       {loading ? (
         <p role="status">Prüfungsanforderungen laden …</p>
       ) : !visible.length ? (
-        <p className="display-empty">
-          {tab === "timed"
-            ? "Noch keine zeitgebundenen Prüfungsvorlagen übernommen."
-            : "Noch keine Hausarbeiten oder Abgaben übernommen."}
-        </p>
+        <div className="assessment-empty" role="status">
+          {tab === "timed" ? (
+            <GraduationCap size={20} aria-hidden="true" />
+          ) : (
+            <FileText size={20} aria-hidden="true" />
+          )}
+          <p>
+            {tab === "timed"
+              ? "Keine Prüfungsvorlagen vorhanden."
+              : "Keine Abgaben oder Fristen vorhanden."}
+          </p>
+        </div>
       ) : (
         <div className="assessment-cards">
           {visible.map((row) => {

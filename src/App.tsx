@@ -1754,7 +1754,7 @@ function Workspace() {
           ) : (
             <>
               {page === "exams" && (
-                <div className="page-actions assessment-actions">
+                <div className="assessment-toolbar">
                   <label className="assessment-plan-select">
                     Semesterplan für Prüfungen
                     <select
@@ -1848,16 +1848,6 @@ function Workspace() {
                   </button>
                 </div>
               )}
-              {page === "exams" && (
-                <div className="info-note">
-                  <GraduationCap size={21} />
-                  <p>
-                    Die Automatik nutzt die Teilnehmerlisten, Prüfungszeiträume
-                    und Aufsichten jeder zeitgebundenen Prüfung. Nachschreiber
-                    erhalten eine eigene Teilnehmerliste.
-                  </p>
-                </div>
-              )}
               {page === "displays" && (
                 <div className="display-cards">
                   {data.displays?.map((d) => (
@@ -1911,7 +1901,9 @@ function Workspace() {
                   ))}
                 </div>
               )}
-              <p className="resource-description">{descriptions[resource]}</p>
+              {page !== "exams" && (
+                <p className="resource-description">{descriptions[resource]}</p>
+              )}
               {boot && (
                 <DataTable
                   resource={resource}

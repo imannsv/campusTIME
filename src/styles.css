@@ -2657,30 +2657,69 @@ tbody tr:hover {
   padding: 20px;
   background: #fff;
 }
-.assessment-board .study-heading > div {
-  flex: 1 1 300px;
-  min-width: 0;
+.assessment-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
 }
-.assessment-board .study-heading > .button {
+.assessment-heading h2 {
+  font-size: 18px;
+}
+.assessment-heading > .button {
   max-width: 100%;
   white-space: normal;
 }
-.assessment-board .study-heading p {
-  margin-top: 6px;
+.assessment-structure-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 14px 0 0;
   font-size: 13px;
+  line-height: 1.6;
   color: var(--muted);
+}
+.assessment-structure-note svg,
+.assessment-empty svg {
+  flex-shrink: 0;
+}
+.assessment-structure-note svg {
+  margin-top: 2px;
+}
+.assessment-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+}
+.assessment-empty p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.assessment-board .info-note {
+  margin: 14px 0;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.6;
 }
 .assessment-cards .study-inline-actions {
   gap: 12px;
-  margin-top: 14px;
+  margin-top: auto;
+  padding-top: 14px;
 }
 .assessment-cards .study-inline-actions .button {
   max-width: 100%;
   white-space: normal;
 }
 .assessment-board .resource-tabs {
-  margin: 18px 0;
+  margin: 18px 0 16px;
   flex-wrap: wrap;
+  gap: 12px;
 }
 .assessment-board .resource-tabs button {
   display: flex;
@@ -2693,6 +2732,8 @@ tbody tr:hover {
   gap: 14px;
 }
 .assessment-cards article {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   padding: 18px;
   border: 1px solid var(--line);
@@ -2731,28 +2772,27 @@ tbody tr:hover {
   width: 100%;
   min-width: 0;
 }
-.assessment-actions {
-  align-items: flex-end;
-  gap: 20px;
+.assessment-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
 }
-.assessment-actions .assessment-plan-select {
-  flex: 1 1 300px;
-  max-width: 520px;
-  margin-right: auto;
-}
-.assessment-actions > .button {
-  flex-shrink: 0;
-  min-height: 38px;
+.assessment-toolbar > .button {
+  min-height: 40px;
 }
 @media (max-width: 720px) {
-  .assessment-actions {
-    align-items: stretch;
-    flex-direction: column;
+  .assessment-toolbar {
+    grid-template-columns: minmax(0, 1fr);
     gap: 12px;
+    padding: 14px;
   }
-  .assessment-actions .assessment-plan-select {
-    flex: initial;
-    max-width: none;
+  .assessment-toolbar > .button {
     width: 100%;
   }
   .assessment-cards .study-inline-actions {
@@ -2762,12 +2802,9 @@ tbody tr:hover {
   .assessment-board {
     padding: 14px;
   }
-  .assessment-board .study-heading {
+  .assessment-heading {
     align-items: stretch;
     flex-direction: column;
-  }
-  .assessment-board .study-heading > div {
-    flex: initial;
   }
 }
 .student-filters label,
