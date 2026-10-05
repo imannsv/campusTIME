@@ -85,25 +85,7 @@ export default function RoomOverview({
   return (
     <section className="room-overview" aria-label="Raumverwaltung">
       <div className="room-header">
-        {areas.length > 0 && (
-          <div className="room-area-tabs" role="group" aria-label="Bereiche">
-            {areas.map((item) => (
-              <button
-                key={item.id}
-                className={area.id === item.id ? "active" : ""}
-                aria-pressed={area.id === item.id}
-                onClick={() => chooseArea(item.id)}
-              >
-                {item.name}
-              </button>
-            ))}
-          </div>
-        )}
-        <div
-          className="page-actions room-actions"
-          role="group"
-          aria-label="Räume verwalten"
-        >
+        <div className="room-actions" role="group" aria-label="Räume verwalten">
           <button
             className="button secondary"
             onClick={() => onEdit("buildings")}
@@ -129,6 +111,20 @@ export default function RoomOverview({
             Raum hinzufügen
           </button>
         </div>
+        {areas.length > 0 && (
+          <div className="room-area-tabs" role="group" aria-label="Bereiche">
+            {areas.map((item) => (
+              <button
+                key={item.id}
+                className={area.id === item.id ? "active" : ""}
+                aria-pressed={area.id === item.id}
+                onClick={() => chooseArea(item.id)}
+              >
+                {item.name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       {areas.length ? (
         <>

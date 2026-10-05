@@ -2156,36 +2156,40 @@ tbody tr:hover {
   box-shadow: 0 1px 4px #17395a0a;
 }
 .room-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  display: grid;
+  min-width: 0;
   gap: 20px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 .room-actions {
-  justify-content: flex-end;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
   flex-wrap: wrap;
-  margin-bottom: 0;
-  margin-left: auto;
+  gap: 12px;
+  margin: 0;
+}
+.room-actions .button {
+  min-height: 40px;
 }
 .room-area-tabs,
 .room-floor-tabs {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 .room-area-tabs {
   min-width: 0;
-  flex: 1 1 200px;
 }
 .room-area-tabs button {
   border: 1px solid #eaeaea;
   border-radius: 12px;
-  padding: 15px 20px;
+  padding: 10px 16px;
+  min-height: 40px;
   background: #fff;
   color: var(--ink);
   font-weight: 600;
+  font-size: 14px;
 }
 .room-area-tabs button.active {
   background: var(--blue);
@@ -2199,7 +2203,8 @@ tbody tr:hover {
   margin-bottom: 24px;
 }
 .room-floor-tabs {
-  flex: 1;
+  flex: 1 1 500px;
+  min-width: 0;
 }
 .room-floor-tabs button {
   border: 1px solid #eaeaea;
@@ -2351,14 +2356,13 @@ tbody tr:hover {
 }
 @media (max-width: 600px) {
   .room-header {
-    align-items: stretch;
-    gap: 16px;
+    gap: 20px;
   }
   .room-actions {
     display: grid;
     width: 100%;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 12px;
   }
   .room-actions button {
     min-width: 0;
