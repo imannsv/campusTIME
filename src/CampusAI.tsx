@@ -34,6 +34,7 @@ export default function CampusAI({
   onNavigate,
   onAction,
   view,
+  suspended = false,
 }: {
   data: Record<string, Row[]>;
   planId: number | null;
@@ -41,8 +42,15 @@ export default function CampusAI({
   onNavigate: (page: string) => void;
   onAction: (id: string, selection: Row) => string;
   view: Row;
+  suspended?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (suspended) {
+      setOpen(false);
+      setPicker(null);
+    }
+  }, [suspended]);
   const [activated, setActivated] = useState(false);
   const [picker, setPicker] = useState<"plan" | "options" | null>(null);
   const panel = useRef<HTMLElement>(null);
@@ -230,6 +238,7 @@ export default function CampusAI({
       <button
         ref={launcher}
         className="campus-ai-launcher"
+        hidden={suspended}
         aria-label={open ? "Freddy schließen" : "Freddy öffnen"}
         aria-expanded={open}
         aria-controls="campus-ai-chat"

@@ -3,6 +3,8 @@ import {
   useEffect,
   useId,
   useState,
+  useRef,
+  Fragment,
   type CSSProperties,
   type SyntheticEvent,
 } from "react";
@@ -36,6 +38,8 @@ export default function Timetable({
   dayEnd = 18,
   weekdays = [0, 1, 2, 3, 4],
   date,
+  responsive = false,
+  followNow = false,
 }: {
   rows: Row[];
   week: string;
@@ -46,7 +50,33 @@ export default function Timetable({
   dayEnd?: number;
   weekdays?: number[];
   date?: string;
+  responsive?: boolean;
+  followNow?: boolean;
 }) {
+  const table = useRef<HTMLDivElement>(null);
+  const nowMarker = useRef<HTMLDivElement>(null);
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => {
+    if (!responsive || publicMode) return;
+    const update = () => setClock(Date.now());
+    const timer = window.setInterval(update, 15000);
+    document.addEventListener("visibilitychange", update);
+    window.addEventListener("focus", update);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", update);
+      window.removeEventListener("focus", update);
+    };
+  }, [responsive, publicMode]);
+  const [mobile, setMobile] = useState(
+    () => window.matchMedia("(max-width: 767px)").matches,
+  );
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const update = () => setMobile(media.matches);
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
   const previewId = useId();
   const [preview, setPreview] = useState<{
     row: Row;
@@ -96,10 +126,76 @@ export default function Timetable({
     });
   };
   const start = DateTime.fromISO(week, { zone }).startOf("week");
+  const now = DateTime.fromMillis(clock, { zone });
+  const currentWeek =
+    responsive &&
+    !publicMode &&
+    start.toISODate() === now.startOf("week").toISODate();
+  // Show the current time even before or after the institution's teaching hours.
+  // This only extends the view, never the configured planning constraints.
+  const viewStart = currentWeek ? Math.min(dayStart, now.hour) : dayStart;
+  const viewEnd = currentWeek ? Math.max(dayEnd, now.hour + 1) : dayEnd;
+  const nowPosition = (now.hour + now.minute / 60 - viewStart) * HOUR_HEIGHT;
+  const minute = now.toFormat("yyyy-MM-dd HH:mm");
+  useEffect(() => {
+    if (!currentWeek || !followNow) return;
+    const focusNow = () => {
+      const marker = nowMarker.current;
+      const scroller = table.current?.closest<HTMLElement>(
+        mobile ? ".main-content" : ".calendar-scroll",
+      );
+      if (!marker || !scroller) return;
+      const bounds = scroller.getBoundingClientRect();
+      scroller.scrollTop +=
+        marker.getBoundingClientRect().top -
+        bounds.top -
+        scroller.clientHeight * 0.45;
+      if (!mobile) {
+        const day = table.current?.querySelector<HTMLElement>(
+          ".calendar-heading .today",
+        );
+        if (day) {
+          const rect = day.getBoundingClientRect();
+          if (rect.left < bounds.left + 58 || rect.right > bounds.right) {
+            scroller.scrollLeft +=
+              rect.left -
+              bounds.left -
+              58 -
+              Math.max(0, (scroller.clientWidth - 58 - rect.width) / 2);
+          }
+        }
+      }
+    };
+    const frame = requestAnimationFrame(focusNow);
+    const scroller = table.current?.closest<HTMLElement>(
+      mobile ? ".main-content" : ".calendar-scroll",
+    );
+    const observer = new ResizeObserver(focusNow);
+    if (scroller) observer.observe(scroller);
+    window.addEventListener("resize", focusNow);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("resize", focusNow);
+    };
+  }, [
+    currentWeek,
+    followNow,
+    mobile,
+    minute,
+    week,
+    dayStart,
+    dayEnd,
+    rows.length,
+  ]);
   const days = date
     ? [DateTime.fromISO(date, { zone })]
     : [...weekdays].sort((a, b) => a - b).map((i) => start.plus({ days: i }));
-  const height = (dayEnd - dayStart) * HOUR_HEIGHT;
+  if (currentWeek && !days.some((day) => day.toISODate() === now.toISODate())) {
+    days.push(now.startOf("day"));
+    days.sort((a, b) => a.toMillis() - b.toMillis());
+  }
+  const height = (viewEnd - viewStart) * HOUR_HEIGHT;
   const eventsOn = (day: DateTime) =>
     rows.filter(
       (r) =>
@@ -107,23 +203,25 @@ export default function Timetable({
     );
   // Large public overviews need readable cards even when many groups run in parallel.
   const agenda =
-    publicMode &&
-    (Boolean(date) ||
-      days.some((day) => {
-        const edges = eventsOn(day)
-          .flatMap((r) => [
-            [DateTime.fromISO(r.start).toMillis(), 1],
-            [DateTime.fromISO(r.end).toMillis(), -1],
-          ])
-          .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-        let active = 0;
-        return edges.some(([, change]) => (active += change) > 3);
-      }));
+    (responsive && mobile) ||
+    (publicMode &&
+      (Boolean(date) ||
+        days.some((day) => {
+          const edges = eventsOn(day)
+            .flatMap((r) => [
+              [DateTime.fromISO(r.start).toMillis(), 1],
+              [DateTime.fromISO(r.end).toMillis(), -1],
+            ])
+            .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+          let active = 0;
+          return edges.some(([, change]) => (active += change) > 3);
+        })));
   const layouts = days.map((day) => layoutEvents(eventsOn(day)));
   // Give simultaneous events enough horizontal space. Only the calendar itself
   // scrolls on smaller screens, never the surrounding page or its actions.
   const dayWidths = layouts.map((events) =>
-    Math.max(180, ...events.map((event) => event.lanes * 156)),
+    // 180px of usable card width, plus gutters and the column border.
+    Math.max(191, ...events.map((event) => event.lanes * 190 + 1)),
   );
   const columns = agenda
     ? `58px repeat(${days.length}, minmax(0, 1fr))`
@@ -131,8 +229,12 @@ export default function Timetable({
   return (
     <>
       <div
+        ref={table}
         className={
-          "timetable" + (date ? " single-day" : "") + (agenda ? " agenda" : "")
+          "timetable" +
+          (date ? " single-day" : "") +
+          (agenda ? " agenda" : "") +
+          (responsive && mobile ? " mobile-agenda" : "")
         }
         style={
           agenda
@@ -170,11 +272,11 @@ export default function Timetable({
         >
           <div className="time-axis">
             {Array.from(
-              { length: Math.ceil(dayEnd - dayStart) + 1 },
+              { length: Math.ceil(viewEnd - viewStart) + 1 },
               (_, i) => (
                 <span key={i} style={{ top: i * HOUR_HEIGHT }}>
                   {DateTime.fromObject({ hour: 0 })
-                    .plus({ minutes: (dayStart + i) * 60 })
+                    .plus({ minutes: (viewStart + i) * 60 })
                     .toFormat("HH:mm")}
                 </span>
               ),
@@ -182,10 +284,34 @@ export default function Timetable({
           </div>
           {days.map((day, dayIndex) => {
             const placed = layouts[dayIndex];
+            const today = currentWeek && day.toISODate() === now.toISODate();
+            const next = today
+              ? placed.findIndex(
+                  ({ row }) =>
+                    DateTime.fromISO(row.end).toMillis() > now.toMillis(),
+                )
+              : -1;
+            const agendaMarker = (
+              <div
+                ref={nowMarker}
+                className="agenda-now-line"
+                aria-label={`Aktuelle Uhrzeit ${now.toFormat("HH:mm")}`}
+              >
+                <span>Jetzt · {now.toFormat("HH:mm")}</span>
+              </div>
+            );
             return (
               <div className="day-column" key={day.toISODate()}>
+                {responsive && mobile && (
+                  <h2 className="agenda-day-heading">
+                    {day.setLocale("de").toFormat("cccc, dd. MMMM")}
+                  </h2>
+                )}
+                {responsive && mobile && placed.length === 0 && (
+                  <p className="agenda-day-empty">Keine Termine</p>
+                )}
                 {Array.from(
-                  { length: Math.ceil(dayEnd - dayStart) },
+                  { length: Math.ceil(viewEnd - viewStart) },
                   (_, i) => (
                     <div
                       key={i}
@@ -197,7 +323,8 @@ export default function Timetable({
                 {placed.map(({ row, lane, lanes, span }, i) => {
                   const s = DateTime.fromISO(row.start, { zone }),
                     e = DateTime.fromISO(row.end, { zone });
-                  const top = (s.hour + s.minute / 60 - dayStart) * HOUR_HEIGHT,
+                  const top =
+                      (s.hour + s.minute / 60 - viewStart) * HOUR_HEIGHT,
                     eventHeight = Math.max(
                       38,
                       (e.diff(s, "minutes").minutes / 60) * HOUR_HEIGHT - 5,
@@ -216,73 +343,89 @@ export default function Timetable({
                     .filter(Boolean)
                     .join(" · ");
                   return (
-                    <button
-                      type="button"
-                      key={row.id || `${row.start}-${i}`}
-                      disabled={publicMode}
-                      className={`calendar-event ${row.color || "blue"} ${compact ? "compact" : brief ? "brief" : ""} ${!agenda && eventHeight < 64 ? "tiny" : ""} ${row.blocked ? "blocked" : ""}`}
-                      aria-label={details}
-                      aria-describedby={
-                        preview?.row === row ? previewId : undefined
-                      }
-                      onMouseEnter={(event) => showPreview(row, event)}
-                      onMouseLeave={() =>
-                        setPreview((current) =>
-                          current?.keyboard ? current : null,
-                        )
-                      }
-                      onFocus={(event) => showPreview(row, event, true)}
-                      onBlur={() => setPreview(null)}
-                      onClick={() => {
-                        setPreview(null);
-                        onSelect?.(row);
-                      }}
-                      style={{
-                        top,
-                        height: eventHeight,
-                        left: `calc(${(lane / lanes) * 100}% + 5px)`,
-                        width: `calc(${(span / lanes) * 100}% - 10px)`,
-                      }}
-                    >
-                      <div className="event-time">
-                        <span>
-                          {fmt(row.start, zone)} – {fmt(row.end, zone)}
-                        </span>
-                        {row.locked && <LockKeyhole size={11} />}
-                      </div>
-                      <strong>{row.name}</strong>
-                      {(agenda || !compact) && (
-                        <span className="event-group">
-                          <Users size={12} />
+                    <Fragment key={row.id || `${row.start}-${i}`}>
+                      {agenda && today && next === i && agendaMarker}
+                      <button
+                        type="button"
+                        key={row.id || `${row.start}-${i}`}
+                        disabled={publicMode}
+                        className={`calendar-event ${row.color || "blue"} ${compact ? "compact" : brief ? "brief" : ""} ${!agenda && eventHeight < 92 ? "short" : ""} ${!agenda && eventHeight < 64 ? "tiny" : ""} ${row.blocked ? "blocked" : ""}`}
+                        aria-label={details}
+                        aria-describedby={
+                          preview?.row === row ? previewId : undefined
+                        }
+                        onMouseEnter={(event) => showPreview(row, event)}
+                        onMouseLeave={() =>
+                          setPreview((current) =>
+                            current?.keyboard ? current : null,
+                          )
+                        }
+                        onFocus={(event) => showPreview(row, event, true)}
+                        onBlur={() => setPreview(null)}
+                        onClick={() => {
+                          setPreview(null);
+                          onSelect?.(row);
+                        }}
+                        style={{
+                          top,
+                          height: eventHeight,
+                          left: `calc(${(lane / lanes) * 100}% + 5px)`,
+                          width: `calc(${(span / lanes) * 100}% - 10px)`,
+                        }}
+                      >
+                        <div className="event-time">
                           <span>
-                            {row.group_names?.join(" & ") ||
-                              "Teilnehmerauswahl"}
+                            {fmt(row.start, zone)} – {fmt(row.end, zone)}
                           </span>
-                        </span>
-                      )}
-                      {(agenda || eventHeight >= 92) && (
-                        <span className="event-room">
-                          <MapPin size={12} />
-                          <span>{row.room_names?.join(", ")}</span>
-                        </span>
-                      )}
-                      {(agenda || !brief) && row.teacher_names?.length > 0 && (
-                        <span className="event-teacher">
-                          <GraduationCap size={12} />
-                          <span>{row.teacher_names.join(", ")}</span>
-                        </span>
-                      )}
-                      {row.blocked && !compact && (
-                        <span className="blocked-label">
-                          Raum gesperrt · Änderung ausstehend
-                        </span>
-                      )}
-                    </button>
+                          {row.locked && <LockKeyhole size={11} />}
+                        </div>
+                        <strong>{row.name}</strong>
+                        {publicMode && (agenda || !compact) && (
+                          <span className="event-group">
+                            <Users size={12} />
+                            <span>
+                              {row.group_names?.join(" & ") ||
+                                "Teilnehmerauswahl"}
+                            </span>
+                          </span>
+                        )}
+                        {(agenda || eventHeight >= 64) && (
+                          <span className="event-room">
+                            <MapPin size={12} />
+                            <span>{row.room_names?.join(", ")}</span>
+                          </span>
+                        )}
+                        {publicMode &&
+                          (agenda || !brief) &&
+                          row.teacher_names?.length > 0 && (
+                            <span className="event-teacher">
+                              <GraduationCap size={12} />
+                              <span>{row.teacher_names.join(", ")}</span>
+                            </span>
+                          )}
+                        {row.blocked && !compact && (
+                          <span className="blocked-label">
+                            Raum gesperrt · Änderung ausstehend
+                          </span>
+                        )}
+                      </button>
+                    </Fragment>
                   );
                 })}
+                {agenda && today && next === -1 && agendaMarker}
               </div>
             );
           })}
+          {currentWeek && !agenda && (
+            <div
+              ref={nowMarker}
+              className="calendar-now-line"
+              style={{ top: nowPosition }}
+              aria-label={`Aktuelle Uhrzeit ${now.toFormat("HH:mm")}`}
+            >
+              <span>{now.toFormat("HH:mm")}</span>
+            </div>
+          )}
         </div>
       </div>
       {preview &&
@@ -332,7 +475,7 @@ export default function Timetable({
               </p>
             )}
             {onSelect && (
-              <div className="event-preview-hint">Anklicken zum Bearbeiten</div>
+              <div className="event-preview-hint">Anklicken für Details</div>
             )}
           </div>,
           document.body,

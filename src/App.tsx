@@ -33,6 +33,8 @@ import {
   SlidersHorizontal,
   X,
   ClipboardList,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { api, all, Row, Field, labels, fmt, DEMO_MODE } from "./api";
 import { Modal, RecordForm, ImportModal, Relation } from "./components";
@@ -43,6 +45,7 @@ import StudentOverview from "./StudentOverview";
 import AssessmentBoard from "./AssessmentBoard";
 import CampusAI from "./CampusAI";
 import { campusActions } from "./campus-ai-actions";
+import { ActionMenu, DetailPanel, PageHeader } from "./WorkspaceUI";
 
 type SessionState = {
   authenticated: boolean;
@@ -59,6 +62,11 @@ const nav = [
   { id: "map", label: "Räume", icon: Building2 },
   { id: "displays", label: "Öffentliche Anzeige", icon: Monitor },
   { id: "students", label: "Studierendenübersicht", icon: Users },
+];
+const navGroups = [
+  { label: "Planung", pages: ["schedule", "exams"] },
+  { label: "Verwaltung", pages: ["setup", "data", "map"] },
+  { label: "Veröffentlichung", pages: ["displays", "students"] },
 ];
 const descriptions: Record<string, string> = {
   areas: "Getrennt planen, gemeinsame Ressourcen berücksichtigen.",
@@ -867,6 +875,18 @@ export default function App() {
   return <Workspace />;
 }
 function Workspace() {
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("campuszeit-sidebar-collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [selectedSession, setSelectedSession] = useState<Row | null>(null);
+  const [roomDetailsOpen, setRoomDetailsOpen] = useState(false);
+  const [planDetailsOpen, setPlanDetailsOpen] = useState(false);
+  const [editorDirty, setEditorDirty] = useState(false);
+  const [followNow, setFollowNow] = useState(true);
   const [setupStep, setSetupStep] = useState(0);
   const [studyContext, setStudyContext] = useState<Row>({});
   const [roomContext, setRoomContext] = useState<Row>({});
@@ -893,9 +913,80 @@ function Workspace() {
     [settings, setSettings] = useState<Row>({}),
     [busy, setBusy] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!menu) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const controls = () =>
+      Array.from(
+        sidebarRef.current?.querySelectorAll<HTMLButtonElement>(
+          "button:not(:disabled)",
+        ) || [],
+      ).filter((element) => element.offsetParent !== null);
+    controls()[0]?.focus();
+    const key = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMenu(false);
+      }
+      if (event.key === "Tab") {
+        const items = controls();
+        if (event.shiftKey && document.activeElement === items[0]) {
+          event.preventDefault();
+          items.at(-1)?.focus();
+        } else if (!event.shiftKey && document.activeElement === items.at(-1)) {
+          event.preventDefault();
+          items[0]?.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", key);
+    return () => {
+      document.removeEventListener("keydown", key);
+      previous?.focus();
+    };
+  }, [menu]);
+  useEffect(() => {
+    try {
+      localStorage.setItem("campuszeit-sidebar-collapsed", String(collapsed));
+    } catch {
+      /* Browser storage is optional for this preference. */
+    }
+  }, [collapsed]);
+  useEffect(() => {
+    setSelectedSession(null);
+    setPlanDetailsOpen(false);
+  }, [planId, week]);
+  useEffect(() => {
+    setSelectedSession((current) =>
+      current ? rows.find((row) => row.id === current.id) || null : null,
+    );
+  }, [rows]);
   const zone = session?.institution?.timezone || "Europe/Berlin",
     plan = data.plans?.find((p) => p.id === planId),
     period = data.periods?.find((p) => p.id === plan?.period);
+  useEffect(() => {
+    setWeek(DateTime.now().setZone(zone).startOf("week").toISODate()!);
+  }, [zone]);
+  useEffect(() => {
+    if (!followNow) return;
+    let previous = DateTime.now().setZone(zone).startOf("week").toISODate()!;
+    const update = () => {
+      const current = DateTime.now().setZone(zone).startOf("week").toISODate()!;
+      const prior = previous;
+      if (current !== prior)
+        setWeek((value) => (value === prior ? current : value));
+      previous = current;
+    };
+    const timer = window.setInterval(update, 15000);
+    window.addEventListener("focus", update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", update);
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, [zone, followNow]);
   const notify = (message: string) => {
     setToast(message);
     setTimeout(() => setToast(""), 4000);
@@ -913,6 +1004,8 @@ function Workspace() {
     const key = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
+        if (document.querySelector('[aria-modal="true"], .sidebar.open'))
+          return;
         searchRef.current?.focus();
       }
     };
@@ -935,11 +1028,6 @@ function Workspace() {
         if (initial && !d.plans.length) setPage("setup");
         if (!planId && d.plans[0]) {
           setPlanId(d.plans[0].id);
-          const p = d.periods.find((r) => r.id === d.plans[0].period);
-          if (p)
-            setWeek(
-              DateTime.fromISO(p.start, { zone }).startOf("week").toISODate()!,
-            );
         }
         setInitial(false);
         setError("");
@@ -972,11 +1060,39 @@ function Workspace() {
       active = false;
     };
   }, [planId, refresh]);
-  const edit = (res: string, row?: Row, defaults: Row = {}) =>
-    setModal({ type: "record", resource: res, record: row, defaults });
+  const edit = (res: string, row?: Row, defaults: Row = {}) => {
+    if (modal?.type === "record" && editorDirty) {
+      setError(
+        "Speichere deine Eingaben oder schließe das Formular, bevor du einen anderen Eintrag öffnest.",
+      );
+      return;
+    }
+    setEditorDirty(false);
+    setModal({
+      type: "record",
+      resource: res,
+      record: row,
+      defaults,
+      openedAt: Date.now(),
+    });
+  };
   const go = (id: string) => {
+    if (modal?.type === "record" && editorDirty) {
+      setError(
+        "Speichere deine Eingaben oder schließe das Formular, bevor du die Ansicht wechselst.",
+      );
+      return;
+    }
+    setModal(null);
+    setSelectedSession(null);
+    setRoomDetailsOpen(false);
+    setPlanDetailsOpen(false);
     setDataFilters({});
     setPage(id);
+    if (id === "schedule") {
+      setWeek(DateTime.now().setZone(zone).startOf("week").toISODate()!);
+      setFollowNow(true);
+    }
     setSearch("");
     setMenu(false);
     if (id === "exams") setResource("exams");
@@ -1129,10 +1245,41 @@ function Workspace() {
       />
     );
   return (
-    <div className="app-shell">
-      <aside className={`sidebar ${menu ? "open" : ""}`}>
-        <Brand />
-        <div className="institution-switch">
+    <div
+      className={`app-shell page-${page} ${collapsed ? "sidebar-collapsed" : ""} ${selectedSession || roomDetailsOpen || planDetailsOpen || (modal?.type === "record" && ["schedule", "map"].includes(page)) ? "has-detail" : ""}`}
+    >
+      <a className="skip-link" href="#workspace-content">
+        Zum Arbeitsbereich
+      </a>
+      <aside
+        id="workspace-navigation"
+        ref={sidebarRef}
+        className={`sidebar ${menu ? "open" : ""}`}
+      >
+        <div className="sidebar-brand">
+          <Brand />
+          <button
+            className="icon-button sidebar-toggle"
+            aria-label={
+              collapsed ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"
+            }
+            onClick={() => setCollapsed(!collapsed)}
+          >
+            {collapsed ? (
+              <PanelLeftOpen size={18} />
+            ) : (
+              <PanelLeftClose size={18} />
+            )}
+          </button>
+          <button
+            className="icon-button sidebar-mobile-close"
+            aria-label="Menü schließen"
+            onClick={() => setMenu(false)}
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="institution-switch" title={session.institution.name}>
           <span className="institution-icon">
             <GraduationCap size={21} />
           </span>
@@ -1146,34 +1293,45 @@ function Workspace() {
           </div>
           <ChevronDown size={15} />
         </div>
-        <span className="nav-caption">Arbeitsbereich</span>
-        <nav>
-          {nav.map((item) => (
-            <button
-              key={item.id}
-              className={page === item.id ? "active" : ""}
-              onClick={() => go(item.id)}
-            >
-              <item.icon size={20} />
-              {item.label}
-              {item.id === "schedule" && (
-                <span className="nav-count">{data.plans?.length || 0}</span>
-              )}
-            </button>
+        <nav aria-label="Hauptnavigation">
+          {navGroups.map((group) => (
+            <div className="nav-group" key={group.label}>
+              <span className="nav-caption">{group.label}</span>
+              {group.pages
+                .map((id) => nav.find((item) => item.id === id)!)
+                .map((item) => (
+                  <button
+                    key={item.id}
+                    className={page === item.id ? "active" : ""}
+                    onClick={() => go(item.id)}
+                    aria-label={item.label}
+                    aria-current={page === item.id ? "page" : undefined}
+                    title={collapsed ? item.label : undefined}
+                  >
+                    <item.icon size={20} />
+                    <span className="nav-item-label">{item.label}</span>
+                  </button>
+                ))}
+            </div>
           ))}
         </nav>
         <div className="sidebar-spacer" />
         <button
           className={"settings-nav " + (page === "settings" ? "active" : "")}
+          aria-label="Einstellungen"
+          title={collapsed ? "Einstellungen" : undefined}
           onClick={() => {
             go("settings");
             setSettings(session.institution);
           }}
         >
           <Settings size={19} />
-          Einstellungen
+          <span className="nav-item-label">Einstellungen</span>
         </button>
-        <div className="user-profile">
+        <div
+          className="user-profile"
+          title={`${session.user} · ${session.role === "admin" ? "Verwaltung" : "Planungsverantwortlich"}`}
+        >
           <span className="avatar">
             {session.user
               .split(" ")
@@ -1215,6 +1373,8 @@ function Workspace() {
           <button
             className="icon-button mobile-menu"
             aria-label="Menü öffnen"
+            aria-expanded={menu}
+            aria-controls="workspace-navigation"
             onClick={() => setMenu((m) => !m)}
           >
             <Menu size={21} />
@@ -1245,7 +1405,7 @@ function Workspace() {
               .join("")}
           </span>
         </header>
-        <main className="main-content">
+        <main className="main-content" id="workspace-content" tabIndex={-1}>
           <DemoNotice />
           {error && (
             <div className="error-box global-error" role="alert">
@@ -1300,60 +1460,37 @@ function Workspace() {
             />
           ) : page === "schedule" ? (
             <>
-              <div className="overview-strip">
-                <div>
-                  <span className="stat-icon blue-stat">
-                    <CalendarDays size={20} />
+              <div className="schedule-heading-bar">
+                <PageHeader title="Stundenplanung" />
+                <div className="plan-status-strip" aria-label="Planungsstatus">
+                  <span>
+                    <CalendarDays size={16} />
+                    <strong>{inWeek.length}</strong> Termine diese Woche
                   </span>
-                  <div>
-                    <strong>{inWeek.length}</strong>
-                    <span>Termine diese Woche</span>
-                  </div>
-                </div>
-                <div>
-                  <span className="stat-icon mint-stat">
-                    <Users size={20} />
-                  </span>
-                  <div>
-                    <strong>{boot?.counts.people || 0}</strong>
-                    <span>Personen erfasst</span>
-                  </div>
-                </div>
-                <div>
-                  <span className="stat-icon violet-stat">
-                    <Building2 size={20} />
-                  </span>
-                  <div>
-                    <strong>{boot?.counts.rooms || 0}</strong>
-                    <span>Räume auf dem Campus</span>
-                  </div>
-                </div>
-                <div>
-                  <span
-                    className={`stat-icon ${conflicts.length ? "amber-stat" : "mint-stat"}`}
+                  <button
+                    className={conflicts.length ? "status-warning" : ""}
+                    onClick={() => {
+                      setSelectedSession(null);
+                      setPlanDetailsOpen(true);
+                    }}
                   >
                     {conflicts.length ? (
-                      <AlertTriangle size={20} />
+                      <AlertTriangle size={16} />
                     ) : (
-                      <CheckCircle2 size={20} />
+                      <CheckCircle2 size={16} />
                     )}
+                    {conflicts.length
+                      ? `${conflicts.length} Hinweise`
+                      : DEMO_MODE
+                        ? "Demo geprüft"
+                        : "Konfliktfrei"}
+                    <ChevronRight size={14} />
+                  </button>
+                  <span className="publication-status">
+                    {publication
+                      ? `Anzeige: Version ${publication.number}`
+                      : "Noch nicht veröffentlicht"}
                   </span>
-                  <div>
-                    <strong>
-                      {conflicts.length
-                        ? `${conflicts.length} Hinweise`
-                        : DEMO_MODE
-                          ? "Demo geprüft"
-                          : "Konfliktfrei"}
-                    </strong>
-                    <span>
-                      {conflicts.length
-                        ? "Vor Veröffentlichung prüfen"
-                        : DEMO_MODE
-                          ? "Überschneidungen & Kapazitäten"
-                          : "Alle Regeln erfüllt"}
-                    </span>
-                  </div>
                 </div>
               </div>
               <div className="schedule-panel">
@@ -1374,35 +1511,7 @@ function Workspace() {
                   </div>
                   <div className="plan-actions">
                     <button
-                      className="button secondary"
-                      disabled={!plan || DEMO_MODE}
-                      title={
-                        DEMO_MODE
-                          ? "Die automatische Planung ist lokal verfügbar und benötigt das echte Backend."
-                          : undefined
-                      }
-                      onClick={() =>
-                        setModal({ type: "solver", kind: "teaching" })
-                      }
-                    >
-                      <Sparkles size={15} />
-                      Automatisch planen
-                    </button>
-                    <button
-                      className="button ghost"
-                      onClick={() => setModal({ type: "template", groups: [] })}
-                      disabled={!plan || DEMO_MODE}
-                      title={
-                        DEMO_MODE
-                          ? "Lehrplanübernahme benötigt das echte Backend."
-                          : undefined
-                      }
-                    >
-                      <FileText size={15} />
-                      Lehrplan übernehmen
-                    </button>
-                    <button
-                      className="button secondary"
+                      className="button secondary add-session-button"
                       disabled={!plan}
                       onClick={() =>
                         edit("sessions", undefined, {
@@ -1417,8 +1526,49 @@ function Workspace() {
                       }
                     >
                       <Plus size={16} />
-                      Termin
+                      Termin hinzufügen
                     </button>
+                    <button
+                      className="button secondary"
+                      disabled={!plan || DEMO_MODE}
+                      title={
+                        DEMO_MODE
+                          ? "Die automatische Planung ist lokal verfügbar und benötigt das echte Backend."
+                          : undefined
+                      }
+                      onClick={() =>
+                        setModal({ type: "solver", kind: "teaching" })
+                      }
+                    >
+                      <Sparkles size={15} />
+                      Automatisch planen
+                    </button>
+                    <ActionMenu label="Weitere Aktionen" shortLabel="Mehr">
+                      <button
+                        className="button ghost"
+                        onClick={() =>
+                          setModal({ type: "template", groups: [] })
+                        }
+                        disabled={!plan || DEMO_MODE}
+                        title={
+                          DEMO_MODE
+                            ? "Lehrplanübernahme benötigt das echte Backend."
+                            : undefined
+                        }
+                      >
+                        <FileText size={15} />
+                        Lehrplan übernehmen
+                      </button>
+                      <button
+                        className="button ghost"
+                        onClick={() => {
+                          setSelectedSession(null);
+                          setPlanDetailsOpen(true);
+                        }}
+                      >
+                        Planungsstatus ansehen
+                      </button>
+                    </ActionMenu>
                     <button
                       className="button primary publish-button"
                       disabled={!plan}
@@ -1459,39 +1609,42 @@ function Workspace() {
                     </button>
                     <strong>
                       {DateTime.fromISO(week)
-                        .plus({
-                          days: Math.min(
-                            ...(period?.weekdays?.length
-                              ? period.weekdays
-                              : [0, 1, 2, 3, 4]),
-                          ),
-                        })
                         .setLocale("de")
                         .toFormat("dd. MMM")}{" "}
                       –{" "}
                       {DateTime.fromISO(week)
                         .plus({
-                          days: Math.max(
-                            ...(period?.weekdays?.length
-                              ? period.weekdays
-                              : [0, 1, 2, 3, 4]),
-                          ),
+                          days: 6,
                         })
                         .setLocale("de")
                         .toFormat("dd. MMM yyyy")}
                     </strong>
                     <button
                       className="today-button"
-                      onClick={() =>
+                      onClick={() => {
+                        setFollowNow(true);
                         setWeek(
                           DateTime.now()
                             .setZone(zone)
                             .startOf("week")
                             .toISODate()!,
-                        )
-                      }
+                        );
+                      }}
                     >
-                      Heute
+                      Diese Woche
+                    </button>
+                    <button
+                      className="follow-now-button"
+                      aria-pressed={followNow}
+                      title="Rote Zeitlinie im sichtbaren Ausschnitt halten. Zum freien Planen ausschalten."
+                      disabled={
+                        week !==
+                        DateTime.now().setZone(zone).startOf("week").toISODate()
+                      }
+                      onClick={() => setFollowNow(!followNow)}
+                    >
+                      <Clock3 size={16} />
+                      Jetzt folgen
                     </button>
                   </div>
                   <div className="calendar-filters">
@@ -1542,14 +1695,12 @@ function Workspace() {
                       rows={visible}
                       week={week}
                       zone={zone}
-                      onSelect={(r) =>
-                        edit("sessions", {
-                          ...r,
-                          rooms: r.room_ids,
-                          teachers: r.teacher_ids,
-                          plan: planId,
-                        })
-                      }
+                      onSelect={(r) => {
+                        setPlanDetailsOpen(false);
+                        setSelectedSession(r);
+                      }}
+                      responsive
+                      followNow={followNow}
                       dayStart={
                         period
                           ? Number(period.day_start.split(":")[0]) +
@@ -1590,42 +1741,11 @@ function Workspace() {
                   </span>
                 </div>
               </div>
-              <div className="below-calendar">
-                <div>
-                  <span className="small-label">Planungsstatus</span>
-                  {conflicts.length ? (
-                    <ul className="conflict-list">
-                      {conflicts.slice(0, 6).map((c, i) => (
-                        <li key={i}>
-                          <AlertTriangle size={15} />
-                          {c}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p>
-                      {DEMO_MODE
-                        ? "Die Demo prüft Überschneidungen und Raumkapazitäten. Die vollständige Soll- und Regelprüfung erfolgt im echten Backend."
-                        : "Keine Überschneidungen. Unterrichtssoll und Kapazitäten sind geprüft."}
-                    </p>
-                  )}
-                </div>
-                <div className="activity">
-                  <span className="small-label">Zuletzt geändert</span>
-                  {boot?.audit.slice(0, 3).map((a: Row, i: number) => (
-                    <div key={i}>
-                      <span className="activity-dot" />
-                      <p>
-                        {a.action}
-                        <small>{fmt(a.created, zone, "dd.MM. · HH:mm")}</small>
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </>
           ) : page === "map" ? (
             <RoomOverview
+              onDetailsChange={setRoomDetailsOpen}
+              editing={Boolean(modal)}
               onContextChange={setRoomContext}
               data={data}
               zone={zone}
@@ -1948,6 +2068,7 @@ function Workspace() {
         </footer>
       </div>
       <CampusAI
+        suspended={Boolean(modal)}
         data={data}
         planId={planId}
         refresh={refresh}
@@ -1961,6 +2082,108 @@ function Workspace() {
           ...(page === "map" ? roomContext : {}),
         }}
       />
+      {selectedSession && !modal && (
+        <DetailPanel
+          title={selectedSession.name}
+          subtitle={DateTime.fromISO(selectedSession.start, { zone })
+            .setLocale("de")
+            .toFormat("cccc, dd. MMMM yyyy")}
+          onClose={() => setSelectedSession(null)}
+        >
+          <div className="session-details">
+            <div className="detail-time">
+              <Clock3 size={18} />
+              {fmt(selectedSession.start, zone)} –{" "}
+              {fmt(selectedSession.end, zone)}
+            </div>
+            <dl className="detail-facts">
+              <div>
+                <dt>Raum</dt>
+                <dd>
+                  {selectedSession.room_names?.join(", ") ||
+                    "Noch nicht zugeordnet"}
+                </dd>
+              </div>
+              <div>
+                <dt>Gruppen</dt>
+                <dd>
+                  {selectedSession.group_names?.join(" & ") ||
+                    "Teilnehmerauswahl"}
+                </dd>
+              </div>
+              <div>
+                <dt>Lehrende</dt>
+                <dd>
+                  {selectedSession.teacher_names?.join(", ") ||
+                    "Noch nicht zugeordnet"}
+                </dd>
+              </div>
+              <div>
+                <dt>Status</dt>
+                <dd>{selectedSession.locked ? "Termin fixiert" : "Entwurf"}</dd>
+              </div>
+            </dl>
+            {selectedSession.blocked && (
+              <div className="error-box">
+                Raum gesperrt · Änderung ausstehend
+              </div>
+            )}
+            <button
+              className="button primary"
+              onClick={() =>
+                edit("sessions", {
+                  ...selectedSession,
+                  rooms: selectedSession.room_ids,
+                  teachers: selectedSession.teacher_ids,
+                  plan: planId,
+                })
+              }
+            >
+              Bearbeiten
+            </button>
+          </div>
+        </DetailPanel>
+      )}
+      {planDetailsOpen && !modal && (
+        <DetailPanel
+          title="Planungsstatus"
+          subtitle={plan?.name}
+          onClose={() => setPlanDetailsOpen(false)}
+        >
+          <div className="plan-details">
+            <span className="status-badge">
+              {publication
+                ? `Anzeige: Version ${publication.number}`
+                : "Noch nicht veröffentlicht"}
+            </span>
+            {conflicts.length ? (
+              <>
+                <h3>{conflicts.length} Hinweise</h3>
+                <ul className="conflict-list">
+                  {conflicts.map((conflict, i) => (
+                    <li key={i}>{conflict}</li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p>
+                {DEMO_MODE
+                  ? "Die Demo prüft Überschneidungen und Raumkapazitäten. Die vollständige Soll- und Regelprüfung erfolgt im echten Backend."
+                  : "Keine Überschneidungen. Unterrichtssoll und Kapazitäten sind geprüft."}
+              </p>
+            )}
+            <h3>Zuletzt geändert</h3>
+            {boot?.audit.slice(0, 3).map((entry: Row, index: number) => (
+              <div className="audit-entry" key={index}>
+                <strong>{entry.action}</strong>
+                <small>
+                  {fmt(entry.created, zone, "dd.MM. HH:mm")} · {entry.actor}
+                </small>
+              </div>
+            ))}
+          </div>
+        </DetailPanel>
+      )}
       {toast && (
         <div className="toast" role="status">
           <CheckCircle2 size={18} />
@@ -1969,14 +2192,22 @@ function Workspace() {
       )}
       {modal?.type === "record" && boot && (
         <RecordForm
-          key={`${modal.resource}-${modal.record?.id}`}
+          key={`${modal.resource}-${modal.record?.id}-${modal.openedAt}`}
           resource={modal.resource}
           fields={boot.schema[modal.resource]}
           record={modal.record}
           defaults={modal.defaults}
           zone={zone}
-          onClose={() => setModal(null)}
+          onClose={() => {
+            setModal(null);
+            setEditorDirty(false);
+            setError((current) =>
+              current.startsWith("Speichere deine Eingaben") ? "" : current,
+            );
+          }}
           onSaved={reload}
+          presentation={["schedule", "map"].includes(page) ? "panel" : "dialog"}
+          onDirtyChange={setEditorDirty}
         />
       )}{" "}
       {modal?.type === "import" && (

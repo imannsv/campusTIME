@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { DateTime } from "luxon";
 import { api, fmt, Row } from "./api";
+import { ActionMenu, DetailPanel, PageHeader } from "./WorkspaceUI";
 
 type Props = {
   onContextChange: (context: Row) => void;
@@ -8,6 +9,8 @@ type Props = {
   zone: string;
   query: string;
   onEdit: (resource: string, record?: Row, defaults?: Row) => void;
+  onDetailsChange: (open: boolean) => void;
+  editing: boolean;
 };
 
 export default function RoomOverview({
@@ -16,6 +19,8 @@ export default function RoomOverview({
   query,
   onEdit,
   onContextChange,
+  onDetailsChange,
+  editing,
 }: Props) {
   const [areaId, setAreaId] = useState<number | null>(null);
   const [floorId, setFloorId] = useState<number | null>(null);
@@ -55,6 +60,9 @@ export default function RoomOverview({
   const selected = rooms.find((room) => room.id === roomId);
   const selectedFloor = floors.find((floor) => floor.id === selected?.floor);
   useEffect(() => {
+    onDetailsChange(Boolean(selected));
+  }, [Boolean(selected), onDetailsChange]);
+  useEffect(() => {
     let active = true;
     setOccupancy([]);
     setError("");
@@ -84,33 +92,57 @@ export default function RoomOverview({
 
   return (
     <section className="room-overview" aria-label="Raumverwaltung">
+      <PageHeader
+        title="Räume"
+        actions={
+          <>
+            <ActionMenu label="Struktur verwalten">
+              <button
+                className="button secondary"
+                onClick={() => onEdit("buildings")}
+              >
+                Bereich hinzufügen
+              </button>
+              <button
+                className="button secondary"
+                disabled={!area}
+                onClick={() =>
+                  onEdit("floors", undefined, { building: area.id })
+                }
+              >
+                Stockwerk hinzufügen
+              </button>
+              <button
+                className="button secondary"
+                disabled={!area}
+                onClick={() => onEdit("buildings", area)}
+              >
+                Bereich bearbeiten
+              </button>
+              <button
+                className="button secondary"
+                disabled={!currentFloor}
+                onClick={() => onEdit("floors", currentFloor)}
+              >
+                Stockwerk bearbeiten
+              </button>
+            </ActionMenu>
+            <button
+              className="button primary"
+              disabled={!floors.length}
+              onClick={() =>
+                onEdit("rooms", undefined, {
+                  floor: currentFloor?.id || floors[0]?.id,
+                })
+              }
+            >
+              Raum hinzufügen
+            </button>
+          </>
+        }
+      />
       <div className="room-header">
-        <div className="room-actions" role="group" aria-label="Räume verwalten">
-          <button
-            className="button secondary"
-            onClick={() => onEdit("buildings")}
-          >
-            Bereich hinzufügen
-          </button>
-          <button
-            className="button secondary"
-            disabled={!area}
-            onClick={() => onEdit("floors", undefined, { building: area.id })}
-          >
-            Stockwerk hinzufügen
-          </button>
-          <button
-            className="button primary"
-            disabled={!floors.length}
-            onClick={() =>
-              onEdit("rooms", undefined, {
-                floor: currentFloor?.id || floors[0]?.id,
-              })
-            }
-          >
-            Raum hinzufügen
-          </button>
-        </div>
+        <span className="filter-label">Bereich</span>
         {areas.length > 0 && (
           <div className="room-area-tabs" role="group" aria-label="Bereiche">
             {areas.map((item) => (
@@ -129,6 +161,7 @@ export default function RoomOverview({
       {areas.length ? (
         <>
           <div className="room-floor-bar">
+            <span className="filter-label">Stockwerk</span>
             <div
               className="room-floor-tabs"
               role="group"
@@ -158,20 +191,6 @@ export default function RoomOverview({
                 </button>
               ))}
             </div>
-            <button
-              className="text-button"
-              onClick={() => onEdit("buildings", area)}
-            >
-              Bereich bearbeiten
-            </button>
-            {currentFloor && (
-              <button
-                className="text-button"
-                onClick={() => onEdit("floors", currentFloor)}
-              >
-                Stockwerk bearbeiten
-              </button>
-            )}
           </div>
           <div className="room-overview-layout">
             <div className="room-catalog">
@@ -228,14 +247,13 @@ export default function RoomOverview({
                 </div>
               )}
             </div>
-            <aside className="room-detail-panel">
-              {selected ? (
+            {selected && !editing && (
+              <DetailPanel
+                title={selected.name}
+                subtitle={`${area.name} · ${selectedFloor?.name || "Stockwerk offen"}`}
+                onClose={() => setRoomId(null)}
+              >
                 <>
-                  <span className="small-label">Raumdetails</span>
-                  <h2>{selected.name}</h2>
-                  <p>
-                    {area.name} · {selectedFloor?.name}
-                  </p>
                   <dl className="room-facts">
                     <div>
                       <dt>Raumbezeichnung</dt>
@@ -308,12 +326,8 @@ export default function RoomOverview({
                     <p>Keine veröffentlichte Belegung.</p>
                   )}
                 </>
-              ) : (
-                <p className="room-selection-hint">
-                  Wähle einen Raum, um Details und Belegung zu sehen.
-                </p>
-              )}
-            </aside>
+              </DetailPanel>
+            )}
           </div>
         </>
       ) : (

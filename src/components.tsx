@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { api, Field, Row, labels, localInput } from "./api";
 import { timedAssessment } from "./assessment";
+import { DetailPanel } from "./WorkspaceUI";
 
 export function Modal({
   title,
@@ -26,6 +27,8 @@ export function Modal({
   wide?: boolean;
 }) {
   const section = useRef<HTMLElement>(null);
+  const closeHandler = useRef(onClose);
+  closeHandler.current = onClose;
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const controls = () =>
@@ -36,7 +39,7 @@ export function Modal({
       ).filter((el) => el.offsetParent !== null);
     controls()[0]?.focus();
     const listener = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") closeHandler.current();
       if (e.key === "Tab") {
         const elements = controls(),
           first = elements[0],
@@ -58,7 +61,7 @@ export function Modal({
       document.body.style.overflow = old;
       previous?.focus();
     };
-  }, [onClose]);
+  }, []);
   return (
     <div
       className="modal-backdrop"
@@ -624,6 +627,8 @@ export function RecordForm({
   zone,
   onClose,
   onSaved,
+  presentation = "dialog",
+  onDirtyChange,
 }: {
   resource: string;
   fields: Field[];
@@ -632,6 +637,8 @@ export function RecordForm({
   zone: string;
   onClose: () => void;
   onSaved: () => void;
+  presentation?: "dialog" | "panel";
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const initial: Row = {};
   fields.forEach((f) => {
@@ -646,7 +653,34 @@ export function RecordForm({
   const [values, setValues] = useState(initial),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
-  const change = (key: string, value: any) =>
+  const baseline = useRef(JSON.stringify(initial));
+  const dirty = JSON.stringify(values) !== baseline.current;
+  const [discard, setDiscard] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const discardRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+  useEffect(() => {
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    if (dirty) window.addEventListener("beforeunload", beforeUnload);
+    return () => window.removeEventListener("beforeunload", beforeUnload);
+  }, [dirty]);
+  useEffect(() => {
+    if (discard)
+      discardRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+  }, [discard]);
+  function requestClose() {
+    if (busy) return;
+    if (dirty) setDiscard(true);
+    else onClose();
+  }
+  const change = (key: string, value: any) => {
+    setFieldErrors((current) => ({ ...current, [key]: "" }));
     setValues((v) => ({
       ...v,
       [key]: value,
@@ -665,6 +699,7 @@ export function RecordForm({
           }
         : {}),
     }));
+  };
   async function submit(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -690,10 +725,31 @@ export function RecordForm({
         record ? "PATCH" : "POST",
         body,
       );
+      onDirtyChange?.(false);
       onSaved();
       onClose();
     } catch (e) {
-      setError((e as Error).message);
+      const message = (e as Error).message;
+      setError(message);
+      // The existing API formats validation errors with translated field labels.
+      // Associate those errors with controls without changing its response contract.
+      const errors: Record<string, string> = {};
+      for (const field of fields) {
+        const prefix = `${labels[field.name] || field.name}: `;
+        const line = message
+          .split("\n")
+          .find((item) => item.startsWith(prefix));
+        if (line) errors[field.name] = line.slice(prefix.length);
+      }
+      setFieldErrors(errors);
+      const first = Object.keys(errors)[0];
+      if (first)
+        Array.from(
+          formRef.current?.querySelectorAll<HTMLElement>("[data-field]") || [],
+        )
+          .find((element) => element.dataset.field === first)
+          ?.querySelector<HTMLElement>("input, select, textarea")
+          ?.focus();
     } finally {
       setBusy(false);
     }
@@ -709,18 +765,35 @@ export function RecordForm({
       setBusy(false);
     }
   }
+  const Container = presentation === "panel" ? DetailPanel : Modal;
   return (
-    <Modal
+    <Container
       title={record ? "Eintrag bearbeiten" : `${labels[resource]} hinzufügen`}
       subtitle={
         defaults.assessment_template
           ? "Prüfungsvorlage übernehmen. Teilnehmer, Zeitraum und Aufsichten prüfen."
           : "Änderungen werden im Entwurf gespeichert."
       }
-      onClose={onClose}
-      wide={resource === "courses" || resource === "exams"}
+      onClose={requestClose}
+      {...(presentation === "panel"
+        ? { editing: true }
+        : { wide: resource === "courses" || resource === "exams" })}
     >
-      <form onSubmit={submit} className="record-form">
+      <form
+        ref={formRef}
+        onSubmit={submit}
+        className="record-form"
+        onInvalidCapture={(event) => {
+          const input = event.target as HTMLInputElement;
+          const name =
+            input.closest<HTMLElement>("[data-field]")?.dataset.field;
+          if (name)
+            setFieldErrors((current) => ({
+              ...current,
+              [name]: input.validationMessage,
+            }));
+        }}
+      >
         {defaults._draft_warnings?.length > 0 && (
           <div className="info-note">
             <p>{defaults._draft_warnings.join(" ")}</p>
@@ -753,6 +826,7 @@ export function RecordForm({
             .map((f) => (
               <label
                 key={f.name}
+                data-field={f.name}
                 className={
                   ["json", "many"].includes(f.type) ||
                   f.name === "assessment_notes"
@@ -872,6 +946,10 @@ export function RecordForm({
                 ) : f.type === "choice" ? (
                   <select
                     aria-label={labels[f.name] || f.name}
+                    aria-invalid={Boolean(fieldErrors[f.name]) || undefined}
+                    aria-describedby={
+                      fieldErrors[f.name] ? `record-error-${f.name}` : undefined
+                    }
                     required={f.required}
                     value={values[f.name] || ""}
                     onChange={(e) => change(f.name, e.target.value)}
@@ -941,6 +1019,11 @@ export function RecordForm({
                   </>
                 ) : (
                   <input
+                    aria-label={labels[f.name] || f.name}
+                    aria-invalid={Boolean(fieldErrors[f.name]) || undefined}
+                    aria-describedby={
+                      fieldErrors[f.name] ? `record-error-${f.name}` : undefined
+                    }
                     required={f.required}
                     type={f.type}
                     placeholder={
@@ -968,12 +1051,46 @@ export function RecordForm({
                     onChange={(e) => change(f.name, e.target.value)}
                   />
                 )}
+                {fieldErrors[f.name] && (
+                  <small
+                    id={`record-error-${f.name}`}
+                    className="field-error"
+                    role="alert"
+                  >
+                    {fieldErrors[f.name]}
+                  </small>
+                )}
               </label>
             ))}
         </div>
         {error && (
           <div className="error-box" role="alert">
             {error}
+          </div>
+        )}
+        {discard && (
+          <div className="discard-confirmation" ref={discardRef} role="alert">
+            <strong>Ungespeicherte Änderungen</strong>
+            <p>Möchtest du die Eingaben behalten oder verwerfen?</p>
+            <div>
+              <button
+                type="button"
+                className="button secondary"
+                onClick={() => setDiscard(false)}
+              >
+                Weiter bearbeiten
+              </button>
+              <button
+                type="button"
+                className="button danger"
+                onClick={() => {
+                  onDirtyChange?.(false);
+                  onClose();
+                }}
+              >
+                Änderungen verwerfen
+              </button>
+            </div>
           </div>
         )}
         <footer>
@@ -989,7 +1106,12 @@ export function RecordForm({
             </button>
           )}
           <div className="spacer" />
-          <button type="button" className="button secondary" onClick={onClose}>
+          <button
+            type="button"
+            className="button secondary"
+            onClick={requestClose}
+            disabled={busy}
+          >
             Abbrechen
           </button>
           <button className="button primary" disabled={busy}>
@@ -1002,7 +1124,7 @@ export function RecordForm({
           </button>
         </footer>
       </form>
-    </Modal>
+    </Container>
   );
 }
 

@@ -215,6 +215,10 @@ export async function campusAIFlow(page: Page) {
     .getByRole("button", { name: "Schließen", exact: true })
     .click();
   await expect(roomForm).toHaveCount(0);
+  await expect(chat).not.toBeVisible();
+  await page.getByRole("button", { name: "Freddy öffnen", exact: true }).click();
+  await expect(chat).toBeVisible();
+  await expect(answer).not.toHaveCount(0);
   await send("Öffne Prüfungen nicht");
   await expect(answer.last()).toContainText("Prüfungen");
   await expect(

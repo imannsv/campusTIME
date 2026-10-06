@@ -325,6 +325,7 @@ test("Raumverwaltung: Bereich, Stockwerk und Raum pflegen", async ({
     .getByRole("button", { name: "Räume", exact: true })
     .click();
   try {
+    await page.getByRole("button", { name: "Struktur verwalten", exact: true }).click();
     await page
       .getByRole("button", { name: "Bereich hinzufügen", exact: true })
       .click();
@@ -335,6 +336,7 @@ test("Raumverwaltung: Bereich, Stockwerk und Raum pflegen", async ({
     await page.getByRole("dialog").getByLabel(/^Name/).fill(code);
     await page.getByRole("button", { name: "Speichern", exact: true }).click();
     await page.getByRole("button", { name: code, exact: true }).click();
+    await page.getByRole("button", { name: "Struktur verwalten", exact: true }).click();
     await page
       .getByRole("button", { name: "Stockwerk hinzufügen", exact: true })
       .click();
