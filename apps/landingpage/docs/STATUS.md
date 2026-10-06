@@ -12,6 +12,7 @@ Stand: 06.10.2026. Eigenständige Umsetzung unter `apps/landingpage`, Branch `la
 - Rechtliche Entwurfsseiten und überprüfte Freigabesicherung. Öffentliche Freigabe benötigt Domain, Kontakt und freigegebene Inhalte.
 - Eigenständige Vercel-Konfiguration mit Buildfilter ausschließlich für `landingpage`.
 - Umsetzung auf GitHub im Branch `landingpage` gespeichert und mit dem lokalen Checkout abgeglichen; `main` bleibt unverändert.
+- Logo an die bestehende Produktmarke angeglichen: `campuszeit.`, DM Sans 800, vier gedrehte farbige Quadrate; durchgängig in Seite, Favicon und Vorschaugrafik. Build und alle zwölf Tests bestanden nach der Korrektur erneut; visuell und unabhängig geprüft.
 
 ## Verifiziert
 

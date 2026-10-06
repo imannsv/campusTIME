@@ -59,3 +59,10 @@
 - Vorschaugrafik visuell geprüft und Fontkonturen eingebettet, damit Linux-/Windows-Builds ohne Systemschriften funktionieren.
 - Task 3 lokal abgeschlossen; externe Einrichtung wartet auf Vercel-Authentifizierung und bestätigte Angaben. Details in `docs/STATUS.md`.
 - Umsetzung über die verbundene GitHub-Anbindung auf `landingpage` übertragen; lokaler und entfernter Stand abgeglichen. Keine Änderung an `main`.
+
+## Logokorrektur
+
+- [x] Produktlogo aus `src/App.tsx` und `src/styles.css` als verbindliche Vorlage übernehmen: vier abgerundete Quadrate, Originalfarben, −5° Drehung, `campuszeit.` in DM Sans 800 und hellblauer Punkt.
+- [x] Navigation, Produktvorschau, Footer auf heller Fläche, Favicon und Vorschaugrafik angleichen; lokale Schrift und Laufweite auch im SVG-/PNG-Build berücksichtigen.
+- [x] Build, fünf Konfigurationstests und sieben Browsertests bestanden; Desktop, Mobilansicht, Rechtsseite/Footer, Favicon und Vorschaugrafik visuell geprüft und mit der bestehenden Demo abgeglichen.
+- [x] Unabhängige Prüfung ohne relevante Befunde. Änderungen ausschließlich unter `apps/landingpage`.

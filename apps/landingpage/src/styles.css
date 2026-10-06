@@ -184,20 +184,21 @@ svg {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-family: Manrope, sans-serif;
+  gap: 11px;
+  font-family: "DM Sans", sans-serif;
   font-size: 24px;
   font-weight: 800;
-  letter-spacing: -0.8px;
+  letter-spacing: -1.1px;
   color: var(--navy);
   white-space: nowrap;
 }
 .brand svg {
   width: 28px;
   height: 28px;
+  flex-shrink: 0;
 }
 .brand-dot {
-  color: #29836d;
+  color: #91acc4;
 }
 .logo-link,
 .site-footer a {
@@ -976,10 +977,9 @@ h2 {
   padding-bottom: 45px;
 }
 .site-footer .brand {
-  color: white;
-}
-.site-footer .brand-dot {
-  color: #6ed8bf;
+  padding: 10px 14px;
+  background: #f4f7fa;
+  border-radius: 8px;
 }
 .footer-top p {
   color: #d6e3ee;

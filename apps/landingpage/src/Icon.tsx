@@ -43,17 +43,23 @@ export function Icon({
 export function Logo() {
   return (
     <span className="brand">
-      <svg
-        width="32"
-        height="32"
-        viewBox="0 0 32 32"
-        fill="currentColor"
-        aria-hidden="true"
-      >
-        <path d="M3 3h11v11H3zM18 3h11v11H18zM3 18h11v11H3zM18 18h11v11H18z" />
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+        <g transform="rotate(-5 14 14)">
+          <rect x="2.5" y="2.5" width="10" height="10" rx="2" fill="#214b76" />
+          <rect x="15.5" y="2.5" width="10" height="10" rx="2" fill="#80a9c5" />
+          <rect x="2.5" y="15.5" width="10" height="10" rx="2" fill="#81b5a2" />
+          <rect
+            x="15.5"
+            y="15.5"
+            width="10"
+            height="10"
+            rx="2"
+            fill="#c7d9e6"
+          />
+        </g>
       </svg>
       <span>
-        CampusZeit<span className="brand-dot">.</span>
+        campuszeit<span className="brand-dot">.</span>
       </span>
     </span>
   );

@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <rect width="1200" height="630" fill="#f4f8fa"/>
-  <path d="M72 62h20v20H72zM98 62h20v20H98zM72 88h20v20H72z" fill="#214b76"/><path d="M98 88h20v20H98z" fill="#29836d"/>
-  <text x="135" y="98" fill="#214b76" font-family="Manrope" font-size="38" font-weight="700">CampusZeit.</text>
+  <g transform="translate(72 57) scale(2)"><g transform="rotate(-5 14 14)"><rect x="2.5" y="2.5" width="10" height="10" rx="2" fill="#214b76"/><rect x="15.5" y="2.5" width="10" height="10" rx="2" fill="#80a9c5"/><rect x="2.5" y="15.5" width="10" height="10" rx="2" fill="#81b5a2"/><rect x="15.5" y="15.5" width="10" height="10" rx="2" fill="#c7d9e6"/></g></g>
+  <text x="144" y="98" fill="#214b76" font-family="DM Sans" font-size="38" font-weight="800" letter-spacing="-1.74">campuszeit</text><text x="346" y="98" fill="#91acc4" font-family="DM Sans" font-size="38" font-weight="800">.</text>
   <g fill="#20364a" font-family="Manrope" font-size="60" font-weight="700"><text x="72" y="220">Ein Stundenplan,</text><text x="72" y="294">der alles</text><text x="72" y="368">zusammenbringt.</text></g>
   <text x="72" y="440" fill="#52677b" font-family="DM Sans" font-size="25">Räume, Lehrpläne und Prüfungen</text><text x="72" y="478" fill="#52677b" font-family="DM Sans" font-size="25">gemeinsam planen.</text>
   <rect x="727" y="175" width="402" height="300" rx="12" fill="white" stroke="#dce6ed"/>

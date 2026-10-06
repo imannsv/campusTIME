@@ -99,6 +99,11 @@ await writeFile(
     : "User-agent: *\nDisallow: /\n",
 );
 const fonts = {
+  brand: createFont(
+    await readFile(
+      "node_modules/@fontsource/dm-sans/files/dm-sans-latin-800-normal.woff2",
+    ),
+  ),
   heading: createFont(
     await readFile(
       "node_modules/@fontsource/manrope/files/manrope-latin-700-normal.woff2",
@@ -117,15 +122,21 @@ const svg = svgSource.replace(
   (_match, attributes, text) => {
     const attr = (name, fallback = "") =>
       attributes.match(new RegExp(`${name}="([^"]+)"`))?.[1] || fallback;
-    const font = attr("font-family") === "DM Sans" ? fonts.body : fonts.heading;
+    const font =
+      attr("font-family") === "DM Sans"
+        ? attr("font-weight") === "800"
+          ? fonts.brand
+          : fonts.body
+        : fonts.heading;
     const scale = Number(attr("font-size", "60")) / font.unitsPerEm;
+    const tracking = Number(attr("letter-spacing", "0")) / scale;
     const run = font.layout(text);
     let advance = 0;
     const paths = run.glyphs
       .map((glyph, index) => {
         const position = run.positions[index];
         const path = `<path transform="translate(${advance + position.xOffset} ${position.yOffset})" d="${glyph.path.toSVG()}"></path>`;
-        advance += position.xAdvance;
+        advance += position.xAdvance + tracking;
         return path;
       })
       .join("");
