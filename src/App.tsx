@@ -98,7 +98,7 @@ const compactResources = [
 
 function Brand() {
   return (
-    <div className="brand">
+    <div className="brand" role="img" aria-label="CampusZeit" title="CampusZeit">
       <span className="brand-symbol">
         <i />
         <i />
@@ -1191,12 +1191,12 @@ function Workspace() {
       />
     );
   return (
-    <div className={`app-shell ${sidebarHidden ? "sidebar-hidden" : ""}`}>
+    <div className={`app-shell ${sidebarHidden ? "sidebar-collapsed" : ""}`}>
       <aside id="workspace-sidebar" aria-label="Hauptnavigation"
-        inert={mobileNavigation ? !menu : sidebarHidden}
+        inert={mobileNavigation && !menu}
         className={`sidebar ${menu ? "open" : ""}`}>
         <Brand />
-        <div className="institution-switch">
+        <div className="institution-switch" title={session.institution.name}>
           <span className="institution-icon">
             <GraduationCap size={21} />
           </span>
@@ -1215,11 +1215,13 @@ function Workspace() {
           {nav.map((item) => (
             <button
               key={item.id}
+              aria-label={item.label}
+              title={item.label}
               className={page === item.id ? "active" : ""}
               onClick={() => go(item.id)}
             >
               <item.icon size={20} />
-              {item.label}
+              <span className="nav-label">{item.label}</span>
               {item.id === "schedule" && (
                 <span className="nav-count">{data.plans?.length || 0}</span>
               )}
@@ -1229,16 +1231,18 @@ function Workspace() {
         <div className="sidebar-spacer" />
         <button
           className={"settings-nav " + (page === "settings" ? "active" : "")}
+          aria-label="Einstellungen"
+          title="Einstellungen"
           onClick={() => {
             go("settings");
             setSettings(session.institution);
           }}
         >
           <Settings size={19} />
-          Einstellungen
+          <span className="nav-label">Einstellungen</span>
         </button>
         <div className="user-profile">
-          <span className="avatar">
+          <span className="avatar" title={session.user}>
             {session.user
               .split(" ")
               .map((x) => x[0])
@@ -1281,8 +1285,8 @@ function Workspace() {
             className="icon-button sidebar-toggle"
             aria-label={mobileNavigation
               ? (menu ? "Menü schließen" : "Menü öffnen")
-              : (sidebarHidden ? "Seitenleiste einblenden" : "Seitenleiste ausblenden")}
-            title={mobileNavigation ? "Menü" : (sidebarHidden ? "Seitenleiste einblenden" : "Seitenleiste ausblenden")}
+              : (sidebarHidden ? "Seitenleiste ausklappen" : "Seitenleiste einklappen")}
+            title={mobileNavigation ? "Menü" : (sidebarHidden ? "Seitenleiste ausklappen" : "Seitenleiste einklappen")}
             aria-controls="workspace-sidebar"
             aria-expanded={mobileNavigation ? menu : !sidebarHidden}
             onClick={() => mobileNavigation
