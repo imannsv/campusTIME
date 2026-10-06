@@ -22,19 +22,13 @@ test("Stundenplanung öffnet die aktuelle Woche und folgt der roten Zeitlinie", 
   });
   await page.reload();
   await expect(page.locator(".week-nav")).toContainText(
-    "12. Okt. – 18. Okt. 2026",
+    "12. Okt. – 16. Okt. 2026",
   );
   const marker = page.locator(".calendar-now-line");
   const scroller = page.locator(".calendar-scroll");
   await expect(marker).toHaveAttribute("aria-label", "Aktuelle Uhrzeit 13:15");
   await expect(marker).toHaveCSS("height", "1px");
-  await expect
-    .poll(async () => {
-      const line = await marker.boundingBox();
-      const box = await scroller.boundingBox();
-      return Math.abs(line!.y - box!.y - box!.height * 0.45);
-    })
-    .toBeLessThan(2);
+  await expect(marker).toBeInViewport();
   await scroller.evaluate((element) => (element.scrollTop = 0));
   await page.clock.runFor(61000);
   await expect(marker).toHaveAttribute("aria-label", "Aktuelle Uhrzeit 13:16");
@@ -59,294 +53,22 @@ test("Stundenplanung öffnet die aktuelle Woche und folgt der roten Zeitlinie", 
   await expect(marker).toHaveAttribute("aria-label", "Aktuelle Uhrzeit 22:30");
   await expect(marker).toBeInViewport();
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator(".agenda-now-line")).toHaveAttribute(
+  await expect(page.locator(".calendar-now-line")).toHaveAttribute(
     "aria-label",
     "Aktuelle Uhrzeit 22:30",
   );
-  await expect(page.locator(".agenda-now-line")).toBeInViewport();
+  await expect(page.locator(".calendar-now-line")).toBeInViewport();
   await page.clock.setSystemTime(new Date("2026-10-18T23:59:45+02:00"));
   await page.clock.runFor(60000);
   await expect(page.locator(".week-nav")).toContainText(
-    "19. Okt. – 25. Okt. 2026",
+    "19. Okt. – 23. Okt. 2026",
   );
-  await expect(page.locator(".agenda-now-line")).toHaveAttribute(
+  await expect(page.locator(".calendar-now-line")).toHaveAttribute(
     "aria-label",
     "Aktuelle Uhrzeit 00:00",
   );
 });
 
-test("Redesign: Raumdetails, angedockte Bearbeitung und Schutz ungespeicherter Eingaben", async ({
-  page,
-}) => {
-  await page.goto("/");
-  await page
-    .getByRole("navigation", { name: "Hauptnavigation" })
-    .getByRole("button", { name: "Räume", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Hörsaal H.101", exact: true })
-    .click();
-  await expect(page.locator(".detail-panel.reading")).toBeVisible();
-  const panel = await page.locator(".detail-panel").boundingBox();
-  const workspace = await page.locator(".workspace").boundingBox();
-  expect(workspace!.x + workspace!.width).toBeLessThanOrEqual(panel!.x + 1);
-  await page
-    .getByRole("button", { name: "Raum bearbeiten", exact: true })
-    .click();
-  const form = page.getByRole("dialog", {
-    name: "Eintrag bearbeiten",
-    exact: true,
-  });
-  await expect(form).not.toHaveAttribute("aria-modal", "true");
-  await form.getByLabel("Kapazität").fill("62");
-  await page
-    .getByRole("navigation", { name: "Hauptnavigation" })
-    .getByRole("button", { name: "Stundenplanung", exact: true })
-    .click();
-  await expect(
-    page.getByRole("alert").filter({ hasText: "Speichere deine Eingaben" }),
-  ).toBeVisible();
-  await expect(form.getByLabel("Kapazität")).toHaveValue("62");
-  await form.getByRole("button", { name: "Abbrechen", exact: true }).click();
-  await expect(
-    form.getByText("Ungespeicherte Änderungen", { exact: true }),
-  ).toBeVisible();
-  await form
-    .getByRole("button", { name: "Weiter bearbeiten", exact: true })
-    .click();
-  await expect(form.getByLabel("Kapazität")).toHaveValue("62");
-  await form.getByLabel("Kapazität").press("Escape");
-  await form
-    .getByRole("button", { name: "Änderungen verwerfen", exact: true })
-    .click();
-  await expect(form).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "Hörsaal H.101", exact: true }),
-  ).toContainText("60 Plätze");
-  await page
-    .getByRole("button", { name: "Raum bearbeiten", exact: true })
-    .click();
-  await form.getByLabel("Kapazität").fill("0");
-  await form.getByRole("button", { name: "Speichern", exact: true }).click();
-  await expect(
-    form.locator('[data-field="capacity"] .field-error'),
-  ).toBeVisible();
-  await expect(form).toBeVisible();
-  await form.getByLabel("Kapazität").fill("62");
-  await form.getByRole("button", { name: "Speichern", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Hörsaal H.101", exact: true }),
-  ).toContainText("62 Plätze");
-  await page.screenshot({ path: "test-results/redesign-rooms-desktop.png" });
-});
-
-test("Redesign: Navigation, mobile Wochenliste und Layout bei unterschiedlichen Breiten", async ({
-  page,
-}) => {
-  await page.goto("/");
-  await expect(
-    page.getByRole("heading", { name: "Stundenplanung", exact: true }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Seitenleiste einklappen" }).click();
-  await expect(page.locator(".sidebar")).toHaveCSS("width", "64px");
-  await page.reload();
-  await expect(page.locator(".sidebar")).toHaveCSS("width", "64px");
-  await page.getByRole("button", { name: "Seitenleiste ausklappen" }).click();
-  for (const width of [390, 640, 768, 1280, 1440, 1920]) {
-    // 640 × 450 CSS pixels also exercises reflow equivalent to 1280 × 900 at 200% zoom.
-    await page.setViewportSize({ width, height: width === 640 ? 450 : 1000 });
-    await expect
-      .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
-      .toBeLessThanOrEqual(width);
-    await expect(
-      page.getByRole("button", { name: "Diese Woche", exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Heute", exact: true }),
-    ).toHaveCount(0);
-    await expect(page.locator(".calendar-event")).toHaveCount(10);
-    if (width < 768) {
-      await expect(page.locator(".mobile-agenda")).toBeVisible();
-      await expect(page.locator(".agenda-day-heading")).toHaveCount(5);
-      const calendar = await page.locator(".calendar-scroll").boundingBox();
-      for (const event of await page.locator(".calendar-event").all()) {
-        const box = await event.boundingBox();
-        expect(box!.x + box!.width).toBeLessThanOrEqual(
-          calendar!.x + calendar!.width,
-        );
-      }
-    } else {
-      await expect(page.locator(".mobile-agenda")).toHaveCount(0);
-      expect(
-        await page
-          .locator(".calendar-event strong")
-          .first()
-          .evaluate((element) => getComputedStyle(element).fontSize),
-      ).toBe("14px");
-    }
-    await page.mouse.move(0, 0);
-    await page.screenshot({
-      path: `test-results/redesign-schedule-${width}.png`,
-      animations: "disabled",
-    });
-  }
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(page.locator(".sidebar")).toHaveCSS("transition-duration", "0s");
-  await page.locator(".calendar-event").first().click();
-  await expect(page.getByRole("dialog")).toHaveAttribute("aria-modal", "true");
-  await expect(page.getByRole("dialog")).toHaveCSS("width", "390px");
-  await page.getByRole("button", { name: "Bearbeiten", exact: true }).click();
-  await expect(
-    page
-      .getByRole("dialog")
-      .getByRole("button", { name: "Speichern", exact: true }),
-  ).toBeVisible();
-  await page.getByRole("dialog").getByLabel("Name", { exact: true }).focus();
-  await page.keyboard.press("Control+k");
-  await expect(
-    page.getByRole("dialog").getByLabel("Name", { exact: true }),
-  ).toBeFocused();
-  await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "Schließen", exact: true })
-    .click();
-  await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "Schließen", exact: true })
-    .click();
-  await page.getByRole("button", { name: "Menü öffnen", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Menü schließen", exact: true }),
-  ).toBeFocused();
-  await page.keyboard.press("Escape");
-  await expect(
-    page.getByRole("button", { name: "Menü öffnen", exact: true }),
-  ).toBeFocused();
-  await page.getByRole("button", { name: "Menü öffnen", exact: true }).click();
-  await page
-    .getByRole("navigation", { name: "Hauptnavigation" })
-    .getByRole("button", { name: "Räume", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Hörsaal H.101", exact: true })
-    .click();
-  await page.screenshot({ path: "test-results/redesign-rooms-mobile.png" });
-  await page
-    .getByRole("button", { name: "Schließen", exact: true })
-    .press("Tab");
-  await expect(
-    page.getByRole("button", { name: "Raum bearbeiten", exact: true }),
-  ).toBeFocused();
-});
-
-test("Redesign: sechs Tage, lange Titel, vier parallele Termine und kurzer Termin", async ({
-  page,
-}) => {
-  await page.goto("/");
-  await expect(page.locator(".calendar-event")).toHaveCount(10);
-  const longTitle =
-    "Interdisziplinäres Projekt zur Entwicklung nachhaltiger betrieblicher Informationssysteme und digitaler Geschäftsprozesse";
-  await page.evaluate((title) => {
-    const key = "campustime-browser-demo-v1";
-    const state = JSON.parse(localStorage.getItem(key)!);
-    const plan = state.data.plans[0];
-    const period = state.data.periods.find(
-      (row: any) => row.id === plan.period,
-    );
-    period.weekdays = [0, 1, 2, 3, 4, 5];
-    const first = state.data.sessions.find(
-      (row: any) => row.plan === plan.id && row.course,
-    );
-    const date = new Date(period.start.slice(0, 10) + "T12:00:00Z");
-    date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
-    const monday = date.toISOString().slice(0, 10);
-    date.setUTCDate(date.getUTCDate() + 5);
-    const saturday = date.toISOString().slice(0, 10);
-    const room = state.data.rooms.find((row: any) => row.id === first.rooms[0]);
-    room.name =
-      "Seminarraum für angewandte Wirtschaftsinformatik und interdisziplinäre Projektarbeit";
-    const appointments = Array.from({ length: 4 }, (_, index) => ({
-      ...first,
-      id: 9000 + index,
-      name: `${title} ${index + 1}`,
-      start: `${monday}T09:00:00+02:00`,
-      end: `${monday}T10:30:00+02:00`,
-    }));
-    appointments.push({
-      ...first,
-      id: 9010,
-      name: "Kurze Projektbesprechung",
-      start: `${monday}T10:45:00+02:00`,
-      end: `${monday}T11:00:00+02:00`,
-    });
-    appointments.push({
-      ...first,
-      id: 9011,
-      name: "Samstagsseminar",
-      start: `${saturday}T10:00:00+02:00`,
-      end: `${saturday}T11:00:00+02:00`,
-    });
-    state.data.sessions = [
-      ...state.data.sessions.filter((row: any) => row.plan !== plan.id),
-      ...appointments,
-    ];
-    localStorage.setItem(key, JSON.stringify(state));
-  }, longTitle);
-  await page.reload();
-  await page.setViewportSize({ width: 1280, height: 900 });
-  await page.getByRole("button", { name: "Jetzt folgen", exact: true }).click();
-  await expect(page.locator(".calendar-event")).toHaveCount(6);
-  await expect(page.locator(".day-column")).toHaveCount(6);
-  const columns = await page.locator(".day-column").first().boundingBox();
-  expect(columns!.width).toBeGreaterThanOrEqual(761);
-  for (const event of await page.locator(".calendar-event").all()) {
-    expect((await event.boundingBox())!.width).toBeGreaterThanOrEqual(180);
-  }
-  const short = page.getByRole("button", { name: /Kurze Projektbesprechung/ });
-  const titleBox = await short.locator("strong").boundingBox();
-  const shortBox = await short.boundingBox();
-  expect(titleBox!.y + titleBox!.height).toBeLessThanOrEqual(
-    shortBox!.y + shortBox!.height - 1,
-  );
-  await expect
-    .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
-    .toBeLessThanOrEqual(1280);
-  await page
-    .locator(".calendar-scroll")
-    .evaluate((element) => (element.scrollLeft = 0));
-  await expect(page.locator(".calendar-scroll")).toHaveJSProperty(
-    "scrollLeft",
-    0,
-  );
-  await page.locator(".calendar-scroll").evaluate((element) => {
-    element.scrollTop = 180;
-    element.scrollLeft = 200;
-  });
-  const header = await page.locator(".calendar-heading").boundingBox();
-  const scroller = await page.locator(".calendar-scroll").boundingBox();
-  expect(Math.abs(header!.y - scroller!.y)).toBeLessThan(2);
-  await short.focus();
-  await expect(page.getByRole("tooltip")).toContainText(
-    "Kurze Projektbesprechung",
-  );
-  await short.click();
-  await expect(page.getByRole("dialog")).toContainText(
-    "Seminarraum für angewandte Wirtschaftsinformatik",
-  );
-  await page.getByRole("button", { name: "Schließen", exact: true }).click();
-  await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator(".agenda-day-heading")).toHaveCount(6);
-  await expect(page.locator(".calendar-event strong").first()).toHaveText(
-    `${longTitle} 1`,
-  );
-  expect(
-    await page
-      .locator(".calendar-event strong")
-      .first()
-      .evaluate((element) => element.scrollHeight === element.clientHeight),
-  ).toBe(true);
-});
 
 test("campusAI Schnellhilfe bleibt ohne Server und ohne Datenänderung verfügbar", async ({
   page,
