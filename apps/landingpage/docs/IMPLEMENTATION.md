@@ -43,17 +43,19 @@
 
 - [x] README, Status und eigene vercel.json mit Branchfilter und statischen Routen erstellen.
 - [x] Gesamte Landingpage prüfen, unabhängige Prüfung durchführen, wesentliche Befunde beheben.
-- [ ] Ausschließlich Landingpage-Dateien committen und Branch pushen.
-- [ ] Vercel-Zugang prüfen; eigenes Projekt bei vorhandenem Zugang konfigurieren. Fehlende Angaben oder Authentifizierung transparent dokumentieren.
+- [x] Ausschließlich Landingpage-Dateien committen und auf Branch `landingpage` übertragen.
+- [x] Vercel-Zugang prüfen und fehlende Angaben/Authentifizierung transparent dokumentieren.
+- [ ] Nach Bereitstellung des Zugangs und der bestätigten Angaben das eigene Vercel-Projekt konfigurieren und live prüfen.
 
 ## Fortschritt
 
 - Briefing und Produktfunktionen gelesen; Demo HTTP 200.
 - Mitgelieferte acht Skills außerhalb des Repositories installiert; vorhandene Skills nicht überschrieben.
 - Ausführung im ausdrücklich vorgegebenen bestehenden `landingpage`-Checkout. Kein zusätzlicher Checkout oder Branch.
-- Kontakt-/Anbieter-/Vercel-Angaben angefragt. Unabhängige lokale Umsetzung läuft weiter.
+- Kontakt-/Anbieter-/Vercel-Angaben angefragt. Lokale Umsetzung abgeschlossen.
 - Task 1 abgeschlossen: fünf Tests zuerst wegen fehlender Funktionen rot, nach Implementierung grün.
 - Task 2 abgeschlossen: Hauptüberschrift zuerst nicht vorhanden; danach funktionsfähige Seite. Responsive-Test zeigte Überbreite bei 320 Pixeln; Schriftgröße und Grid korrigiert. Sieben Browserprüfungen grün.
 - Unabhängige Prüfung ohne kritische/wesentliche Befunde. Mobile Ankernavigation ohne JavaScript als zusätzlicher Test zuerst rot (Überschrift unter Header), nach CSS-Korrektur grün. Keine zurückgestellten Befunde.
 - Vorschaugrafik visuell geprüft und Fontkonturen eingebettet, damit Linux-/Windows-Builds ohne Systemschriften funktionieren.
 - Task 3 lokal abgeschlossen; externe Einrichtung wartet auf Vercel-Authentifizierung und bestätigte Angaben. Details in `docs/STATUS.md`.
+- Umsetzung über die verbundene GitHub-Anbindung auf `landingpage` übertragen; lokaler und entfernter Stand abgeglichen. Keine Änderung an `main`.

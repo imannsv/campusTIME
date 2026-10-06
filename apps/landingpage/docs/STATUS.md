@@ -11,6 +11,7 @@ Stand: 06.10.2026. Eigenständige Umsetzung unter `apps/landingpage`, Branch `la
 - Konfigurierbarer echter E-Mail-Kontaktweg. Aktuell klar gekennzeichneter Hinweis, da keine bestätigte Adresse vorliegt.
 - Rechtliche Entwurfsseiten und überprüfte Freigabesicherung. Öffentliche Freigabe benötigt Domain, Kontakt und freigegebene Inhalte.
 - Eigenständige Vercel-Konfiguration mit Buildfilter ausschließlich für `landingpage`.
+- Umsetzung auf GitHub im Branch `landingpage` gespeichert und mit dem lokalen Checkout abgeglichen; `main` bleibt unverändert.
 
 ## Verifiziert
 
