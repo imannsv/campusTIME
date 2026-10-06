@@ -1,0 +1,4 @@
+.prerender/
+.env.local
+.env.production.local
+artifacts/

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f4f8fa"/>
+  <path d="M72 62h20v20H72zM98 62h20v20H98zM72 88h20v20H72z" fill="#214b76"/><path d="M98 88h20v20H98z" fill="#29836d"/>
+  <text x="135" y="98" fill="#214b76" font-family="Manrope" font-size="38" font-weight="700">CampusZeit.</text>
+  <g fill="#20364a" font-family="Manrope" font-size="60" font-weight="700"><text x="72" y="220">Ein Stundenplan,</text><text x="72" y="294">der alles</text><text x="72" y="368">zusammenbringt.</text></g>
+  <text x="72" y="440" fill="#52677b" font-family="DM Sans" font-size="25">Räume, Lehrpläne und Prüfungen</text><text x="72" y="478" fill="#52677b" font-family="DM Sans" font-size="25">gemeinsam planen.</text>
+  <rect x="727" y="175" width="402" height="300" rx="12" fill="white" stroke="#dce6ed"/>
+  <path d="M739 175h378a12 12 0 0 1 12 12v42H727v-42a12 12 0 0 1 12-12Z" fill="#214b76"/>
+  <text x="748" y="210" fill="white" font-family="DM Sans" font-size="19">Wochenplanung</text>
+  <g stroke="#e6edf1"><path d="M748 279h360M748 342h360M748 405h360M820 247v200M892 247v200M964 247v200M1036 247v200"/></g>
+  <rect x="752" y="284" width="63" height="53" rx="4" fill="#c9e8dd"/><rect x="825" y="348" width="62" height="52" rx="4" fill="#d8e5f5"/><rect x="897" y="284" width="62" height="53" rx="4" fill="#e6e0f3"/><rect x="970" y="411" width="61" height="37" rx="4" fill="#f6e9c8"/><rect x="1042" y="284" width="61" height="53" rx="4" fill="#c9e8dd"/>
+  <text x="72" y="576" fill="#214b76" font-family="DM Sans" font-size="20">Für Hochschulen und Schulen</text>
+</svg>
