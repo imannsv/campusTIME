@@ -45,7 +45,8 @@
 - [x] Gesamte Landingpage prüfen, unabhängige Prüfung durchführen, wesentliche Befunde beheben.
 - [x] Ausschließlich Landingpage-Dateien committen und auf Branch `landingpage` übertragen.
 - [x] Vercel-Zugang prüfen und fehlende Angaben/Authentifizierung transparent dokumentieren.
-- [ ] Nach Bereitstellung des Zugangs und der bestätigten Angaben das eigene Vercel-Projekt konfigurieren und live prüfen.
+- [x] Eigenes Vercel-Projekt nach Anmeldung konfigurieren und geschützte Vorschau per HTTP prüfen.
+- [ ] Git-Verbindung, entfernte Browserprüfung und öffentliche Freigabe nach bestätigten Kontakt-/Rechtsangaben abschließen.
 
 ## Fortschritt
 
@@ -57,7 +58,7 @@
 - Task 2 abgeschlossen: Hauptüberschrift zuerst nicht vorhanden; danach funktionsfähige Seite. Responsive-Test zeigte Überbreite bei 320 Pixeln; Schriftgröße und Grid korrigiert. Sieben Browserprüfungen grün.
 - Unabhängige Prüfung ohne kritische/wesentliche Befunde. Mobile Ankernavigation ohne JavaScript als zusätzlicher Test zuerst rot (Überschrift unter Header), nach CSS-Korrektur grün. Keine zurückgestellten Befunde.
 - Vorschaugrafik visuell geprüft und Fontkonturen eingebettet, damit Linux-/Windows-Builds ohne Systemschriften funktionieren.
-- Task 3 lokal abgeschlossen; externe Einrichtung wartet auf Vercel-Authentifizierung und bestätigte Angaben. Details in `docs/STATUS.md`.
+- Task 3 zunächst lokal abgeschlossen; nach Vercel-Anmeldung geschützte Vorschau eingerichtet. Git-Verbindung und öffentliche Freigabe bleiben offen. Details in `docs/STATUS.md`.
 - Umsetzung über die verbundene GitHub-Anbindung auf `landingpage` übertragen; lokaler und entfernter Stand abgeglichen. Keine Änderung an `main`.
 
 ## Logokorrektur
@@ -66,3 +67,11 @@
 - [x] Navigation, Produktvorschau, Footer auf heller Fläche, Favicon und Vorschaugrafik angleichen; lokale Schrift und Laufweite auch im SVG-/PNG-Build berücksichtigen.
 - [x] Build, fünf Konfigurationstests und sieben Browsertests bestanden; Desktop, Mobilansicht, Rechtsseite/Footer, Favicon und Vorschaugrafik visuell geprüft und mit der bestehenden Demo abgeglichen.
 - [x] Unabhängige Prüfung ohne relevante Befunde. Änderungen ausschließlich unter `apps/landingpage`.
+
+## Geschützte Vercel-Vorschau
+
+- [x] Benutzer hat die CLI-Anmeldung abgeschlossen; einziges Team `jakob-fee8` geprüft und eigenes Projekt `campuszeit-landingpage` eingerichtet.
+- [x] Root/Build/Node/Systemvariablen und Branchfilter konfiguriert; isolierten Snapshot des geprüften Commits `e58f83d` ohne Umgebungsdateien hochgeladen.
+- [x] Preview-Ziel und READY geprüft; authentifizierte HTTP-Prüfung von Seiten, Entwurfsmetadaten und echtem 404 abgeschlossen. Schutz nach initialer automatischer Produktionszuordnung auf sämtliche Adressen erweitert und unangemeldeten Zugriff geprüft.
+- [ ] GitHub-Repository-Zugriff und Verbindung, Production Branch `landingpage` und automatische Git-Builds einrichten; Vercel verweigerte bisher die Repository-Verbindung.
+- [ ] Entfernte Browserdarstellung mit angemeldetem Vercel-Konto prüfen; In-App-Browser zeigt den erwarteten Login. Öffentliche Freigabe weiterhin erst nach bestätigten Kontakt-/Rechtsangaben.

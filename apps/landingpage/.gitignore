@@ -1,4 +1,5 @@
 .prerender/
-.env.local
-.env.production.local
+.env*
+!.env.example
 artifacts/
+.vercel/

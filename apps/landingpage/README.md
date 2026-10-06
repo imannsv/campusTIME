@@ -71,6 +71,10 @@ Vercel-Systemvariablen aktivieren. Die lokale `vercel.json` enthält denselben B
 
 Ein Entwurf gehört hinter die Zugriffssperre des neuen Vercel-Projekts; `noindex` ist keine Zugriffskontrolle. Nicht öffentlich als fertige Seite bereitstellen, solange Anbieterangaben und Freigabe fehlen. Keine Domain oder kostenpflichtigen Zusatzdienste buchen.
 
+Aktueller Prüfstand: Im Team `jakob-fee8` besteht das eigene Projekt `campuszeit-landingpage` mit [geschützter Vorschau](https://campuszeit-landingpage-gb57j6kki-jakob-fee8.vercel.app) aus Commit `e58f83d`. Vercel Authentication gilt für **alle** Adressen. Die GitHub-Verbindung ist noch nicht freigegeben; automatische Deployments und Production Branch `landingpage` sind deshalb noch offen. Details und verifizierte HTTP-Status stehen in `docs/STATUS.md`.
+
+Für CLI-Deployments mit Root Directory `apps/landingpage` muss das Upload-Verzeichnis diese relative Struktur enthalten. Ein direktes Deployment aus dem App-Unterordner würde den Pfad verdoppeln. Verwendet wurde ein isolierter Snapshot ausschließlich der getrackten Landingpage-Dateien. Beim allerersten Deployment kann Vercel das Ziel production automatisch zuweisen; Zugriffsschutz für sämtliche Adressen deshalb **vor** dem Upload setzen und das tatsächliche Ziel danach mit `vercel inspect` prüfen.
+
 Nach Bereitstellung prüfen:
 
 - Projektname, Production Branch, Root Directory und freigegebene Umgebung bestätigen.
