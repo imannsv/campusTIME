@@ -893,6 +893,23 @@ small {
   align-items: center;
   gap: 20px;
 }
+.topbar .sidebar-toggle {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+}
+@media (min-width: 721px) {
+  .app-shell.sidebar-hidden .sidebar {
+    display: none;
+  }
+  .app-shell.sidebar-hidden .workspace {
+    margin-left: 0;
+    width: 100%;
+  }
+  .app-shell.sidebar-hidden .toast {
+    left: 50%;
+  }
+}
 .breadcrumb {
   display: flex;
   align-items: center;
@@ -3060,6 +3077,10 @@ tbody tr:hover {
   }
 }
 @media (max-width: 720px) {
+  .topbar .sidebar-toggle {
+    width: 44px;
+    height: 44px;
+  }
   .sidebar {
     transform: translateX(-100%);
     transition: transform 0.2s;

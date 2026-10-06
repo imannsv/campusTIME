@@ -18,6 +18,8 @@ import {
   Building2,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   Sparkles,
   Upload,
   AlertTriangle,
@@ -867,6 +869,17 @@ export default function App() {
   return <Workspace />;
 }
 function Workspace() {
+  const [sidebarHidden, setSidebarHidden] = useState(() => {
+    try {
+      return localStorage.getItem("campuszeit-sidebar-hidden") === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [mobileNavigation, setMobileNavigation] = useState(() =>
+    window.matchMedia("(max-width: 720px)").matches,
+  );
+  const sidebarToggle = useRef<HTMLButtonElement>(null);
   const [followNow, setFollowNow] = useState(true);
   const [setupStep, setSetupStep] = useState(0);
   const [studyContext, setStudyContext] = useState<Row>({});
@@ -894,6 +907,33 @@ function Workspace() {
     [settings, setSettings] = useState<Row>({}),
     [busy, setBusy] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    try {
+      localStorage.setItem("campuszeit-sidebar-hidden", String(sidebarHidden));
+    } catch {
+      // The toggle still works when browser storage is unavailable.
+    }
+  }, [sidebarHidden]);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 720px)");
+    const update = () => {
+      setMobileNavigation(media.matches);
+      setMenu(false);
+    };
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  useEffect(() => {
+    if (!menu) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenu(false);
+        sidebarToggle.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [menu]);
   const zone = session?.institution?.timezone || "Europe/Berlin",
     plan = data.plans?.find((p) => p.id === planId),
     period = data.periods?.find((p) => p.id === plan?.period);
@@ -1151,8 +1191,10 @@ function Workspace() {
       />
     );
   return (
-    <div className="app-shell">
-      <aside className={`sidebar ${menu ? "open" : ""}`}>
+    <div className={`app-shell ${sidebarHidden ? "sidebar-hidden" : ""}`}>
+      <aside id="workspace-sidebar" aria-label="Hauptnavigation"
+        inert={mobileNavigation ? !menu : sidebarHidden}
+        className={`sidebar ${menu ? "open" : ""}`}>
         <Brand />
         <div className="institution-switch">
           <span className="institution-icon">
@@ -1235,11 +1277,20 @@ function Workspace() {
       <div className="workspace">
         <header className="topbar">
           <button
-            className="icon-button mobile-menu"
-            aria-label="Menü öffnen"
-            onClick={() => setMenu((m) => !m)}
+            ref={sidebarToggle}
+            className="icon-button sidebar-toggle"
+            aria-label={mobileNavigation
+              ? (menu ? "Menü schließen" : "Menü öffnen")
+              : (sidebarHidden ? "Seitenleiste einblenden" : "Seitenleiste ausblenden")}
+            title={mobileNavigation ? "Menü" : (sidebarHidden ? "Seitenleiste einblenden" : "Seitenleiste ausblenden")}
+            aria-controls="workspace-sidebar"
+            aria-expanded={mobileNavigation ? menu : !sidebarHidden}
+            onClick={() => mobileNavigation
+              ? setMenu((m) => !m)
+              : setSidebarHidden((hidden) => !hidden)}
           >
-            <Menu size={21} />
+            {mobileNavigation ? <Menu size={21} /> : sidebarHidden
+              ? <PanelLeftOpen size={21} /> : <PanelLeftClose size={21} />}
           </button>
           <div className="breadcrumb">
             Arbeitsbereich
