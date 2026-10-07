@@ -39,10 +39,14 @@ export function createSiteConfig(env = {}, legal = {}) {
       (section) =>
         typeof section.heading === "string" &&
         section.heading.trim() &&
+        !/[\[\]]/.test(section.heading) &&
         Array.isArray(section.paragraphs) &&
         section.paragraphs.length > 0 &&
         section.paragraphs.every(
-          (paragraph) => typeof paragraph === "string" && paragraph.trim(),
+          (paragraph) =>
+            typeof paragraph === "string" &&
+            paragraph.trim() &&
+            !/[\[\]]/.test(paragraph),
         ),
     );
   const legalReady =

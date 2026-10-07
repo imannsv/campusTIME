@@ -141,3 +141,30 @@ test("only the landingpage branch is permitted by the ignored build step", () =>
   for (const branch of ["main", "feature/new", "", undefined])
     assert.equal(module.shouldIgnoreBuild(branch), true);
 });
+
+test("unresolved legal placeholders cannot be approved for public release", () => {
+  const env = {
+    PUBLIC_RELEASE: "true",
+    SITE_URL: "https://campuszeit.example",
+    CONTACT_EMAIL: "kontakt@example.org",
+  };
+  for (const field of ["imprint", "privacy"]) {
+    const incomplete = {
+      ...legal,
+      [field]: [{ heading: "Anbieter", paragraphs: ["[VOLLSTÄNDIGER NAME]"] }],
+    };
+    assert.equal(module.createSiteConfig({}, incomplete).legalReady, false);
+    assert.throws(
+      () => module.createSiteConfig(env, incomplete),
+      /Rechtsinhalte/,
+    );
+  }
+  const unfinishedHeading = {
+    ...legal,
+    imprint: [{ heading: "[ANBIETER]", paragraphs: ["Bestätigte Angaben."] }],
+  };
+  assert.throws(
+    () => module.createSiteConfig(env, unfinishedHeading),
+    /Rechtsinhalte/,
+  );
+});

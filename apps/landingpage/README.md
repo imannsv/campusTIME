@@ -38,7 +38,9 @@ Die Freigabeprüfung muss im aktuellen Entwurfsstand fehlschlagen. Sie prüft di
 
 Mit einer Adresse erscheint ein E-Mail-Link für Demo- und Angebotsanfragen. Dieser öffnet das E-Mail-Programm; er behauptet keinen erfolgten Versand. Ohne Adresse steht ein transparenter Hinweis im Kontaktbereich.
 
-`content/legal.json` nimmt freigegebene Texte auf:
+`content/legal.json` enthält recherchierte Entwürfe für Impressum und Datenschutz mit gekennzeichneten Platzhaltern. Sie sind auf den Rechtsseiten mit einem Entwurfshinweis sichtbar. Die lesbare Kopie steht in [docs/RECHTSTEXTE.md](docs/RECHTSTEXTE.md); Quellen, bedingte Pflichtangaben und offene Hosting-/E-Mail-Fragen in [docs/RECHTLICHE_ANGABEN.md](docs/RECHTLICHE_ANGABEN.md). Vor Freigabe alle eckigen Klammerplatzhalter ersetzen oder ausdrücklich nicht einschlägige Abschnitte entfernen. Verbleibende Klammern verhindern einen öffentlichen Build selbst bei `approved: true`.
+
+Das Datenformat:
 
 ```json
 {
@@ -54,13 +56,13 @@ Keine Tracker, Kontakt-API, Cookie-Speicherung oder eingebetteten Fremddienste. 
 
 ## Separates Vercel-Projekt
 
-Neues Projekt, z. B. `campuszeit-landingpage`, im vom Benutzer bestätigten Konto anlegen. Die vorhandene Produktzuordnung **nicht** verwenden.
+Das separate Projekt `campuszeit-landingpage` besteht im Team `jakob-fee8`. Der Benutzer hat manuelle CLI-Deployments gewählt; eine GitHub-Verbindung ist dafür nicht erforderlich. Die vorhandene Produktzuordnung **nicht** verwenden.
 
 | Einstellung | Wert |
 | --- | --- |
 | Repository | `imannsv/campusTIME` |
 | Root Directory | `apps/landingpage` |
-| Production Branch | `landingpage` |
+| Quellbranch für CLI-Uploads | `landingpage` |
 | Framework | Vite |
 | Install Command | `npm ci` |
 | Build Command | `npm run build` |
@@ -71,14 +73,14 @@ Vercel-Systemvariablen aktivieren. Die lokale `vercel.json` enthält denselben B
 
 Ein Entwurf gehört hinter die Zugriffssperre des neuen Vercel-Projekts; `noindex` ist keine Zugriffskontrolle. Nicht öffentlich als fertige Seite bereitstellen, solange Anbieterangaben und Freigabe fehlen. Keine Domain oder kostenpflichtigen Zusatzdienste buchen.
 
-Aktueller Prüfstand: Im Team `jakob-fee8` besteht das eigene Projekt `campuszeit-landingpage` mit [geschützter Vorschau](https://campuszeit-landingpage-gb57j6kki-jakob-fee8.vercel.app) aus Commit `e58f83d`. Vercel Authentication gilt für **alle** Adressen. Die GitHub-Verbindung ist noch nicht freigegeben; automatische Deployments und Production Branch `landingpage` sind deshalb noch offen. Details und verifizierte HTTP-Status stehen in `docs/STATUS.md`.
+Aktueller Prüfstand und Vorschauadresse stehen in [docs/STATUS.md](docs/STATUS.md). Vercel Authentication gilt für **alle** Adressen. Updates erfolgen manuell aus einem isolierten Snapshot des Branches `landingpage`; es bestehen keine automatischen Git-Deployments.
 
 Für CLI-Deployments mit Root Directory `apps/landingpage` muss das Upload-Verzeichnis diese relative Struktur enthalten. Ein direktes Deployment aus dem App-Unterordner würde den Pfad verdoppeln. Verwendet wurde ein isolierter Snapshot ausschließlich der getrackten Landingpage-Dateien. Beim allerersten Deployment kann Vercel das Ziel production automatisch zuweisen; Zugriffsschutz für sämtliche Adressen deshalb **vor** dem Upload setzen und das tatsächliche Ziel danach mit `vercel inspect` prüfen.
 
 Nach Bereitstellung prüfen:
 
-- Projektname, Production Branch, Root Directory und freigegebene Umgebung bestätigen.
-- Deployment-Logs zeigen, dass der Branchfilter für `landingpage` weiterbaut; `main` und andere Branches werden übersprungen.
+- Projektname, Quellcommit, Root Directory und freigegebene Umgebung bestätigen.
+- Bei einer später ausdrücklich gewünschten Git-Anbindung zusätzlich Production Branch `landingpage` und Branchfilter in den Buildlogs prüfen.
 - `/`, `/impressum/` und `/datenschutz/` direkt aufrufen; unbekannte Route liefert HTTP 404 mit eigener Seite. Die Vite-Vorschau liefert für unbekannte Routen einen SPA-Fallback mit HTTP 200 und ersetzt diese Produktionsprüfung nicht.
 - Demo-Link, Kontakt, Metadaten, Canonical, Sitemap und Mobil-/Desktopdarstellung prüfen.
 - Iman erhält den Live-Link und Projektzugriff über die vom Kontoinhaber bestätigte Einladung.

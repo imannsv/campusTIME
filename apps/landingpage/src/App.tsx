@@ -501,38 +501,29 @@ function LegalPage({
         Zur Startseite
       </a>
       <h1>{privacy ? "Datenschutz" : "Impressum"}</h1>
-      {config.legalReady ? (
-        sections.map((section) => (
-          <section key={section.heading}>
-            <h2>{section.heading}</h2>
-            {section.paragraphs.map((text, index) => (
-              <p key={index}>{text}</p>
-            ))}
-          </section>
-        ))
-      ) : (
+      {!config.legalReady ? (
         <>
           <div className="legal-notice">
             <Icon name="clock" />
             <div>
               <strong>Noch nicht zur Veröffentlichung freigegeben.</strong>
               <p>
-                Diese Seite ist ein Entwurf. Die bestätigten Angaben des
-                Anbieters und die freigegebenen rechtlichen Inhalte fehlen noch.
+                Dieser Entwurf enthält Platzhalter in eckigen Klammern. Sie
+                müssen durch bestätigte Angaben ersetzt werden. Nicht
+                einschlägige Abschnitte sind vor der Freigabe zu entfernen.
               </p>
             </div>
           </div>
-          <p>
-            {privacy
-              ? "Vor der öffentlichen Freigabe werden die verantwortliche Stelle, der konkrete Hostingbetrieb und der Kontaktweg erfasst. Daraus werden die passenden Datenschutzhinweise erstellt und geprüft."
-              : "Vor der öffentlichen Freigabe werden der rechtliche Anbieter, eine ladungsfähige Anschrift, die Vertretung und die erforderlichen Kontakt- und Registerangaben ergänzt."}
-          </p>
-          <p>
-            Hier stehen bewusst keine erfundenen Unternehmensdaten oder
-            vorläufigen Rechtstexte.
-          </p>
         </>
-      )}
+      ) : null}
+      {sections.map((section) => (
+        <section key={section.heading}>
+          <h2>{section.heading}</h2>
+          {section.paragraphs.map((text, index) => (
+            <p key={index}>{text}</p>
+          ))}
+        </section>
+      ))}
     </article>
   );
 }

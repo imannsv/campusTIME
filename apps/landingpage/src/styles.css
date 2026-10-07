@@ -1042,6 +1042,9 @@ h2 {
 .legal-page section p + p {
   margin-top: 14px;
 }
+.legal-page section p {
+  overflow-wrap: anywhere;
+}
 .legal-notice {
   display: flex;
   align-items: start;

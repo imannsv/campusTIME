@@ -1,6 +1,6 @@
 # Prüf- und Übergabestand
 
-Stand: 06.10.2026. Eigenständige Umsetzung unter `apps/landingpage`, Branch `landingpage`.
+Stand: 07.10.2026. Eigenständige Umsetzung unter `apps/landingpage`, Branch `landingpage`.
 
 ## Umgesetzt
 
@@ -13,6 +13,8 @@ Stand: 06.10.2026. Eigenständige Umsetzung unter `apps/landingpage`, Branch `la
 - Eigenständige Vercel-Konfiguration mit Buildfilter ausschließlich für `landingpage`.
 - Umsetzung auf GitHub im Branch `landingpage` gespeichert und mit dem lokalen Checkout abgeglichen; `main` bleibt unverändert.
 - Logo an die bestehende Produktmarke angeglichen: `campuszeit.`, DM Sans 800, vier gedrehte farbige Quadrate; durchgängig in Seite, Favicon und Vorschaugrafik. Build und alle zwölf Tests bestanden nach der Korrektur erneut; visuell und unabhängig geprüft.
+- Recherchierte Impressums- und Datenschutzentwürfe mit Platzhaltern für Anbieter, Kontakt und tatsächliche Betriebsangaben eingebaut. Lesbare Texte und Ausfüllhinweise mit Primärquellen stehen in `RECHTSTEXTE.md` und `RECHTLICHE_ANGABEN.md`.
+- Öffentliche Freigabe mit ungelösten Klammerplatzhaltern wird auch bei versehentlich gesetztem `approved: true` abgewiesen. Desktop- und Mobilansichten der längeren Rechtsseiten geprüft; alle 13 Tests bestehen.
 
 ## Verifiziert
 
@@ -20,7 +22,7 @@ Stand: 06.10.2026. Eigenständige Umsetzung unter `apps/landingpage`, Branch `la
 | --- | --- |
 | TypeScript und Client-/Serverbuild | Bestanden |
 | Statische Erzeugung von 4 Seiten | Bestanden |
-| 5 Node-Tests | Bestanden |
+| 6 Node-Tests | Bestanden |
 | 7 Playwright-Prüfungen | Bestanden |
 | axe: Startseite bei 320, 390, 768 und 1440 Pixeln | Keine Verstöße in geprüften WCAG-A-/AA-Regeln |
 | Ohne JavaScript: Inhalte, FAQ und mobile Ankernavigation | Bestanden |
@@ -34,7 +36,7 @@ Stand: 06.10.2026. Eigenständige Umsetzung unter `apps/landingpage`, Branch `la
 
 Eine unabhängige Codeprüfung fand keine kritischen oder wesentlichen Probleme. Der Hinweis auf verdeckte Ankerüberschriften ohne JavaScript wurde mit einem zuerst fehlschlagenden Browsertest reproduziert und behoben. Alle sieben Browserprüfungen bestanden danach erneut. Das ist keine vollständige manuelle WCAG-Zertifizierung.
 
-Die lokalen Tests gegen Vite preview prüfen den dargestellten 404-Inhalt, nicht den HTTP-Status des Hostings. Im neuen Vercel-Projekt wurden die Rechtsseiten mit HTTP 200 und eine unbekannte Route mit HTTP 404 und eigener Fehlerseite anschließend geprüft. Automatische Git-Deployments bleiben offen.
+Die lokalen Tests gegen Vite preview prüfen den dargestellten 404-Inhalt, nicht den HTTP-Status des Hostings. Im neuen Vercel-Projekt wurden die Rechtsseiten mit HTTP 200 und eine unbekannte Route mit HTTP 404 und eigener Fehlerseite anschließend geprüft. Der Benutzer hat manuelle CLI-Deployments gewählt; eine Git-Verbindung ist dafür nicht erforderlich.
 
 ## Vercel-Vorschau
 
@@ -48,14 +50,14 @@ Die lokalen Tests gegen Vite preview prüfen den dargestellten 404-Inhalt, nicht
 - Beim ersten CLI-Deployment ordnete Vercel trotz angefordertem Preview das initiale Deployment dem Ziel production zu. Die automatisch angelegte Adresse `campuszeit-landingpage.vercel.app` war kurz öffentlich erreichbar, bis der Schutz auf `all` erweitert wurde. Sie ist jetzt ebenfalls geschützt. Es wurden keine echten Kontakt-/Betreiber- oder Personendaten veröffentlicht. Danach wurde ein separates Preview-Deployment erstellt und verifiziert.
 - Im In-App-Browser erscheint ohne Anmeldung der erwartete Vercel-Login. Die authentifizierte Browserprüfung des entfernten Builds ist noch offen; lokale Desktop-/Mobilansichten wurden bereits geprüft.
 - Ausgelieferte JavaScript-/CSS-Dateien und PNG-Vorschaugrafik stimmen per SHA-256 exakt mit dem lokal getesteten Build überein.
-- Git-Verbindung zu `imannsv/campusTIME` wurde von Vercel abgewiesen. Root-Verzeichnis und Branchfilter sind eingerichtet; Production Branch `landingpage` und automatische Deployments müssen nach Freigabe des Repository-Zugriffs eingerichtet und geprüft werden. Der Ignored Build Step wurde bei den CLI-Deployments nicht ausgeführt.
+- Git-Verbindung zu `imannsv/campusTIME` wurde von Vercel abgewiesen. Der Benutzer möchte beim manuellen Deployment bleiben. Root-Verzeichnis und Branchfilter sind eingerichtet; der Ignored Build Step wurde bei den CLI-Deployments nicht ausgeführt.
 
 Die lokale Vercel-Verknüpfung und heruntergeladene Entwicklungsvariablen liegen ausschließlich in ignorierten Dateien. Keine Tokens, Bypass-Schlüssel oder Umgebungsdateien gehören ins Repository.
 
 ## Offen für die öffentliche Übergabe
 
-1. Bestätigte Kontaktadresse und Betreiber-/Impressumsdaten; tatsächliche Datenschutzinhalte und Freigabe.
-2. Vercel Zugriff auf das GitHub-Repository freigeben; Verbindung, Production Branch `landingpage` und automatische Builds einrichten. Branchfilter in Git-Buildlogs bestätigen.
+1. Platzhalter durch bestätigte Kontakt-, Betreiber- und Betriebsangaben ersetzen, nicht einschlägige Abschnitte entfernen und Inhalte freigeben.
+2. Hostingvertrag, Rollenverteilung, Drittlandgarantien und Tarifnutzung klären: Das Projekt nutzt Hobby; das veröffentlichte Vercel-DPA nennt Pro/Enterprise. Ein wirksamer AVV ist nicht nachgewiesen. E-Mail-Dienstleister und tatsächliche Löschfristen bestätigen.
 3. Authentifizierte Browserprüfung der entfernten Vorschau mit Desktop-/Mobilansicht durchführen.
 4. Zieladresse in `SITE_URL` eintragen und freigegebene Umgebung bauen; Live-Routen, Canonical, Sitemap und Kontakt prüfen.
 5. Projektzugriff für Iman mit bestätigter Empfängeridentität einrichten. Es wurde keine Einladung versendet.

@@ -95,10 +95,22 @@ test("legal drafts, contact fallback and unknown routes are honest and reachable
       exact: true,
     }),
   ).toBeVisible();
+  expect(await page.locator(".legal-page section").count()).toBeGreaterThan(0);
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+    "content",
+    "noindex, nofollow",
+  );
   await page.goto("/datenschutz/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Datenschutz",
   );
+  expect(await page.locator(".legal-page section").count()).toBeGreaterThan(0);
+  await page.setViewportSize({ width: 320, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
   await page.goto("/diese-seite-gibt-es-nicht");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Hier geht es nicht weiter.",
