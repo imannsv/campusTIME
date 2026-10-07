@@ -4,7 +4,71 @@ import { progressionFlow } from "./progression-flow";
 import { overviewFlow } from "./overview-flow";
 import { assessmentFlow } from "./assessment-flow";
 import { campusAIFlow } from "./campus-ai-flow";
+import "./planning-workspace";
 test.use({ actionTimeout: 10000 });
+
+test("Stundenplanung öffnet die aktuelle Woche und folgt der roten Zeitlinie", async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date("2026-10-14T13:15:00+02:00") });
+  await page.goto("/");
+  await expect(page.locator(".calendar-event")).toHaveCount(10);
+  await page.evaluate(() => {
+    const key = "campustime-browser-demo-v1";
+    const state = JSON.parse(localStorage.getItem(key)!);
+    const plan = state.data.plans[0];
+    state.data.periods.find((item: any) => item.id === plan.period).start =
+      "2026-08-03";
+    localStorage.setItem(key, JSON.stringify(state));
+  });
+  await page.reload();
+  await expect(page.locator(".week-nav")).toContainText(
+    "12. Okt. – 16. Okt. 2026",
+  );
+  const marker = page.locator(".calendar-now-line");
+  const scroller = page.locator(".calendar-scroll");
+  await expect(marker).toHaveAttribute("aria-label", "Aktuelle Uhrzeit 13:15");
+  await expect(marker).toHaveCSS("height", "1px");
+  await expect(marker).toBeInViewport();
+  await scroller.evaluate((element) => (element.scrollTop = 0));
+  await page.clock.runFor(61000);
+  await expect(marker).toHaveAttribute("aria-label", "Aktuelle Uhrzeit 13:16");
+  await expect
+    .poll(() => scroller.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Jetzt folgen", exact: true }).click();
+  await scroller.evaluate((element) => (element.scrollTop = 0));
+  await page.clock.runFor(60000);
+  await expect(scroller).toHaveJSProperty("scrollTop", 0);
+  await expect(marker).toHaveAttribute("aria-label", "Aktuelle Uhrzeit 13:17");
+  await page.getByRole("button", { name: "Vorherige Woche" }).click();
+  await expect(marker).toHaveCount(0);
+  await page.getByRole("button", { name: "Diese Woche", exact: true }).click();
+  await expect(marker).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Jetzt folgen", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  // The time marker remains visible even outside the institution's teaching hours.
+  await page.clock.setSystemTime(new Date("2026-10-14T22:30:00+02:00"));
+  await page.clock.runFor(15000);
+  await expect(marker).toHaveAttribute("aria-label", "Aktuelle Uhrzeit 22:30");
+  await expect(marker).toBeInViewport();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".calendar-now-line")).toHaveAttribute(
+    "aria-label",
+    "Aktuelle Uhrzeit 22:30",
+  );
+  await expect(page.locator(".calendar-now-line")).toBeInViewport();
+  await page.clock.setSystemTime(new Date("2026-10-18T23:59:45+02:00"));
+  await page.clock.runFor(60000);
+  await expect(page.locator(".week-nav")).toContainText(
+    "19. Okt. – 23. Okt. 2026",
+  );
+  await expect(page.locator(".calendar-now-line")).toHaveAttribute(
+    "aria-label",
+    "Aktuelle Uhrzeit 00:00",
+  );
+});
 
 test("campusAI Schnellhilfe bleibt ohne Server und ohne Datenänderung verfügbar", async ({
   page,

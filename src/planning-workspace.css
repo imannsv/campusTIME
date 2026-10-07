@@ -1,0 +1,261 @@
+.planning-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+.planning-heading h1 {
+  font-size: 24px;
+}
+.planning-heading p {
+  margin-top: 5px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.planning-summary {
+  color: var(--muted);
+  font-size: 12px;
+}
+.planning-overview {
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.planning-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  align-items: start;
+  gap: 20px;
+}
+.planning-calendar {
+  min-width: 0;
+}
+.planning-calendar .schedule-panel-top {
+  padding: 16px;
+}
+.planning-calendar .plan-select {
+  flex-basis: 100%;
+}
+.planning-calendar .plan-select select {
+  font-size: 14px;
+}
+.planning-calendar .plan-actions {
+  justify-content: flex-start;
+}
+.planning-calendar .schedule-toolbar {
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  gap: 12px;
+}
+.planning-calendar .week-nav {
+  flex-wrap: wrap;
+}
+.planning-calendar .calendar-filters {
+  flex-wrap: wrap;
+}
+.planning-calendar .calendar-footer {
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+}
+.planning-calendar .calendar-scroll {
+  max-height: min(680px, 70vh);
+}
+.planning-calendar .below-calendar {
+  margin-top: 20px;
+  gap: 20px;
+  padding: 0 4px;
+}
+.planning-calendar .calendar-event[aria-pressed="true"] {
+  outline: 2px solid var(--navy);
+  outline-offset: -2px;
+}
+.planning-details {
+  min-width: 0;
+  position: sticky;
+  top: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+  overflow: hidden;
+}
+.planning-details-empty {
+  padding: 28px 24px;
+}
+.planning-details-empty .stat-icon {
+  margin-bottom: 20px;
+}
+.planning-details h2 {
+  font-size: 18px;
+}
+.planning-details-empty p {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.planning-details-empty small {
+  display: block;
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.record-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: var(--editor-height, calc(100dvh - 40px));
+}
+.record-panel > header {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.record-panel > header > div {
+  min-width: 0;
+}
+.record-panel > header p {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.record-panel h2 {
+  scroll-margin-top: 20px;
+}
+.record-panel .record-form {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 20px 0;
+}
+.record-fields {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.record-panel .form-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+.record-panel .form-grid > label {
+  min-width: 0;
+}
+.record-panel .record-form footer {
+  position: sticky;
+  bottom: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px -20px 0;
+  padding: 16px 20px;
+  z-index: 1;
+}
+.record-panel footer .button {
+  min-height: 40px;
+  padding: 9px 10px;
+  font-size: 12px;
+  gap: 6px;
+}
+.record-panel footer .spacer {
+  display: none;
+}
+.record-panel footer .danger {
+  margin-right: auto;
+}
+.record-panel .selected-chips {
+  flex-wrap: wrap;
+}
+.record-panel .selected-chips button {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+}
+.record-panel .selected-chips svg {
+  flex-shrink: 0;
+}
+@media (min-width: 1101px) {
+  .app-shell:has(.planning-workspace.is-editing)
+    :is(.campus-ai-launcher, .campus-ai) {
+    right: 432px;
+  }
+}
+@media (min-width: 1600px) {
+  .planning-workspace {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 24px;
+  }
+  .app-shell:has(.planning-workspace.is-editing)
+    :is(.campus-ai-launcher, .campus-ai) {
+    right: 464px;
+  }
+}
+@media (max-width: 1100px) {
+  .planning-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .planning-details {
+    position: static;
+  }
+  .planning-details-empty {
+    padding: 20px;
+  }
+  .planning-details-empty .stat-icon,
+  .planning-details-empty small {
+    display: none;
+  }
+  .planning-workspace.is-editing .planning-details {
+    grid-row: 1;
+  }
+  .record-panel {
+    max-height: none;
+  }
+  .record-panel .record-form {
+    overflow: visible;
+  }
+  .record-panel .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .record-panel .record-form footer {
+    position: static;
+  }
+}
+@media (max-width: 720px) {
+  .planning-heading {
+    margin: 4px 0 18px;
+  }
+  .planning-heading h1 {
+    font-size: 22px;
+  }
+  .planning-summary {
+    display: none;
+  }
+  .planning-overview {
+    gap: 16px;
+    padding: 16px;
+  }
+  .planning-calendar .plan-actions {
+    width: 100%;
+  }
+  .planning-calendar .calendar-filters {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .record-panel > header {
+    padding: 18px;
+  }
+  .record-panel .record-form {
+    padding: 18px 18px 0;
+  }
+  .record-panel .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .record-panel .record-form footer {
+    margin: 20px -18px 0;
+    padding: 16px 18px;
+  }
+  .record-panel footer .button {
+    min-height: 44px;
+  }
+}

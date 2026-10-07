@@ -3,6 +3,7 @@ import {
   useEffect,
   useId,
   useState,
+  useRef,
   type CSSProperties,
   type SyntheticEvent,
 } from "react";
@@ -36,6 +37,10 @@ export default function Timetable({
   dayEnd = 18,
   weekdays = [0, 1, 2, 3, 4],
   date,
+  showNow = false,
+  followNow = false,
+  selectedId,
+  compactColumns = false,
 }: {
   rows: Row[];
   week: string;
@@ -46,7 +51,26 @@ export default function Timetable({
   dayEnd?: number;
   weekdays?: number[];
   date?: string;
+  showNow?: boolean;
+  followNow?: boolean;
+  selectedId?: number;
+  compactColumns?: boolean;
 }) {
+  const table = useRef<HTMLDivElement>(null);
+  const nowMarker = useRef<HTMLDivElement>(null);
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => {
+    if (!showNow || publicMode) return;
+    const update = () => setClock(Date.now());
+    const timer = window.setInterval(update, 15000);
+    document.addEventListener("visibilitychange", update);
+    window.addEventListener("focus", update);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", update);
+      window.removeEventListener("focus", update);
+    };
+  }, [showNow, publicMode]);
   const previewId = useId();
   const [preview, setPreview] = useState<{
     row: Row;
@@ -96,10 +120,71 @@ export default function Timetable({
     });
   };
   const start = DateTime.fromISO(week, { zone }).startOf("week");
+  const now = DateTime.fromMillis(clock, { zone });
+  const currentWeek =
+    showNow &&
+    !publicMode &&
+    start.toISODate() === now.startOf("week").toISODate();
+  // Show the current time even before or after the institution's teaching hours.
+  // This only extends the view, never the configured planning constraints.
+  const viewStart = currentWeek ? Math.min(dayStart, now.hour) : dayStart;
+  const viewEnd = currentWeek ? Math.max(dayEnd, now.hour + 1) : dayEnd;
+  const nowPosition = (now.hour + now.minute / 60 - viewStart) * HOUR_HEIGHT;
+  const minute = now.toFormat("yyyy-MM-dd HH:mm");
+  useEffect(() => {
+    if (!currentWeek || !followNow) return;
+    const focusNow = () => {
+      const marker = nowMarker.current;
+      const scroller = table.current?.closest<HTMLElement>(".calendar-scroll");
+      if (!marker || !scroller) return;
+      const bounds = scroller.getBoundingClientRect();
+      scroller.scrollTop +=
+        marker.getBoundingClientRect().top -
+        bounds.top -
+        scroller.clientHeight * 0.45;
+      if (table.current) {
+        const day = table.current?.querySelector<HTMLElement>(
+          ".calendar-heading .today",
+        );
+        if (day) {
+          const rect = day.getBoundingClientRect();
+          if (rect.left < bounds.left + 58 || rect.right > bounds.right) {
+            scroller.scrollLeft +=
+              rect.left -
+              bounds.left -
+              58 -
+              Math.max(0, (scroller.clientWidth - 58 - rect.width) / 2);
+          }
+        }
+      }
+      const rect = marker.getBoundingClientRect();
+      if (rect.top < 0 || rect.bottom > window.innerHeight) {
+        marker.scrollIntoView({
+          block: "center",
+          inline: "nearest",
+          behavior: "instant",
+        });
+      }
+    };
+    const frame = requestAnimationFrame(focusNow);
+    const scroller = table.current?.closest<HTMLElement>(".calendar-scroll");
+    const observer = new ResizeObserver(focusNow);
+    if (scroller) observer.observe(scroller);
+    window.addEventListener("resize", focusNow);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("resize", focusNow);
+    };
+  }, [currentWeek, followNow, minute, week, dayStart, dayEnd, rows.length]);
   const days = date
     ? [DateTime.fromISO(date, { zone })]
     : [...weekdays].sort((a, b) => a - b).map((i) => start.plus({ days: i }));
-  const height = (dayEnd - dayStart) * HOUR_HEIGHT;
+  if (currentWeek && !days.some((day) => day.toISODate() === now.toISODate())) {
+    days.push(now.startOf("day"));
+    days.sort((a, b) => a.toMillis() - b.toMillis());
+  }
+  const height = (viewEnd - viewStart) * HOUR_HEIGHT;
   const eventsOn = (day: DateTime) =>
     rows.filter(
       (r) =>
@@ -123,7 +208,12 @@ export default function Timetable({
   // Give simultaneous events enough horizontal space. Only the calendar itself
   // scrolls on smaller screens, never the surrounding page or its actions.
   const dayWidths = layouts.map((events) =>
-    Math.max(180, ...events.map((event) => event.lanes * 156)),
+    Math.max(
+      compactColumns ? 132 : 180,
+      ...events.map((event) =>
+        compactColumns && event.lanes === 1 ? 132 : event.lanes * 156,
+      ),
+    ),
   );
   const columns = agenda
     ? `58px repeat(${days.length}, minmax(0, 1fr))`
@@ -131,8 +221,12 @@ export default function Timetable({
   return (
     <>
       <div
+        ref={table}
         className={
-          "timetable" + (date ? " single-day" : "") + (agenda ? " agenda" : "")
+          "timetable" +
+          (date ? " single-day" : "") +
+          (agenda ? " agenda" : "") +
+          (showNow ? " with-current-time" : "")
         }
         style={
           agenda
@@ -170,11 +264,11 @@ export default function Timetable({
         >
           <div className="time-axis">
             {Array.from(
-              { length: Math.ceil(dayEnd - dayStart) + 1 },
+              { length: Math.ceil(viewEnd - viewStart) + 1 },
               (_, i) => (
                 <span key={i} style={{ top: i * HOUR_HEIGHT }}>
                   {DateTime.fromObject({ hour: 0 })
-                    .plus({ minutes: (dayStart + i) * 60 })
+                    .plus({ minutes: (viewStart + i) * 60 })
                     .toFormat("HH:mm")}
                 </span>
               ),
@@ -185,7 +279,7 @@ export default function Timetable({
             return (
               <div className="day-column" key={day.toISODate()}>
                 {Array.from(
-                  { length: Math.ceil(dayEnd - dayStart) },
+                  { length: Math.ceil(viewEnd - viewStart) },
                   (_, i) => (
                     <div
                       key={i}
@@ -197,7 +291,8 @@ export default function Timetable({
                 {placed.map(({ row, lane, lanes, span }, i) => {
                   const s = DateTime.fromISO(row.start, { zone }),
                     e = DateTime.fromISO(row.end, { zone });
-                  const top = (s.hour + s.minute / 60 - dayStart) * HOUR_HEIGHT,
+                  const top =
+                      (s.hour + s.minute / 60 - viewStart) * HOUR_HEIGHT,
                     eventHeight = Math.max(
                       38,
                       (e.diff(s, "minutes").minutes / 60) * HOUR_HEIGHT - 5,
@@ -222,6 +317,9 @@ export default function Timetable({
                       disabled={publicMode}
                       className={`calendar-event ${row.color || "blue"} ${compact ? "compact" : brief ? "brief" : ""} ${!agenda && eventHeight < 64 ? "tiny" : ""} ${row.blocked ? "blocked" : ""}`}
                       aria-label={details}
+                      aria-pressed={
+                        onSelect ? row.id === selectedId : undefined
+                      }
                       aria-describedby={
                         preview?.row === row ? previewId : undefined
                       }
@@ -283,6 +381,16 @@ export default function Timetable({
               </div>
             );
           })}
+          {currentWeek && !agenda && (
+            <div
+              ref={nowMarker}
+              className="calendar-now-line"
+              style={{ top: nowPosition }}
+              aria-label={`Aktuelle Uhrzeit ${now.toFormat("HH:mm")}`}
+            >
+              <span>{now.toFormat("HH:mm")}</span>
+            </div>
+          )}
         </div>
       </div>
       {preview &&

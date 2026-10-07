@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, FormEvent } from "react";
 import { DateTime } from "luxon";
 import {
   CalendarDays,
@@ -18,6 +18,8 @@ import {
   Building2,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   Sparkles,
   Upload,
   AlertTriangle,
@@ -96,7 +98,12 @@ const compactResources = [
 
 function Brand() {
   return (
-    <div className="brand">
+    <div
+      className="brand"
+      role="img"
+      aria-label="CampusZeit"
+      title="CampusZeit"
+    >
       <span className="brand-symbol">
         <i />
         <i />
@@ -109,7 +116,7 @@ function Brand() {
     </div>
   );
 }
-function DemoNotice() {
+function DemoNotice({ beforeReset }: { beforeReset?: () => boolean }) {
   const [error, setError] = useState("");
   if (!DEMO_MODE) return null;
   return (
@@ -121,6 +128,7 @@ function DemoNotice() {
       </p>
       <button
         onClick={async () => {
+          if (beforeReset && !beforeReset()) return;
           try {
             (await import("./demo")).resetDemo();
           } catch (err) {
@@ -867,6 +875,18 @@ export default function App() {
   return <Workspace />;
 }
 function Workspace() {
+  const [sidebarHidden, setSidebarHidden] = useState(() => {
+    try {
+      return localStorage.getItem("campuszeit-sidebar-hidden") === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [mobileNavigation, setMobileNavigation] = useState(
+    () => window.matchMedia("(max-width: 720px)").matches,
+  );
+  const sidebarToggle = useRef<HTMLButtonElement>(null);
+  const [followNow, setFollowNow] = useState(true);
   const [setupStep, setSetupStep] = useState(0);
   const [studyContext, setStudyContext] = useState<Row>({});
   const [roomContext, setRoomContext] = useState<Row>({});
@@ -885,6 +905,8 @@ function Workspace() {
     [groupFilter, setGroupFilter] = useState(""),
     [roomFilter, setRoomFilter] = useState(""),
     [modal, setModal] = useState<Row | null>(null),
+    [scheduleEditor, setScheduleEditor] = useState<Row | null>(null),
+    [loggingOut, setLoggingOut] = useState(false),
     [refresh, setRefresh] = useState(0),
     [toast, setToast] = useState(""),
     [error, setError] = useState(""),
@@ -893,9 +915,96 @@ function Workspace() {
     [settings, setSettings] = useState<Row>({}),
     [busy, setBusy] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const editorState = useRef({ dirty: false, busy: false });
+  const editorSequence = useRef(0);
+  const updateEditorState = useCallback((dirty: boolean, busy: boolean) => {
+    editorState.current = { dirty, busy };
+  }, []);
+  const canLeaveEditor = () =>
+    !loggingOut &&
+    !editorState.current.busy &&
+    (!editorState.current.dirty ||
+      window.confirm("Ungespeicherte Änderungen verwerfen?"));
+  const clearEditor = () => {
+    editorState.current = { dirty: false, busy: false };
+    setScheduleEditor(null);
+  };
+  const closeEditor = () => {
+    if (canLeaveEditor()) clearEditor();
+  };
+  const openPlanningModal = (value: Row) => {
+    if (!canLeaveEditor()) return;
+    clearEditor();
+    setModal(value);
+  };
+  async function logout() {
+    if (!session || !canLeaveEditor()) return;
+    clearEditor();
+    setLoggingOut(true);
+    try {
+      await api("auth/logout/", "POST", {});
+      setSession({ ...session, authenticated: false });
+      setBoot(null);
+      setData({});
+      setPlanId(null);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoggingOut(false);
+    }
+  }
+  useEffect(() => {
+    try {
+      localStorage.setItem("campuszeit-sidebar-hidden", String(sidebarHidden));
+    } catch {
+      // The toggle still works when browser storage is unavailable.
+    }
+  }, [sidebarHidden]);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 720px)");
+    const update = () => {
+      setMobileNavigation(media.matches);
+      setMenu(false);
+    };
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  useEffect(() => {
+    if (!menu) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenu(false);
+        sidebarToggle.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [menu]);
   const zone = session?.institution?.timezone || "Europe/Berlin",
     plan = data.plans?.find((p) => p.id === planId),
     period = data.periods?.find((p) => p.id === plan?.period);
+  useEffect(() => {
+    setWeek(DateTime.now().setZone(zone).startOf("week").toISODate()!);
+  }, [zone]);
+  useEffect(() => {
+    if (!followNow) return;
+    let previous = DateTime.now().setZone(zone).startOf("week").toISODate()!;
+    const update = () => {
+      const current = DateTime.now().setZone(zone).startOf("week").toISODate()!;
+      const prior = previous;
+      if (current !== prior)
+        setWeek((value) => (value === prior ? current : value));
+      previous = current;
+    };
+    const timer = window.setInterval(update, 15000);
+    window.addEventListener("focus", update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", update);
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, [zone, followNow]);
   const notify = (message: string) => {
     setToast(message);
     setTimeout(() => setToast(""), 4000);
@@ -935,11 +1044,6 @@ function Workspace() {
         if (initial && !d.plans.length) setPage("setup");
         if (!planId && d.plans[0]) {
           setPlanId(d.plans[0].id);
-          const p = d.periods.find((r) => r.id === d.plans[0].period);
-          if (p)
-            setWeek(
-              DateTime.fromISO(p.start, { zone }).startOf("week").toISODate()!,
-            );
         }
         setInitial(false);
         setError("");
@@ -972,11 +1076,28 @@ function Workspace() {
       active = false;
     };
   }, [planId, refresh]);
-  const edit = (res: string, row?: Row, defaults: Row = {}) =>
-    setModal({ type: "record", resource: res, record: row, defaults });
+  const edit = (res: string, row?: Row, defaults: Row = {}) => {
+    if (page === "schedule" && res === "sessions") {
+      if (!canLeaveEditor()) return;
+      editorState.current = { dirty: false, busy: false };
+      setScheduleEditor({
+        record: row,
+        defaults,
+        key: ++editorSequence.current,
+      });
+    } else {
+      setModal({ type: "record", resource: res, record: row, defaults });
+    }
+  };
   const go = (id: string) => {
+    if (!canLeaveEditor()) return;
+    clearEditor();
     setDataFilters({});
     setPage(id);
+    if (id === "schedule") {
+      setWeek(DateTime.now().setZone(zone).startOf("week").toISODate()!);
+      setFollowNow(true);
+    }
     setSearch("");
     setMenu(false);
     if (id === "exams") setResource("exams");
@@ -986,7 +1107,7 @@ function Workspace() {
     const action = campusActions.find((item) => item.id === id);
     if (!action || initial || !boot)
       throw new Error("Diese Ansicht ist noch nicht verfügbar.");
-    if (modal)
+    if (modal || scheduleEditor)
       throw new Error(
         "Schließe zuerst das geöffnete Formular. Deine Eingaben bleiben erhalten.",
       );
@@ -1129,10 +1250,15 @@ function Workspace() {
       />
     );
   return (
-    <div className="app-shell">
-      <aside className={`sidebar ${menu ? "open" : ""}`}>
+    <div className={`app-shell ${sidebarHidden ? "sidebar-collapsed" : ""}`}>
+      <aside
+        id="workspace-sidebar"
+        aria-label="Hauptnavigation"
+        inert={mobileNavigation && !menu}
+        className={`sidebar ${menu ? "open" : ""}`}
+      >
         <Brand />
-        <div className="institution-switch">
+        <div className="institution-switch" title={session.institution.name}>
           <span className="institution-icon">
             <GraduationCap size={21} />
           </span>
@@ -1151,11 +1277,13 @@ function Workspace() {
           {nav.map((item) => (
             <button
               key={item.id}
+              aria-label={item.label}
+              title={item.label}
               className={page === item.id ? "active" : ""}
               onClick={() => go(item.id)}
             >
               <item.icon size={20} />
-              {item.label}
+              <span className="nav-label">{item.label}</span>
               {item.id === "schedule" && (
                 <span className="nav-count">{data.plans?.length || 0}</span>
               )}
@@ -1165,16 +1293,18 @@ function Workspace() {
         <div className="sidebar-spacer" />
         <button
           className={"settings-nav " + (page === "settings" ? "active" : "")}
+          aria-label="Einstellungen"
+          title="Einstellungen"
           onClick={() => {
             go("settings");
             setSettings(session.institution);
           }}
         >
           <Settings size={19} />
-          Einstellungen
+          <span className="nav-label">Einstellungen</span>
         </button>
         <div className="user-profile">
-          <span className="avatar">
+          <span className="avatar" title={session.user}>
             {session.user
               .split(" ")
               .map((x) => x[0])
@@ -1192,18 +1322,9 @@ function Workspace() {
           <button
             className="icon-button"
             aria-label="Abmelden"
-            disabled={DEMO_MODE}
+            disabled={DEMO_MODE || loggingOut}
             title={DEMO_MODE ? "Die Demo benötigt keine Anmeldung." : undefined}
-            onClick={() =>
-              api("auth/logout/", "POST", {})
-                .then(() => {
-                  setSession({ ...session, authenticated: false });
-                  setBoot(null);
-                  setData({});
-                  setPlanId(null);
-                })
-                .catch((e) => setError(e.message))
-            }
+            onClick={logout}
           >
             <LogOut size={17} />
           </button>
@@ -1213,11 +1334,39 @@ function Workspace() {
       <div className="workspace">
         <header className="topbar">
           <button
-            className="icon-button mobile-menu"
-            aria-label="Menü öffnen"
-            onClick={() => setMenu((m) => !m)}
+            ref={sidebarToggle}
+            className="icon-button sidebar-toggle"
+            aria-label={
+              mobileNavigation
+                ? menu
+                  ? "Menü schließen"
+                  : "Menü öffnen"
+                : sidebarHidden
+                  ? "Seitenleiste ausklappen"
+                  : "Seitenleiste einklappen"
+            }
+            title={
+              mobileNavigation
+                ? "Menü"
+                : sidebarHidden
+                  ? "Seitenleiste ausklappen"
+                  : "Seitenleiste einklappen"
+            }
+            aria-controls="workspace-sidebar"
+            aria-expanded={mobileNavigation ? menu : !sidebarHidden}
+            onClick={() =>
+              mobileNavigation
+                ? setMenu((m) => !m)
+                : setSidebarHidden((hidden) => !hidden)
+            }
           >
-            <Menu size={21} />
+            {mobileNavigation ? (
+              <Menu size={21} />
+            ) : sidebarHidden ? (
+              <PanelLeftOpen size={21} />
+            ) : (
+              <PanelLeftClose size={21} />
+            )}
           </button>
           <div className="breadcrumb">
             Arbeitsbereich
@@ -1246,7 +1395,13 @@ function Workspace() {
           </span>
         </header>
         <main className="main-content">
-          <DemoNotice />
+          <DemoNotice
+            beforeReset={() => {
+              if (!canLeaveEditor()) return false;
+              clearEditor();
+              return true;
+            }}
+          />
           {error && (
             <div className="error-box global-error" role="alert">
               {error}
@@ -1300,7 +1455,16 @@ function Workspace() {
             />
           ) : page === "schedule" ? (
             <>
-              <div className="overview-strip">
+              <div className="planning-heading">
+                <div>
+                  <h1>Stundenplanung</h1>
+                  <p>Wochenplan und Termindetails im Blick.</p>
+                </div>
+                <span className="planning-summary">
+                  {inWeek.length} Termine diese Woche
+                </span>
+              </div>
+              <div className="overview-strip planning-overview">
                 <div>
                   <span className="stat-icon blue-stat">
                     <CalendarDays size={20} />
@@ -1356,272 +1520,351 @@ function Workspace() {
                   </div>
                 </div>
               </div>
-              <div className="schedule-panel">
-                <div className="schedule-panel-top">
-                  <div className="plan-select">
-                    <span className="plan-dot" />
-                    <select
-                      aria-label="Stundenplan auswählen"
-                      value={planId || ""}
-                      onChange={(e) => setPlanId(Number(e.target.value))}
-                    >
-                      {data.plans?.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="plan-actions">
-                    <button
-                      className="button secondary"
-                      disabled={!plan || DEMO_MODE}
-                      title={
-                        DEMO_MODE
-                          ? "Die automatische Planung ist lokal verfügbar und benötigt das echte Backend."
-                          : undefined
-                      }
-                      onClick={() =>
-                        setModal({ type: "solver", kind: "teaching" })
-                      }
-                    >
-                      <Sparkles size={15} />
-                      Automatisch planen
-                    </button>
-                    <button
-                      className="button ghost"
-                      onClick={() => setModal({ type: "template", groups: [] })}
-                      disabled={!plan || DEMO_MODE}
-                      title={
-                        DEMO_MODE
-                          ? "Lehrplanübernahme benötigt das echte Backend."
-                          : undefined
-                      }
-                    >
-                      <FileText size={15} />
-                      Lehrplan übernehmen
-                    </button>
-                    <button
-                      className="button secondary"
-                      disabled={!plan}
-                      onClick={() =>
-                        edit("sessions", undefined, {
-                          plan: planId,
-                          start: DateTime.fromISO(week, { zone })
-                            .set({ hour: 8, minute: 0 })
-                            .toISO(),
-                          end: DateTime.fromISO(week, { zone })
-                            .set({ hour: 9, minute: 30 })
-                            .toISO(),
-                        })
-                      }
-                    >
-                      <Plus size={16} />
-                      Termin
-                    </button>
-                    <button
-                      className="button primary publish-button"
-                      disabled={!plan}
-                      onClick={() => setModal({ type: "publish" })}
-                    >
-                      <ArrowUpRight size={16} />
-                      {DEMO_MODE
-                        ? "Demoanzeige aktualisieren"
-                        : "Veröffentlichen"}
-                    </button>
-                  </div>
-                </div>
-                <div className="schedule-toolbar">
-                  <div className="week-nav">
-                    <button
-                      aria-label="Vorherige Woche"
-                      onClick={() =>
-                        setWeek(
-                          DateTime.fromISO(week)
-                            .minus({ weeks: 1 })
-                            .toISODate()!,
-                        )
-                      }
-                    >
-                      <ChevronLeft size={18} />
-                    </button>
-                    <button
-                      aria-label="Nächste Woche"
-                      onClick={() =>
-                        setWeek(
-                          DateTime.fromISO(week)
-                            .plus({ weeks: 1 })
-                            .toISODate()!,
-                        )
-                      }
-                    >
-                      <ChevronRight size={18} />
-                    </button>
-                    <strong>
-                      {DateTime.fromISO(week)
-                        .plus({
-                          days: Math.min(
-                            ...(period?.weekdays?.length
-                              ? period.weekdays
-                              : [0, 1, 2, 3, 4]),
-                          ),
-                        })
-                        .setLocale("de")
-                        .toFormat("dd. MMM")}{" "}
-                      –{" "}
-                      {DateTime.fromISO(week)
-                        .plus({
-                          days: Math.max(
-                            ...(period?.weekdays?.length
-                              ? period.weekdays
-                              : [0, 1, 2, 3, 4]),
-                          ),
-                        })
-                        .setLocale("de")
-                        .toFormat("dd. MMM yyyy")}
-                    </strong>
-                    <button
-                      className="today-button"
-                      onClick={() =>
-                        setWeek(
-                          DateTime.now()
-                            .setZone(zone)
-                            .startOf("week")
-                            .toISODate()!,
-                        )
-                      }
-                    >
-                      Heute
-                    </button>
-                  </div>
-                  <div className="calendar-filters">
-                    <SlidersHorizontal size={15} />
-                    <select
-                      aria-label="Gruppe filtern"
-                      value={groupFilter}
-                      onChange={(e) => setGroupFilter(e.target.value)}
-                    >
-                      <option value="">Alle Gruppen</option>
-                      {data.groups?.map((g) => (
-                        <option key={g.id}>{g.name}</option>
-                      ))}
-                    </select>
-                    <select
-                      aria-label="Raum filtern"
-                      value={roomFilter}
-                      onChange={(e) => setRoomFilter(e.target.value)}
-                    >
-                      <option value="">Alle Räume</option>
-                      {data.rooms?.map((r) => (
-                        <option key={r.id}>{r.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                {!plan ? (
-                  <div className="empty-state">
-                    <CalendarDays size={36} />
-                    <h3>Noch kein Stundenplan vorhanden</h3>
-                    <p>
-                      Lege zunächst einen Zeitraum, einen Planbereich und einen
-                      Stundenplan unter Stammdaten an.
-                    </p>
-                    <button
-                      className="button primary"
-                      onClick={() => {
-                        go("data");
-                        setResource("plans");
-                      }}
-                    >
-                      Stammdaten öffnen
-                    </button>
-                  </div>
-                ) : (
-                  <div className="calendar-scroll">
-                    <Timetable
-                      rows={visible}
-                      week={week}
-                      zone={zone}
-                      onSelect={(r) =>
-                        edit("sessions", {
-                          ...r,
-                          rooms: r.room_ids,
-                          teachers: r.teacher_ids,
-                          plan: planId,
-                        })
-                      }
-                      dayStart={
-                        period
-                          ? Number(period.day_start.split(":")[0]) +
-                            Number(period.day_start.split(":")[1]) / 60
-                          : 8
-                      }
-                      dayEnd={
-                        period
-                          ? Number(period.day_end.split(":")[0]) +
-                            Number(period.day_end.split(":")[1]) / 60
-                          : 18
-                      }
-                      weekdays={period?.weekdays}
-                    />
-                  </div>
-                )}
-                <div className="calendar-footer">
-                  <div className="legend">
-                    <span>
-                      <i className="blue" />
-                      Vorlesung & Projekt
-                    </span>
-                    <span>
-                      <i className="violet" />
-                      Übung & Wahlpflicht
-                    </span>
-                    <span>
-                      <i className="mint" />
-                      Labor
-                    </span>
-                  </div>
-                  <span className="draft-note">
-                    <span className="status-dot amber-dot" />
-                    Entwurf
-                    {publication
-                      ? ` · Anzeige: Version ${publication.number}`
-                      : " · Noch nicht veröffentlicht"}
-                  </span>
-                </div>
-              </div>
-              <div className="below-calendar">
-                <div>
-                  <span className="small-label">Planungsstatus</span>
-                  {conflicts.length ? (
-                    <ul className="conflict-list">
-                      {conflicts.slice(0, 6).map((c, i) => (
-                        <li key={i}>
-                          <AlertTriangle size={15} />
-                          {c}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p>
-                      {DEMO_MODE
-                        ? "Die Demo prüft Überschneidungen und Raumkapazitäten. Die vollständige Soll- und Regelprüfung erfolgt im echten Backend."
-                        : "Keine Überschneidungen. Unterrichtssoll und Kapazitäten sind geprüft."}
-                    </p>
-                  )}
-                </div>
-                <div className="activity">
-                  <span className="small-label">Zuletzt geändert</span>
-                  {boot?.audit.slice(0, 3).map((a: Row, i: number) => (
-                    <div key={i}>
-                      <span className="activity-dot" />
-                      <p>
-                        {a.action}
-                        <small>{fmt(a.created, zone, "dd.MM. · HH:mm")}</small>
-                      </p>
+              <div
+                className={`planning-workspace${scheduleEditor ? " is-editing" : ""}`}
+              >
+                <div className="planning-calendar">
+                  <div className="schedule-panel">
+                    <div className="schedule-panel-top">
+                      <div className="plan-select">
+                        <span className="plan-dot" />
+                        <select
+                          aria-label="Stundenplan auswählen"
+                          value={planId || ""}
+                          onChange={(e) => {
+                            if (!canLeaveEditor()) return;
+                            clearEditor();
+                            setPlanId(Number(e.target.value));
+                          }}
+                        >
+                          {data.plans?.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="plan-actions">
+                        <button
+                          className="button secondary"
+                          disabled={!plan || DEMO_MODE}
+                          title={
+                            DEMO_MODE
+                              ? "Die automatische Planung ist lokal verfügbar und benötigt das echte Backend."
+                              : undefined
+                          }
+                          onClick={() =>
+                            openPlanningModal({
+                              type: "solver",
+                              kind: "teaching",
+                            })
+                          }
+                        >
+                          <Sparkles size={15} />
+                          Automatisch planen
+                        </button>
+                        <button
+                          className="button ghost"
+                          onClick={() =>
+                            openPlanningModal({ type: "template", groups: [] })
+                          }
+                          disabled={!plan || DEMO_MODE}
+                          title={
+                            DEMO_MODE
+                              ? "Lehrplanübernahme benötigt das echte Backend."
+                              : undefined
+                          }
+                        >
+                          <FileText size={15} />
+                          Lehrplan übernehmen
+                        </button>
+                        <button
+                          className="button secondary"
+                          disabled={!plan}
+                          onClick={() =>
+                            edit("sessions", undefined, {
+                              plan: planId,
+                              start: DateTime.fromISO(week, { zone })
+                                .set({ hour: 8, minute: 0 })
+                                .toISO(),
+                              end: DateTime.fromISO(week, { zone })
+                                .set({ hour: 9, minute: 30 })
+                                .toISO(),
+                            })
+                          }
+                        >
+                          <Plus size={16} />
+                          Termin
+                        </button>
+                        <button
+                          className="button primary publish-button"
+                          disabled={!plan}
+                          onClick={() => openPlanningModal({ type: "publish" })}
+                        >
+                          <ArrowUpRight size={16} />
+                          {DEMO_MODE
+                            ? "Demoanzeige aktualisieren"
+                            : "Veröffentlichen"}
+                        </button>
+                      </div>
                     </div>
-                  ))}
+                    <div className="schedule-toolbar">
+                      <div className="week-nav">
+                        <button
+                          aria-label="Vorherige Woche"
+                          onClick={() =>
+                            setWeek(
+                              DateTime.fromISO(week)
+                                .minus({ weeks: 1 })
+                                .toISODate()!,
+                            )
+                          }
+                        >
+                          <ChevronLeft size={18} />
+                        </button>
+                        <button
+                          aria-label="Nächste Woche"
+                          onClick={() =>
+                            setWeek(
+                              DateTime.fromISO(week)
+                                .plus({ weeks: 1 })
+                                .toISODate()!,
+                            )
+                          }
+                        >
+                          <ChevronRight size={18} />
+                        </button>
+                        <strong>
+                          {DateTime.fromISO(week)
+                            .plus({
+                              days: Math.min(
+                                ...(period?.weekdays?.length
+                                  ? period.weekdays
+                                  : [0, 1, 2, 3, 4]),
+                              ),
+                            })
+                            .setLocale("de")
+                            .toFormat("dd. MMM")}{" "}
+                          –{" "}
+                          {DateTime.fromISO(week)
+                            .plus({
+                              days: Math.max(
+                                ...(period?.weekdays?.length
+                                  ? period.weekdays
+                                  : [0, 1, 2, 3, 4]),
+                              ),
+                            })
+                            .setLocale("de")
+                            .toFormat("dd. MMM yyyy")}
+                        </strong>
+                        <button
+                          className="today-button"
+                          onClick={() => {
+                            setFollowNow(true);
+                            setWeek(
+                              DateTime.now()
+                                .setZone(zone)
+                                .startOf("week")
+                                .toISODate()!,
+                            );
+                          }}
+                        >
+                          Diese Woche
+                        </button>
+                        <button
+                          className="follow-now-button"
+                          aria-pressed={followNow && !scheduleEditor}
+                          title={
+                            scheduleEditor
+                              ? "Die Zeitnavigation pausiert während der Terminbearbeitung."
+                              : "Rote Zeitlinie im sichtbaren Ausschnitt halten. Zum freien Planen ausschalten."
+                          }
+                          disabled={
+                            Boolean(scheduleEditor) ||
+                            week !==
+                              DateTime.now()
+                                .setZone(zone)
+                                .startOf("week")
+                                .toISODate()
+                          }
+                          onClick={() => setFollowNow(!followNow)}
+                        >
+                          <Clock3 size={14} />
+                          {scheduleEditor
+                            ? "Zeitnavigation pausiert"
+                            : "Jetzt folgen"}
+                        </button>
+                      </div>
+                      <div className="calendar-filters">
+                        <SlidersHorizontal size={15} />
+                        <select
+                          aria-label="Gruppe filtern"
+                          value={groupFilter}
+                          onChange={(e) => setGroupFilter(e.target.value)}
+                        >
+                          <option value="">Alle Gruppen</option>
+                          {data.groups?.map((g) => (
+                            <option key={g.id}>{g.name}</option>
+                          ))}
+                        </select>
+                        <select
+                          aria-label="Raum filtern"
+                          value={roomFilter}
+                          onChange={(e) => setRoomFilter(e.target.value)}
+                        >
+                          <option value="">Alle Räume</option>
+                          {data.rooms?.map((r) => (
+                            <option key={r.id}>{r.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    {!plan ? (
+                      <div className="empty-state">
+                        <CalendarDays size={36} />
+                        <h3>Noch kein Stundenplan vorhanden</h3>
+                        <p>
+                          Lege zunächst einen Zeitraum, einen Planbereich und
+                          einen Stundenplan unter Stammdaten an.
+                        </p>
+                        <button
+                          className="button primary"
+                          onClick={() => {
+                            go("data");
+                            setResource("plans");
+                          }}
+                        >
+                          Stammdaten öffnen
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="calendar-scroll">
+                        <Timetable
+                          selectedId={scheduleEditor?.record?.id}
+                          compactColumns
+                          rows={visible}
+                          showNow
+                          followNow={followNow && !scheduleEditor}
+                          week={week}
+                          zone={zone}
+                          onSelect={(r) =>
+                            edit("sessions", {
+                              ...r,
+                              rooms: r.room_ids,
+                              teachers: r.teacher_ids,
+                              plan: planId,
+                            })
+                          }
+                          dayStart={
+                            period
+                              ? Number(period.day_start.split(":")[0]) +
+                                Number(period.day_start.split(":")[1]) / 60
+                              : 8
+                          }
+                          dayEnd={
+                            period
+                              ? Number(period.day_end.split(":")[0]) +
+                                Number(period.day_end.split(":")[1]) / 60
+                              : 18
+                          }
+                          weekdays={period?.weekdays}
+                        />
+                      </div>
+                    )}
+                    <div className="calendar-footer">
+                      <div className="legend">
+                        <span>
+                          <i className="blue" />
+                          Vorlesung & Projekt
+                        </span>
+                        <span>
+                          <i className="violet" />
+                          Übung & Wahlpflicht
+                        </span>
+                        <span>
+                          <i className="mint" />
+                          Labor
+                        </span>
+                      </div>
+                      <span className="draft-note">
+                        <span className="status-dot amber-dot" />
+                        Entwurf
+                        {publication
+                          ? ` · Anzeige: Version ${publication.number}`
+                          : " · Noch nicht veröffentlicht"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="below-calendar">
+                    <div>
+                      <span className="small-label">Planungsstatus</span>
+                      {conflicts.length ? (
+                        <ul className="conflict-list">
+                          {conflicts.slice(0, 6).map((c, i) => (
+                            <li key={i}>
+                              <AlertTriangle size={15} />
+                              {c}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p>
+                          {DEMO_MODE
+                            ? "Die Demo prüft Überschneidungen und Raumkapazitäten. Die vollständige Soll- und Regelprüfung erfolgt im echten Backend."
+                            : "Keine Überschneidungen. Unterrichtssoll und Kapazitäten sind geprüft."}
+                        </p>
+                      )}
+                    </div>
+                    <div className="activity">
+                      <span className="small-label">Zuletzt geändert</span>
+                      {boot?.audit.slice(0, 3).map((a: Row, i: number) => (
+                        <div key={i}>
+                          <span className="activity-dot" />
+                          <p>
+                            {a.action}
+                            <small>
+                              {fmt(a.created, zone, "dd.MM. · HH:mm")}
+                            </small>
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
+                <aside className="planning-details" aria-label="Termindetails">
+                  {scheduleEditor && boot ? (
+                    <RecordForm
+                      key={scheduleEditor.key}
+                      resource="sessions"
+                      fields={boot.schema.sessions}
+                      record={scheduleEditor.record}
+                      defaults={scheduleEditor.defaults}
+                      zone={zone}
+                      presentation="panel"
+                      onStateChange={updateEditorState}
+                      onClose={closeEditor}
+                      onSaved={() => {
+                        editorState.current = { dirty: false, busy: false };
+                        reload();
+                      }}
+                    />
+                  ) : (
+                    <div className="planning-details-empty">
+                      <span className="stat-icon blue-stat">
+                        <CalendarDays size={22} />
+                      </span>
+                      <h2>Termindetails</h2>
+                      <p>
+                        Wähle einen Termin im Wochenplan, um Zeit, Räume und
+                        Lehrpersonen zu bearbeiten.
+                      </p>
+                      <small>
+                        Der Kalender bleibt dabei bedienbar. Änderungen werden
+                        erst mit „Speichern“ übernommen.
+                      </small>
+                    </div>
+                  )}
+                </aside>
               </div>
             </>
           ) : page === "map" ? (

@@ -893,6 +893,55 @@ small {
   align-items: center;
   gap: 20px;
 }
+.topbar .sidebar-toggle {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+}
+@media (min-width: 721px) {
+  .app-shell.sidebar-collapsed .sidebar {
+    width: 72px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .sidebar-collapsed .sidebar .brand {
+    justify-content: center;
+    gap: 0;
+  }
+  .sidebar-collapsed .sidebar .brand > span:last-child,
+  .sidebar-collapsed .nav-label,
+  .sidebar-collapsed .nav-caption,
+  .sidebar-collapsed .nav-count,
+  .sidebar-collapsed .institution-switch > div,
+  .sidebar-collapsed .institution-switch > svg,
+  .sidebar-collapsed .user-profile > div {
+    display: none;
+  }
+  .sidebar-collapsed .institution-switch {
+    justify-content: center;
+    padding: 6px;
+  }
+  .sidebar-collapsed .sidebar nav button,
+  .sidebar-collapsed .settings-nav {
+    justify-content: center;
+    padding: 0;
+    min-height: 44px;
+  }
+  .sidebar-collapsed .sidebar nav button > svg,
+  .sidebar-collapsed .settings-nav > svg {
+    flex-shrink: 0;
+  }
+  .sidebar-collapsed .user-profile {
+    flex-direction: column;
+  }
+  .app-shell.sidebar-collapsed .workspace {
+    margin-left: 72px;
+    width: calc(100% - 72px);
+  }
+  .app-shell.sidebar-collapsed .toast {
+    left: calc(50% + 36px);
+  }
+}
 .breadcrumb {
   display: flex;
   align-items: center;
@@ -3060,6 +3109,10 @@ tbody tr:hover {
   }
 }
 @media (max-width: 720px) {
+  .topbar .sidebar-toggle {
+    width: 44px;
+    height: 44px;
+  }
   .sidebar {
     transform: translateX(-100%);
     transition: transform 0.2s;
