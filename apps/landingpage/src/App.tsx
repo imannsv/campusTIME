@@ -146,10 +146,6 @@ function Home({ config }: { config: SiteConfig }) {
     <>
       <section className="hero container" aria-labelledby="hero-title">
         <div className="hero-copy">
-          <p className="hero-context">
-            <span className="status-dot" />
-            Für Hochschulen und Schulen
-          </p>
           <h1 id="hero-title">Ein Stundenplan, der alles zusammenbringt.</h1>
           <p className="hero-description">
             Räume, Lehrpläne, Menschen und Prüfungen gemeinsam planen. Damit aus

@@ -236,15 +236,6 @@ svg {
   align-items: center;
   padding-block: 94px 86px;
 }
-.hero-context {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--muted);
-  margin-bottom: 24px;
-}
 .status-dot {
   width: 7px;
   height: 7px;
@@ -1397,10 +1388,6 @@ h2 {
   .hero h1 {
     font-size: clamp(2.05rem, 9.6vw, 3.15rem);
     letter-spacing: -1.5px;
-  }
-  .hero-context {
-    font-size: 0.8125rem;
-    margin-bottom: 21px;
   }
   .hero-description {
     font-size: 1rem;
