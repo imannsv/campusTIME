@@ -41,15 +41,15 @@ Die lokalen Tests gegen Vite preview prüfen den dargestellten 404-Inhalt, nicht
 ## Vercel-Vorschau
 
 - Team: `jakob-fee8`; Projekt: `campuszeit-landingpage` (`prj_zITmXtZRWcLAv5dOSaATMyIFsMVn`).
-- Vorschau: https://campuszeit-landingpage-gb57j6kki-jakob-fee8.vercel.app
-- Deployment: `dpl_6TQ49RyX9oTLXb3GDnStXP9MrJ4Z`, Ziel **preview**, Status **READY**, Builddauer 12 Sekunden.
-- Quellstand: `e58f83dcf376e08ebb114776cc0fc3ae5bb6d4ea`, Branch `landingpage`. CLI-Upload eines isolierten Snapshots mit ausschließlich Landingpage-Dateien; kein Git-Deployment.
+- Vorschau: https://campuszeit-landingpage-gkvbucbz0-jakob-fee8.vercel.app
+- Deployment: `dpl_Cb5gdmKSoYXFA9UpZRT8GWgP4YXP`, Ziel **preview**, Status **READY**, Builddauer 17 Sekunden.
+- Quellstand: `36a9c6dee966dbb251965eae6cf56c513a55e520`, Branch `landingpage`. CLI-Upload eines isolierten Snapshots mit ausschließlich Landingpage-Dateien; kein Git-Deployment.
 - Root Directory `apps/landingpage`, Framework Vite, Node 24.x, `npm ci`, `npm run build`, Ausgabe `dist`, Systemvariablen und Ignored Build Step eingerichtet.
 - Entwurfsmodus (`PUBLIC_RELEASE=false`), keine Canonical-URL; Hauptseite, Impressum und Datenschutz mit `noindex, nofollow`; robots sperrt Crawling, Sitemap ohne öffentliche URLs.
-- Vercel Authentication für **alle** Deployments und Adressen (`ssoProtection.deploymentType=all`). Vorschau und Projektadresse leiten unangemeldete HTTP-Anfragen zur Vercel-Anmeldung um. Authentifizierte Prüfung mit `vercel curl`: Startseite/Rechtsseiten/robots/Sitemap/Favicon HTTP 200, unbekannte Route HTTP 404 mit eigener Seite.
+- Vercel Authentication für **alle** Deployments und Adressen (`ssoProtection.deploymentType=all`). Für die neue Vorschau Startseite und beide Rechtsseiten authentifiziert mit HTTP 200 und `noindex, nofollow` geprüft; Rechtsseiten zeigen den Entwurfshinweis. Unangemeldeter Impressumsaufruf liefert HTTP 302 zur Vercel-Anmeldung. robots/Sitemap/Favicon und unbekannte Route mit eigener HTTP-404-Seite wurden beim vorherigen Deployment geprüft.
 - Beim ersten CLI-Deployment ordnete Vercel trotz angefordertem Preview das initiale Deployment dem Ziel production zu. Die automatisch angelegte Adresse `campuszeit-landingpage.vercel.app` war kurz öffentlich erreichbar, bis der Schutz auf `all` erweitert wurde. Sie ist jetzt ebenfalls geschützt. Es wurden keine echten Kontakt-/Betreiber- oder Personendaten veröffentlicht. Danach wurde ein separates Preview-Deployment erstellt und verifiziert.
-- Im In-App-Browser erscheint ohne Anmeldung der erwartete Vercel-Login. Die authentifizierte Browserprüfung des entfernten Builds ist noch offen; lokale Desktop-/Mobilansichten wurden bereits geprüft.
-- Ausgelieferte JavaScript-/CSS-Dateien und PNG-Vorschaugrafik stimmen per SHA-256 exakt mit dem lokal getesteten Build überein.
+- Authentifizierte Browserprüfung der neuen Vorschau durchgeführt: Impressum am Desktop und Datenschutz auf Mobilgerät mit sichtbaren Abschnitten und Platzhaltern; bei 390 Pixeln kein horizontaler Überlauf. Lokale Rechtsseiten ebenfalls visuell geprüft. Nachweise im ignorierten `artifacts/`.
+- Beim vorherigen Logo-Deployment stimmten ausgelieferte JavaScript-/CSS-Dateien und PNG-Vorschaugrafik per SHA-256 mit dem lokal getesteten Build überein. Der neue Textbuild wurde anhand seiner Quellcommit-Metadaten, HTTP-Antworten und gerenderten Inhalte geprüft.
 - Git-Verbindung zu `imannsv/campusTIME` wurde von Vercel abgewiesen. Der Benutzer möchte beim manuellen Deployment bleiben. Root-Verzeichnis und Branchfilter sind eingerichtet; der Ignored Build Step wurde bei den CLI-Deployments nicht ausgeführt.
 
 Die lokale Vercel-Verknüpfung und heruntergeladene Entwicklungsvariablen liegen ausschließlich in ignorierten Dateien. Keine Tokens, Bypass-Schlüssel oder Umgebungsdateien gehören ins Repository.
@@ -58,9 +58,8 @@ Die lokale Vercel-Verknüpfung und heruntergeladene Entwicklungsvariablen liegen
 
 1. Platzhalter durch bestätigte Kontakt-, Betreiber- und Betriebsangaben ersetzen, nicht einschlägige Abschnitte entfernen und Inhalte freigeben.
 2. Hostingvertrag, Rollenverteilung, Drittlandgarantien und Tarifnutzung klären: Das Projekt nutzt Hobby; das veröffentlichte Vercel-DPA nennt Pro/Enterprise. Ein wirksamer AVV ist nicht nachgewiesen. E-Mail-Dienstleister und tatsächliche Löschfristen bestätigen.
-3. Authentifizierte Browserprüfung der entfernten Vorschau mit Desktop-/Mobilansicht durchführen.
-4. Zieladresse in `SITE_URL` eintragen und freigegebene Umgebung bauen; Live-Routen, Canonical, Sitemap und Kontakt prüfen.
-5. Projektzugriff für Iman mit bestätigter Empfängeridentität einrichten. Es wurde keine Einladung versendet.
+3. Zieladresse in `SITE_URL` eintragen und freigegebene Umgebung bauen; Live-Routen, Canonical, Sitemap und Kontakt prüfen.
+4. Falls weiterhin gewünscht: Projektzugriff für Iman mit bestätigter Empfängeridentität einrichten. Es wurde keine Einladung versendet.
 
 Bis dahin bleibt die Seite ein geschützter, lokal und auf Vercel prüfbarer Entwurf. Ein bestehendes Produktprojekt wurde weder umgestellt noch verändert. Es wurden keine Domains oder kostenpflichtigen Dienste gebucht.
 
