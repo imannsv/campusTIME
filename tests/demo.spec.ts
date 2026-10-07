@@ -4,6 +4,7 @@ import { progressionFlow } from "./progression-flow";
 import { overviewFlow } from "./overview-flow";
 import { assessmentFlow } from "./assessment-flow";
 import { campusAIFlow } from "./campus-ai-flow";
+import "./planning-workspace";
 test.use({ actionTimeout: 10000 });
 
 test("Stundenplanung öffnet die aktuelle Woche und folgt der roten Zeitlinie", async ({
@@ -68,7 +69,6 @@ test("Stundenplanung öffnet die aktuelle Woche und folgt der roten Zeitlinie", 
     "Aktuelle Uhrzeit 00:00",
   );
 });
-
 
 test("campusAI Schnellhilfe bleibt ohne Server und ohne Datenänderung verfügbar", async ({
   page,

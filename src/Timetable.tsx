@@ -39,6 +39,8 @@ export default function Timetable({
   date,
   showNow = false,
   followNow = false,
+  selectedId,
+  compactColumns = false,
 }: {
   rows: Row[];
   week: string;
@@ -51,6 +53,8 @@ export default function Timetable({
   date?: string;
   showNow?: boolean;
   followNow?: boolean;
+  selectedId?: number;
+  compactColumns?: boolean;
 }) {
   const table = useRef<HTMLDivElement>(null);
   const nowMarker = useRef<HTMLDivElement>(null);
@@ -131,9 +135,7 @@ export default function Timetable({
     if (!currentWeek || !followNow) return;
     const focusNow = () => {
       const marker = nowMarker.current;
-      const scroller = table.current?.closest<HTMLElement>(
-        ".calendar-scroll",
-      );
+      const scroller = table.current?.closest<HTMLElement>(".calendar-scroll");
       if (!marker || !scroller) return;
       const bounds = scroller.getBoundingClientRect();
       scroller.scrollTop +=
@@ -157,13 +159,15 @@ export default function Timetable({
       }
       const rect = marker.getBoundingClientRect();
       if (rect.top < 0 || rect.bottom > window.innerHeight) {
-        marker.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
+        marker.scrollIntoView({
+          block: "center",
+          inline: "nearest",
+          behavior: "instant",
+        });
       }
     };
     const frame = requestAnimationFrame(focusNow);
-    const scroller = table.current?.closest<HTMLElement>(
-      ".calendar-scroll",
-    );
+    const scroller = table.current?.closest<HTMLElement>(".calendar-scroll");
     const observer = new ResizeObserver(focusNow);
     if (scroller) observer.observe(scroller);
     window.addEventListener("resize", focusNow);
@@ -172,19 +176,11 @@ export default function Timetable({
       observer.disconnect();
       window.removeEventListener("resize", focusNow);
     };
-  }, [
-    currentWeek,
-    followNow,
-    minute,
-    week,
-    dayStart,
-    dayEnd,
-    rows.length,
-  ]);
+  }, [currentWeek, followNow, minute, week, dayStart, dayEnd, rows.length]);
   const days = date
     ? [DateTime.fromISO(date, { zone })]
     : [...weekdays].sort((a, b) => a - b).map((i) => start.plus({ days: i }));
-  if (currentWeek && !days.some(day => day.toISODate() === now.toISODate())) {
+  if (currentWeek && !days.some((day) => day.toISODate() === now.toISODate())) {
     days.push(now.startOf("day"));
     days.sort((a, b) => a.toMillis() - b.toMillis());
   }
@@ -212,7 +208,12 @@ export default function Timetable({
   // Give simultaneous events enough horizontal space. Only the calendar itself
   // scrolls on smaller screens, never the surrounding page or its actions.
   const dayWidths = layouts.map((events) =>
-    Math.max(180, ...events.map((event) => event.lanes * 156)),
+    Math.max(
+      compactColumns ? 132 : 180,
+      ...events.map((event) =>
+        compactColumns && event.lanes === 1 ? 132 : event.lanes * 156,
+      ),
+    ),
   );
   const columns = agenda
     ? `58px repeat(${days.length}, minmax(0, 1fr))`
@@ -222,7 +223,10 @@ export default function Timetable({
       <div
         ref={table}
         className={
-          "timetable" + (date ? " single-day" : "") + (agenda ? " agenda" : "") + (showNow ? " with-current-time" : "")
+          "timetable" +
+          (date ? " single-day" : "") +
+          (agenda ? " agenda" : "") +
+          (showNow ? " with-current-time" : "")
         }
         style={
           agenda
@@ -287,7 +291,8 @@ export default function Timetable({
                 {placed.map(({ row, lane, lanes, span }, i) => {
                   const s = DateTime.fromISO(row.start, { zone }),
                     e = DateTime.fromISO(row.end, { zone });
-                  const top = (s.hour + s.minute / 60 - viewStart) * HOUR_HEIGHT,
+                  const top =
+                      (s.hour + s.minute / 60 - viewStart) * HOUR_HEIGHT,
                     eventHeight = Math.max(
                       38,
                       (e.diff(s, "minutes").minutes / 60) * HOUR_HEIGHT - 5,
@@ -312,6 +317,9 @@ export default function Timetable({
                       disabled={publicMode}
                       className={`calendar-event ${row.color || "blue"} ${compact ? "compact" : brief ? "brief" : ""} ${!agenda && eventHeight < 64 ? "tiny" : ""} ${row.blocked ? "blocked" : ""}`}
                       aria-label={details}
+                      aria-pressed={
+                        onSelect ? row.id === selectedId : undefined
+                      }
                       aria-describedby={
                         preview?.row === row ? previewId : undefined
                       }
@@ -373,10 +381,16 @@ export default function Timetable({
               </div>
             );
           })}
-          {currentWeek && !agenda && <div ref={nowMarker} className="calendar-now-line"
-            style={{ top: nowPosition }} aria-label={`Aktuelle Uhrzeit ${now.toFormat("HH:mm")}`}>
-            <span>{now.toFormat("HH:mm")}</span>
-          </div>}
+          {currentWeek && !agenda && (
+            <div
+              ref={nowMarker}
+              className="calendar-now-line"
+              style={{ top: nowPosition }}
+              aria-label={`Aktuelle Uhrzeit ${now.toFormat("HH:mm")}`}
+            >
+              <span>{now.toFormat("HH:mm")}</span>
+            </div>
+          )}
         </div>
       </div>
       {preview &&

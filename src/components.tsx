@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, FormEvent } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, FormEvent } from "react";
 import { DateTime } from "luxon";
 import {
   X,
@@ -91,6 +91,92 @@ export function Modal({
     </div>
   );
 }
+function RecordPanel({
+  title,
+  subtitle,
+  children,
+  onClose,
+  busy,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  onClose: () => void;
+  wide?: boolean;
+  busy?: boolean;
+}) {
+  const heading = useRef<HTMLHeadingElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    const fit = () => {
+      const height = Math.max(
+        200,
+        window.innerHeight - panel.getBoundingClientRect().top - 20,
+      );
+      panel.style.setProperty("--editor-height", `${height}px`);
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(panel.closest("main")!);
+    window.addEventListener("resize", fit);
+    window.addEventListener("scroll", fit, { passive: true });
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", fit);
+      window.removeEventListener("scroll", fit);
+    };
+  }, []);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const panel = heading.current?.closest(".record-panel");
+    heading.current?.focus({ preventScroll: true });
+    if (window.matchMedia("(max-width: 1100px)").matches)
+      heading.current?.scrollIntoView({ block: "start" });
+    return () => {
+      if (
+        previous?.isConnected &&
+        (document.activeElement === document.body ||
+          panel?.contains(document.activeElement))
+      )
+        previous.focus({ preventScroll: true });
+    };
+  }, []);
+  return (
+    <section
+      ref={panelRef}
+      className="record-panel"
+      role="region"
+      aria-label={title}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && !busy) {
+          event.stopPropagation();
+          onClose();
+        }
+      }}
+    >
+      <header>
+        <div>
+          <h2 ref={heading} tabIndex={-1}>
+            {title}
+          </h2>
+          {subtitle && <p>{subtitle}</p>}
+        </div>
+        <button
+          className="icon-button"
+          aria-label="Terminbearbeitung schließen"
+          onClick={onClose}
+          disabled={busy}
+        >
+          <X size={20} />
+        </button>
+      </header>
+      {children}
+    </section>
+  );
+}
+
 export function Relation({
   resource,
   value,
@@ -624,6 +710,8 @@ export function RecordForm({
   zone,
   onClose,
   onSaved,
+  presentation = "modal",
+  onStateChange,
 }: {
   resource: string;
   fields: Field[];
@@ -632,6 +720,8 @@ export function RecordForm({
   zone: string;
   onClose: () => void;
   onSaved: () => void;
+  presentation?: "modal" | "panel";
+  onStateChange?: (dirty: boolean, busy: boolean) => void;
 }) {
   const initial: Row = {};
   fields.forEach((f) => {
@@ -646,6 +736,20 @@ export function RecordForm({
   const [values, setValues] = useState(initial),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const original = useRef(initial);
+  const dirty = JSON.stringify(values) !== JSON.stringify(original.current);
+  useEffect(() => {
+    onStateChange?.(dirty, busy);
+  }, [dirty, busy, onStateChange]);
+  useEffect(() => {
+    if (presentation !== "panel" || (!dirty && !busy)) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [presentation, dirty, busy]);
   const change = (key: string, value: any) =>
     setValues((v) => ({
       ...v,
@@ -668,6 +772,7 @@ export function RecordForm({
   async function submit(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
+    onStateChange?.(dirty, true);
     setError("");
     try {
       const body: Row = {};
@@ -700,6 +805,7 @@ export function RecordForm({
   }
   async function remove() {
     setBusy(true);
+    onStateChange?.(dirty, true);
     try {
       await api(`${resource}/${record!.id}/`, "DELETE");
       onSaved();
@@ -709,268 +815,308 @@ export function RecordForm({
       setBusy(false);
     }
   }
+  const Container = presentation === "panel" ? RecordPanel : Modal;
+  const sessionOrder = [
+    "course",
+    "name",
+    "start",
+    "end",
+    "rooms",
+    "teachers",
+    "locked",
+    "plan",
+    "exam",
+    "repeat_weekly",
+    "repeat_until",
+    "repeat_interval",
+  ];
+  const displayedFields =
+    presentation === "panel"
+      ? [...fields].sort((a, b) => {
+          const order = (name: string) =>
+            sessionOrder.includes(name)
+              ? sessionOrder.indexOf(name)
+              : sessionOrder.length;
+          return order(a.name) - order(b.name);
+        })
+      : fields;
   return (
-    <Modal
-      title={record ? "Eintrag bearbeiten" : `${labels[resource]} hinzufügen`}
+    <Container
+      title={
+        presentation === "panel"
+          ? record
+            ? "Termin bearbeiten"
+            : "Termin hinzufügen"
+          : record
+            ? "Eintrag bearbeiten"
+            : `${labels[resource]} hinzufügen`
+      }
       subtitle={
-        defaults.assessment_template
-          ? "Prüfungsvorlage übernehmen. Teilnehmer, Zeitraum und Aufsichten prüfen."
-          : "Änderungen werden im Entwurf gespeichert."
+        presentation === "panel"
+          ? record?.name || "Neuen Termin im Entwurf anlegen."
+          : defaults.assessment_template
+            ? "Prüfungsvorlage übernehmen. Teilnehmer, Zeitraum und Aufsichten prüfen."
+            : "Änderungen werden im Entwurf gespeichert."
       }
       onClose={onClose}
       wide={resource === "courses" || resource === "exams"}
+      busy={busy}
     >
-      <form onSubmit={submit} className="record-form">
+      <form onSubmit={submit} className="record-form" aria-busy={busy}>
         {defaults._draft_warnings?.length > 0 && (
           <div className="info-note">
             <p>{defaults._draft_warnings.join(" ")}</p>
           </div>
         )}
-        <div className="form-grid">
-          {fields
-            .filter(
-              (f) =>
-                ![
-                  "file",
-                  "geometry",
-                  "polygon",
-                  "longitude",
-                  "latitude",
-                  "teaching_unit",
-                  "study_group",
-                  "assessment_template",
-                ].includes(f.type === "file" ? "file" : f.name) &&
-                !(
-                  resource === "assessments" &&
-                  ["plan", "module"].includes(f.name)
-                ) &&
-                !(
-                  f.name === "due_at" && timedAssessment(values.assessment_type)
-                ) &&
-                (f.name !== "assessment_duration_minutes" ||
-                  timedAssessment(values.assessment_type)),
-            )
-            .map((f) => (
-              <label
-                key={f.name}
-                className={
-                  ["json", "many"].includes(f.type) ||
-                  f.name === "assessment_notes"
-                    ? "full"
-                    : ""
-                }
-              >
-                <span>
-                  {labels[f.name] || f.name}
-                  {(f.required || f.name === "assessment_duration_minutes") && (
-                    <b className="required"> *</b>
-                  )}
-                </span>
-                {f.type === "relation" || f.type === "many" ? (
-                  <Relation
-                    resource={f.resource!}
-                    filters={
-                      f.name === "study_version" && resource === "cohorts"
-                        ? {
-                            program: String(values.program || 0),
-                            status: "approved",
-                          }
-                        : f.name === "course" && resource === "exams"
-                          ? { plan: String(values.plan || 0) }
-                          : ["parent", "prerequisites"].includes(f.name)
-                            ? {
-                                study_version: String(
-                                  values.study_version || 0,
-                                ),
-                              }
-                            : {}
-                    }
-                    value={values[f.name]}
-                    many={f.type === "many"}
-                    kind={
-                      ["teachers", "supervisors"].includes(f.name)
-                        ? "teacher"
-                        : f.name === "learners"
-                          ? "learner"
-                          : undefined
-                    }
-                    onChange={(v) => change(f.name, v)}
-                  />
-                ) : f.name === "items" ? (
-                  <CurriculumEditor
-                    value={values.items}
-                    onChange={(v) => change("items", v)}
-                  />
-                ) : f.name === "availability" ? (
-                  <AvailabilityEditor
-                    value={values.availability}
-                    zone={zone}
-                    onChange={(v) => change("availability", v)}
-                  />
-                ) : f.name === "teacher_assignments" ? (
-                  <TeamEditor
-                    value={JSON.parse(values.teacher_assignments || "[]")}
-                    teachers={values.teachers || []}
-                    onChange={(v) =>
-                      change("teacher_assignments", JSON.stringify(v))
-                    }
-                  />
-                ) : f.name === "equipment" ? (
-                  <EquipmentEditor
-                    value={JSON.parse(values.equipment || "[]")}
-                    onChange={(v) => change("equipment", JSON.stringify(v))}
-                  />
-                ) : f.name === "assessment_notes" ? (
-                  <>
-                    <textarea
-                      aria-label={labels[f.name]}
-                      value={values.assessment_notes || ""}
-                      onChange={(e) => change(f.name, e.target.value)}
-                      maxLength={2000}
-                      rows={3}
-                      placeholder="Zum Beispiel Umfang, Hilfsmittel oder Abgabe vier Wochen nach Themenausgabe"
+        <fieldset className="record-fields" disabled={busy}>
+          <div className="form-grid">
+            {displayedFields
+              .filter(
+                (f) =>
+                  ![
+                    "file",
+                    "geometry",
+                    "polygon",
+                    "longitude",
+                    "latitude",
+                    "teaching_unit",
+                    "study_group",
+                    "assessment_template",
+                  ].includes(f.type === "file" ? "file" : f.name) &&
+                  !(
+                    resource === "assessments" &&
+                    ["plan", "module"].includes(f.name)
+                  ) &&
+                  !(
+                    f.name === "due_at" &&
+                    timedAssessment(values.assessment_type)
+                  ) &&
+                  (f.name !== "assessment_duration_minutes" ||
+                    timedAssessment(values.assessment_type)),
+              )
+              .map((f) => (
+                <label
+                  key={f.name}
+                  className={
+                    ["json", "many"].includes(f.type) ||
+                    f.name === "assessment_notes"
+                      ? "full"
+                      : ""
+                  }
+                >
+                  <span>
+                    {labels[f.name] || f.name}
+                    {(f.required ||
+                      f.name === "assessment_duration_minutes") && (
+                      <b className="required"> *</b>
+                    )}
+                  </span>
+                  {f.type === "relation" || f.type === "many" ? (
+                    <Relation
+                      resource={f.resource!}
+                      filters={
+                        f.name === "study_version" && resource === "cohorts"
+                          ? {
+                              program: String(values.program || 0),
+                              status: "approved",
+                            }
+                          : f.name === "course" && resource === "exams"
+                            ? { plan: String(values.plan || 0) }
+                            : ["parent", "prerequisites"].includes(f.name)
+                              ? {
+                                  study_version: String(
+                                    values.study_version || 0,
+                                  ),
+                                }
+                              : {}
+                      }
+                      value={values[f.name]}
+                      many={f.type === "many"}
+                      kind={
+                        ["teachers", "supervisors"].includes(f.name)
+                          ? "teacher"
+                          : f.name === "learners"
+                            ? "learner"
+                            : undefined
+                      }
+                      onChange={(v) => change(f.name, v)}
                     />
-                    <small>
-                      {resource === "modules"
-                        ? "Die Vorgabe gilt für dieses Modul. Konkrete Prüfungstermine und Abgabedaten werden für den jeweiligen Jahrgang festgelegt."
-                        : "Anforderungen, Umfang und erlaubte Hilfsmittel für diese Prüfungsleistung."}
-                    </small>
-                  </>
-                ) : f.name === "assessment_duration_minutes" ? (
-                  <>
+                  ) : f.name === "items" ? (
+                    <CurriculumEditor
+                      value={values.items}
+                      onChange={(v) => change("items", v)}
+                    />
+                  ) : f.name === "availability" ? (
+                    <AvailabilityEditor
+                      value={values.availability}
+                      zone={zone}
+                      onChange={(v) => change("availability", v)}
+                    />
+                  ) : f.name === "teacher_assignments" ? (
+                    <TeamEditor
+                      value={JSON.parse(values.teacher_assignments || "[]")}
+                      teachers={values.teachers || []}
+                      onChange={(v) =>
+                        change("teacher_assignments", JSON.stringify(v))
+                      }
+                    />
+                  ) : f.name === "equipment" ? (
+                    <EquipmentEditor
+                      value={JSON.parse(values.equipment || "[]")}
+                      onChange={(v) => change("equipment", JSON.stringify(v))}
+                    />
+                  ) : f.name === "assessment_notes" ? (
+                    <>
+                      <textarea
+                        aria-label={labels[f.name]}
+                        value={values.assessment_notes || ""}
+                        onChange={(e) => change(f.name, e.target.value)}
+                        maxLength={2000}
+                        rows={3}
+                        placeholder="Zum Beispiel Umfang, Hilfsmittel oder Abgabe vier Wochen nach Themenausgabe"
+                      />
+                      <small>
+                        {resource === "modules"
+                          ? "Die Vorgabe gilt für dieses Modul. Konkrete Prüfungstermine und Abgabedaten werden für den jeweiligen Jahrgang festgelegt."
+                          : "Anforderungen, Umfang und erlaubte Hilfsmittel für diese Prüfungsleistung."}
+                      </small>
+                    </>
+                  ) : f.name === "assessment_duration_minutes" ? (
+                    <>
+                      <input
+                        aria-label={labels[f.name]}
+                        type="number"
+                        min="1"
+                        max="1440"
+                        step="1"
+                        required
+                        list="assessment-duration-options"
+                        value={values[f.name] ?? ""}
+                        onChange={(e) => change(f.name, e.target.value)}
+                      />
+                      <datalist id="assessment-duration-options">
+                        {[60, 90, 120].map((duration) => (
+                          <option key={duration} value={duration} />
+                        ))}
+                      </datalist>
+                      <small>60, 90, 120 Minuten oder eine andere Dauer.</small>
+                    </>
+                  ) : f.type === "boolean" ? (
+                    <div className="switch-row">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(values[f.name])}
+                        onChange={(e) => change(f.name, e.target.checked)}
+                      />
+                      <small>
+                        {f.name === "locked"
+                          ? "Bei automatischer Umplanung erhalten"
+                          : "Aktiviert"}
+                      </small>
+                    </div>
+                  ) : f.type === "choice" ? (
+                    <select
+                      aria-label={labels[f.name] || f.name}
+                      required={f.required}
+                      value={values[f.name] || ""}
+                      onChange={(e) => change(f.name, e.target.value)}
+                    >
+                      {!values[f.name] && <option value="">Auswählen …</option>}
+                      {f.choices.map(([v, l]) => (
+                        <option key={v} value={v}>
+                          {l}
+                        </option>
+                      ))}
+                    </select>
+                  ) : f.name === "weekdays" ? (
+                    <div className="day-checkboxes">
+                      {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map(
+                        (day, index) => (
+                          <label key={day}>
+                            <input
+                              type="checkbox"
+                              aria-label={`Unterricht am ${day}`}
+                              checked={JSON.parse(
+                                values.weekdays || "[]",
+                              ).includes(index)}
+                              onChange={(e) => {
+                                const days: number[] = JSON.parse(
+                                  values.weekdays || "[]",
+                                );
+                                change(
+                                  "weekdays",
+                                  JSON.stringify(
+                                    e.target.checked
+                                      ? [...days, index].sort()
+                                      : days.filter((item) => item !== index),
+                                  ),
+                                );
+                              }}
+                            />
+                            {day}
+                          </label>
+                        ),
+                      )}
+                    </div>
+                  ) : f.name === "excluded_dates" ? (
+                    <FreeDaysEditor
+                      value={JSON.parse(values.excluded_dates || "[]")}
+                      onChange={(days) =>
+                        change("excluded_dates", JSON.stringify(days))
+                      }
+                    />
+                  ) : f.type === "json" ? (
+                    <>
+                      <textarea
+                        value={values[f.name]}
+                        onChange={(e) => change(f.name, e.target.value)}
+                        rows={f.name === "teacher_assignments" ? 2 : 3}
+                      />
+                      <small>
+                        {f.name === "equipment"
+                          ? 'Zum Beispiel ["Beamer", "PC"]'
+                          : f.name === "excluded_dates"
+                            ? 'Zum Beispiel ["2026-12-24"]'
+                            : f.name === "weekdays"
+                              ? "0 = Montag, 6 = Sonntag; zum Beispiel [0,1,2,3,4]"
+                              : f.name === "teacher_assignments"
+                                ? "Optional: ID-Liste je Termin, zum Beispiel [[1],[2]]. Leer = gesamtes Team."
+                                : ""}
+                      </small>
+                    </>
+                  ) : (
                     <input
-                      aria-label={labels[f.name]}
-                      type="number"
-                      min="1"
-                      max="1440"
-                      step="1"
-                      required
-                      list="assessment-duration-options"
+                      required={f.required}
+                      type={f.type}
+                      placeholder={
+                        f.name === "capacity" ? "Noch nicht erfasst" : undefined
+                      }
+                      min={
+                        f.type === "number" &&
+                        !["latitude", "longitude", "level"].includes(f.name)
+                          ? f.name === "capacity"
+                            ? "1"
+                            : "0"
+                          : undefined
+                      }
+                      step={
+                        [
+                          "longitude",
+                          "latitude",
+                          "credits",
+                          "total_credits",
+                        ].includes(f.name)
+                          ? "any"
+                          : undefined
+                      }
                       value={values[f.name] ?? ""}
                       onChange={(e) => change(f.name, e.target.value)}
                     />
-                    <datalist id="assessment-duration-options">
-                      {[60, 90, 120].map((duration) => (
-                        <option key={duration} value={duration} />
-                      ))}
-                    </datalist>
-                    <small>60, 90, 120 Minuten oder eine andere Dauer.</small>
-                  </>
-                ) : f.type === "boolean" ? (
-                  <div className="switch-row">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(values[f.name])}
-                      onChange={(e) => change(f.name, e.target.checked)}
-                    />
-                    <small>
-                      {f.name === "locked"
-                        ? "Bei automatischer Umplanung erhalten"
-                        : "Aktiviert"}
-                    </small>
-                  </div>
-                ) : f.type === "choice" ? (
-                  <select
-                    aria-label={labels[f.name] || f.name}
-                    required={f.required}
-                    value={values[f.name] || ""}
-                    onChange={(e) => change(f.name, e.target.value)}
-                  >
-                    {!values[f.name] && <option value="">Auswählen …</option>}
-                    {f.choices.map(([v, l]) => (
-                      <option key={v} value={v}>
-                        {l}
-                      </option>
-                    ))}
-                  </select>
-                ) : f.name === "weekdays" ? (
-                  <div className="day-checkboxes">
-                    {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map(
-                      (day, index) => (
-                        <label key={day}>
-                          <input
-                            type="checkbox"
-                            aria-label={`Unterricht am ${day}`}
-                            checked={JSON.parse(
-                              values.weekdays || "[]",
-                            ).includes(index)}
-                            onChange={(e) => {
-                              const days: number[] = JSON.parse(
-                                values.weekdays || "[]",
-                              );
-                              change(
-                                "weekdays",
-                                JSON.stringify(
-                                  e.target.checked
-                                    ? [...days, index].sort()
-                                    : days.filter((item) => item !== index),
-                                ),
-                              );
-                            }}
-                          />
-                          {day}
-                        </label>
-                      ),
-                    )}
-                  </div>
-                ) : f.name === "excluded_dates" ? (
-                  <FreeDaysEditor
-                    value={JSON.parse(values.excluded_dates || "[]")}
-                    onChange={(days) =>
-                      change("excluded_dates", JSON.stringify(days))
-                    }
-                  />
-                ) : f.type === "json" ? (
-                  <>
-                    <textarea
-                      value={values[f.name]}
-                      onChange={(e) => change(f.name, e.target.value)}
-                      rows={f.name === "teacher_assignments" ? 2 : 3}
-                    />
-                    <small>
-                      {f.name === "equipment"
-                        ? 'Zum Beispiel ["Beamer", "PC"]'
-                        : f.name === "excluded_dates"
-                          ? 'Zum Beispiel ["2026-12-24"]'
-                          : f.name === "weekdays"
-                            ? "0 = Montag, 6 = Sonntag; zum Beispiel [0,1,2,3,4]"
-                            : f.name === "teacher_assignments"
-                              ? "Optional: ID-Liste je Termin, zum Beispiel [[1],[2]]. Leer = gesamtes Team."
-                              : ""}
-                    </small>
-                  </>
-                ) : (
-                  <input
-                    required={f.required}
-                    type={f.type}
-                    placeholder={
-                      f.name === "capacity" ? "Noch nicht erfasst" : undefined
-                    }
-                    min={
-                      f.type === "number" &&
-                      !["latitude", "longitude", "level"].includes(f.name)
-                        ? f.name === "capacity"
-                          ? "1"
-                          : "0"
-                        : undefined
-                    }
-                    step={
-                      [
-                        "longitude",
-                        "latitude",
-                        "credits",
-                        "total_credits",
-                      ].includes(f.name)
-                        ? "any"
-                        : undefined
-                    }
-                    value={values[f.name] ?? ""}
-                    onChange={(e) => change(f.name, e.target.value)}
-                  />
-                )}
-              </label>
-            ))}
-        </div>
+                  )}
+                </label>
+              ))}
+          </div>
+        </fieldset>
         {error && (
           <div className="error-box" role="alert">
             {error}
@@ -989,7 +1135,12 @@ export function RecordForm({
             </button>
           )}
           <div className="spacer" />
-          <button type="button" className="button secondary" onClick={onClose}>
+          <button
+            type="button"
+            className="button secondary"
+            onClick={onClose}
+            disabled={busy}
+          >
             Abbrechen
           </button>
           <button className="button primary" disabled={busy}>
@@ -1002,7 +1153,7 @@ export function RecordForm({
           </button>
         </footer>
       </form>
-    </Modal>
+    </Container>
   );
 }
 
