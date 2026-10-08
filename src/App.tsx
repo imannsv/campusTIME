@@ -934,6 +934,7 @@ function Workspace() {
   const [setupStep, setSetupStep] = useState(0);
   const [studyContext, setStudyContext] = useState<Row>({});
   const [roomContext, setRoomContext] = useState<Row>({});
+  const [areaId, setAreaId] = useState<number | null>(null);
   const [session, setSession] = useState<SessionState | null>(null),
     [boot, setBoot] = useState<Row | null>(null),
     [data, setData] = useState<Record<string, Row[]>>({}),
@@ -1027,6 +1028,8 @@ function Workspace() {
   const zone = session?.institution?.timezone || "Europe/Berlin",
     plan = data.plans?.find((p) => p.id === planId),
     period = data.periods?.find((p) => p.id === plan?.period);
+  const selectedArea =
+    data.buildings?.find((area) => area.id === areaId) || data.buildings?.[0];
   useEffect(() => {
     setWeek(DateTime.now().setZone(zone).startOf("week").toISODate()!);
   }, [zone]);
@@ -1135,7 +1138,7 @@ function Workspace() {
   };
   const go = (id: string) => {
     setInstitutionMenu(false);
-    if (!canLeaveEditor()) return;
+    if (!canLeaveEditor()) return false;
     clearEditor();
     setDataFilters({});
     setPage(id);
@@ -1147,6 +1150,7 @@ function Workspace() {
     setMenu(false);
     if (id === "exams") setResource("exams");
     if (id === "displays") setResource("displays");
+    return true;
   };
   const assistantAction = (id: string, selection: Row) => {
     const action = campusActions.find((item) => item.id === id);
@@ -1331,11 +1335,45 @@ function Workspace() {
             <div id="institution-options" className="institution-options">
               <small>Aktuelle Einrichtung</small>
               <strong>{session.institution.name}</strong>
+              <small>Bereiche</small>
+              <div
+                className="institution-area-list"
+                role="group"
+                aria-label="Bereich auswählen"
+              >
+                {data.buildings?.map((area) => (
+                  <button
+                    key={area.id}
+                    type="button"
+                    aria-pressed={selectedArea?.id === area.id}
+                    onClick={() => {
+                      if (go("map")) setAreaId(area.id);
+                    }}
+                  >
+                    <Building2 size={16} />
+                    <span>{area.name}</span>
+                    {selectedArea?.id === area.id && <Check size={16} />}
+                  </button>
+                ))}
+                {!data.buildings?.length && (
+                  <p>Noch keine Bereiche angelegt.</p>
+                )}
+              </div>
+              <button
+                type="button"
+                disabled={initial || !boot}
+                onClick={() => {
+                  if (go("map")) edit("buildings");
+                }}
+              >
+                <Plus size={16} />
+                Bereich hinzufügen
+              </button>
+              <div className="institution-options-divider" />
               <button
                 type="button"
                 onClick={() => {
-                  go("settings");
-                  setSettings(session.institution);
+                  if (go("settings")) setSettings(session.institution);
                 }}
               >
                 <Settings size={16} />
@@ -1869,6 +1907,9 @@ function Workspace() {
             </>
           ) : page === "map" ? (
             <RoomOverview
+              key={selectedArea?.id}
+              areaId={selectedArea?.id ?? null}
+              onAreaChange={setAreaId}
               onContextChange={setRoomContext}
               data={data}
               zone={zone}
@@ -2237,7 +2278,11 @@ function Workspace() {
           defaults={modal.defaults}
           zone={zone}
           onClose={() => setModal(null)}
-          onSaved={reload}
+          onSaved={(saved) => {
+            if (modal.resource === "buildings" && !modal.record && saved)
+              setAreaId(saved.id);
+            reload();
+          }}
         />
       )}{" "}
       {modal?.type === "import" && (

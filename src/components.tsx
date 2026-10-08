@@ -722,7 +722,7 @@ export function RecordForm({
   defaults?: Row;
   zone: string;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (saved?: Row) => void;
   presentation?: "modal" | "panel";
   onStateChange?: (dirty: boolean, busy: boolean) => void;
 }) {
@@ -797,12 +797,12 @@ export function RecordForm({
         if (value === "" && ["relation", "date"].includes(f.type)) value = null;
         body[f.name] = value;
       }
-      await api(
+      const saved = await api(
         `${resource}/${record ? record.id + "/" : ""}`,
         record ? "PATCH" : "POST",
         body,
       );
-      onSaved();
+      onSaved(saved);
       onClose();
     } catch (e) {
       setError((e as Error).message);
