@@ -1488,7 +1488,7 @@ function Workspace() {
               <div className="planning-heading">
                 <div>
                   <h1>Stundenplanung</h1>
-                  <p>Wochenplan und Termindetails im Blick.</p>
+                  <p>Termine im Wochenplan auswählen und bearbeiten.</p>
                 </div>
                 <div className="planning-summary">
                   <span>{inWeek.length} Termine diese Woche</span>
@@ -1721,7 +1721,6 @@ function Workspace() {
                       <div className="calendar-scroll">
                         <Timetable
                           selectedId={scheduleEditor?.record?.id}
-                          compactColumns
                           rows={visible}
                           showNow
                           followNow={followNow && !scheduleEditor}
@@ -1811,40 +1810,6 @@ function Workspace() {
                     </div>
                   </div>
                 </div>
-                <aside className="planning-details" aria-label="Termindetails">
-                  {scheduleEditor && boot ? (
-                    <RecordForm
-                      key={scheduleEditor.key}
-                      resource="sessions"
-                      fields={boot.schema.sessions}
-                      record={scheduleEditor.record}
-                      defaults={scheduleEditor.defaults}
-                      zone={zone}
-                      presentation="panel"
-                      onStateChange={updateEditorState}
-                      onClose={closeEditor}
-                      onSaved={() => {
-                        editorState.current = { dirty: false, busy: false };
-                        reload();
-                      }}
-                    />
-                  ) : (
-                    <div className="planning-details-empty">
-                      <span className="stat-icon blue-stat">
-                        <CalendarDays size={22} />
-                      </span>
-                      <h2>Termindetails</h2>
-                      <p>
-                        Wähle einen Termin im Wochenplan, um Zeit, Räume und
-                        Lehrpersonen zu bearbeiten.
-                      </p>
-                      <small>
-                        Der Kalender bleibt dabei bedienbar. Änderungen werden
-                        erst mit „Speichern“ übernommen.
-                      </small>
-                    </div>
-                  )}
-                </aside>
               </div>
             </>
           ) : page === "map" ? (
@@ -2188,6 +2153,24 @@ function Workspace() {
         <div className="toast" role="status">
           <CheckCircle2 size={18} />
           {toast}
+        </div>
+      )}
+      {scheduleEditor && boot && (
+        <div className="schedule-popup">
+          <RecordForm
+            key={scheduleEditor.key}
+            resource="sessions"
+            fields={boot.schema.sessions}
+            record={scheduleEditor.record}
+            defaults={scheduleEditor.defaults}
+            zone={zone}
+            onStateChange={updateEditorState}
+            onClose={closeEditor}
+            onSaved={() => {
+              editorState.current = { dirty: false, busy: false };
+              reload();
+            }}
+          />
         </div>
       )}
       {modal?.type === "record" && boot && (

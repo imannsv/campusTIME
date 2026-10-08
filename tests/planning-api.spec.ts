@@ -73,24 +73,26 @@ async function planningAPI(page: Page, delaySave = false) {
   return { logouts: () => logouts, release: () => releaseSave?.() };
 }
 
-test("Planungszentrale API: Abmelden schützt Eingaben und räumt den Editor auf", async ({
+test("Popup API: Abbrechen schützt Eingaben; danach ist Abmelden möglich", async ({
   page,
 }) => {
   const api = await planningAPI(page);
   await page.goto("/");
   await page.locator(".calendar-event").first().click();
-  const editor = page.getByRole("region", {
+  const editor = page.getByRole("dialog", {
     name: "Termin bearbeiten",
     exact: true,
   });
   await editor.getByLabel("Name", { exact: true }).fill("Ungespeichert");
   page.once("dialog", (dialog) => dialog.dismiss());
-  await page.getByRole("button", { name: "Abmelden", exact: true }).click();
+  await editor.getByRole("button", { name: "Abbrechen", exact: true }).click();
   await expect(editor.getByLabel("Name", { exact: true })).toHaveValue(
     "Ungespeichert",
   );
   expect(api.logouts()).toBe(0);
   page.once("dialog", (dialog) => dialog.accept());
+  await editor.getByRole("button", { name: "Abbrechen", exact: true }).click();
+  await expect(editor).toHaveCount(0);
   await page.getByRole("button", { name: "Abmelden", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Anmelden", exact: true }),
@@ -102,13 +104,13 @@ test("Planungszentrale API: Abmelden schützt Eingaben und räumt den Editor auf
   await expect(editor).toHaveCount(0);
 });
 
-test("Planungszentrale API: Laufender Speichervorgang bleibt vor Abmelden geschützt", async ({
+test("Popup API: Laufender Speichervorgang ist gegen Schließen geschützt", async ({
   page,
 }) => {
   const api = await planningAPI(page, true);
   await page.goto("/");
   await page.locator(".calendar-event").first().click();
-  const editor = page.getByRole("region", {
+  const editor = page.getByRole("dialog", {
     name: "Termin bearbeiten",
     exact: true,
   });
@@ -124,7 +126,11 @@ test("Planungszentrale API: Laufender Speichervorgang bleibt vor Abmelden gesch�
     editor.getByRole("button", { name: "Abbrechen", exact: true }),
   ).toBeDisabled();
   await expect(editor.getByLabel("Name", { exact: true })).toBeDisabled();
-  await page.getByRole("button", { name: "Abmelden", exact: true }).click();
+  await expect(
+    editor.getByRole("button", { name: "Schließen", exact: true }),
+  ).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await page.mouse.click(4, 4);
   expect(api.logouts()).toBe(0);
   await expect(editor).toBeVisible();
   api.release();

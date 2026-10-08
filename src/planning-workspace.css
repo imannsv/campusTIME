@@ -35,12 +35,42 @@
 }
 .planning-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 20px;
 }
 .planning-calendar {
   min-width: 0;
+}
+.schedule-popup .modal {
+  width: min(680px, 100%);
+  max-height: min(90dvh, 900px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.schedule-popup .modal > header {
+  flex-shrink: 0;
+}
+.schedule-popup .record-form {
+  overflow-y: auto;
+  min-height: 0;
+}
+.schedule-popup .record-form footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  flex-wrap: wrap;
+}
+.schedule-popup .form-grid > label {
+  min-width: 0;
+}
+.schedule-popup .selected-chips {
+  flex-wrap: wrap;
+}
+.schedule-popup .selected-chips button {
+  max-width: 100%;
+  white-space: normal;
 }
 .planning-calendar .schedule-panel-top {
   padding: 16px;
@@ -81,36 +111,6 @@
 .planning-calendar .calendar-event[aria-pressed="true"] {
   outline: 2px solid var(--navy);
   outline-offset: -2px;
-}
-.planning-details {
-  min-width: 0;
-  position: sticky;
-  top: 20px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: white;
-  overflow: hidden;
-}
-.planning-details-empty {
-  padding: 28px 24px;
-}
-.planning-details-empty .stat-icon {
-  margin-bottom: 20px;
-}
-.planning-details h2 {
-  font-size: 18px;
-}
-.planning-details-empty p {
-  margin-top: 12px;
-  font-size: 14px;
-  line-height: 1.6;
-}
-.planning-details-empty small {
-  display: block;
-  margin-top: 20px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.6;
 }
 .record-panel {
   display: flex;
@@ -187,38 +187,9 @@
 .record-panel .selected-chips svg {
   flex-shrink: 0;
 }
-@media (min-width: 1101px) {
-  .app-shell:has(.planning-workspace.is-editing)
-    :is(.campus-ai-launcher, .campus-ai) {
-    right: 432px;
-  }
-}
-@media (min-width: 1600px) {
-  .planning-workspace {
-    grid-template-columns: minmax(0, 1fr) 380px;
-    gap: 24px;
-  }
-  .app-shell:has(.planning-workspace.is-editing)
-    :is(.campus-ai-launcher, .campus-ai) {
-    right: 464px;
-  }
-}
 @media (max-width: 1100px) {
   .planning-workspace {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .planning-details {
-    position: static;
-  }
-  .planning-details-empty {
-    padding: 20px;
-  }
-  .planning-details-empty .stat-icon,
-  .planning-details-empty small {
-    display: none;
-  }
-  .planning-workspace.is-editing .planning-details {
-    grid-row: 1;
   }
   .record-panel {
     max-height: none;
@@ -234,6 +205,15 @@
   }
 }
 @media (max-width: 720px) {
+  .schedule-popup .modal {
+    max-height: calc(100dvh - 24px);
+  }
+  .schedule-popup .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .schedule-popup .record-form footer .button {
+    min-height: 44px;
+  }
   .planning-heading {
     margin: 4px 0 18px;
     flex-wrap: wrap;
