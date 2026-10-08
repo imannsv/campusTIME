@@ -8,6 +8,171 @@ import "./planning-workspace";
 import "./freddy-improvements";
 test.use({ actionTimeout: 10000 });
 
+test("Einrichtungskarte öffnet ein bedienbares Menü statt eines inaktiven Schalters", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const card = page.getByRole("button", { name: /^Einrichtungsmenü:/ });
+  const options = page.locator("#institution-options");
+  await expect(card).toHaveAttribute("aria-expanded", "false");
+  await card.focus();
+  await page.keyboard.press("Enter");
+  await expect(options).toBeVisible();
+  await page.keyboard.press("Tab");
+  await expect(
+    options.getByRole("button", { name: "Hauptgebäude", exact: true }),
+  ).toBeFocused();
+  await options
+    .getByRole("button", { name: "Einrichtungseinstellungen", exact: true })
+    .focus();
+  await expect(
+    options.getByRole("button", {
+      name: "Einrichtungseinstellungen",
+      exact: true,
+    }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("heading", {
+      name: "Einrichtungseinstellungen",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Dauer einer Unterrichtseinheit (Minuten)"),
+  ).not.toHaveValue("");
+  await expect(options).toHaveCount(0);
+  await card.click();
+  await page.keyboard.press("Escape");
+  await expect(options).toHaveCount(0);
+  await expect(card).toBeFocused();
+  await card.click();
+  await page
+    .getByRole("heading", { name: "Einrichtungseinstellungen", exact: true })
+    .click();
+  await expect(options).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Seitenleiste einklappen", exact: true })
+    .click();
+  await card.click();
+  await options
+    .getByRole("button", { name: "Einrichtung & Studienstruktur", exact: true })
+    .click();
+  await expect(page.locator(".breadcrumb strong")).toHaveText(
+    "Einrichtung & Studienstruktur",
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "Menü öffnen", exact: true }).click();
+  await card.click();
+  const bounds = await options.boundingBox();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
+  await options
+    .getByRole("button", { name: "Einrichtungseinstellungen", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Einrichtungseinstellungen",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.locator(".sidebar-scrim")).toHaveCount(0);
+});
+
+test("Einrichtungsmenü wechselt Raumbereiche und legt neue Bereiche direkt an", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const card = page.getByRole("button", { name: /^Einrichtungsmenü:/ });
+  const options = page.locator("#institution-options");
+  const areas = page.getByRole("group", { name: "Bereiche", exact: true });
+  await card.click();
+  await options
+    .getByRole("button", { name: "Seminarzentrum", exact: true })
+    .click();
+  await expect(page.locator(".breadcrumb strong")).toHaveText("Räume");
+  await expect(
+    areas.getByRole("button", { name: "Seminarzentrum", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".room-result-count")).toContainText(
+    "Seminarzentrum",
+  );
+  await expect(page.locator(".room-tile").first()).toBeVisible();
+  await page
+    .getByRole("navigation", { name: "Arbeitsbereiche" })
+    .getByRole("button", { name: "Prüfungen", exact: true })
+    .click();
+  await card.click();
+  await expect(
+    options.getByRole("button", { name: "Seminarzentrum", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await options
+    .getByRole("button", { name: "Hauptgebäude", exact: true })
+    .click();
+  await expect(page.locator(".room-result-count")).toContainText(
+    "Hauptgebäude",
+  );
+  await areas
+    .getByRole("button", { name: "Projektforum", exact: true })
+    .click();
+  await card.click();
+  await expect(
+    options.getByRole("button", { name: "Projektforum", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await options
+    .getByRole("button", { name: "Bereich hinzufügen", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Raumbereiche hinzufügen",
+    exact: true,
+  });
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel("Kennung").fill("WEST-TEST");
+  await dialog.getByLabel(/^Name/).fill("Westflügel Test");
+  await dialog.getByRole("button", { name: "Speichern", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(
+    areas.getByRole("button", { name: "Westflügel Test", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".room-empty")).toContainText(
+    "Lege zuerst ein Stockwerk",
+  );
+  await page
+    .getByRole("navigation", { name: "Arbeitsbereiche" })
+    .getByRole("button", { name: "Stundenplanung", exact: true })
+    .click();
+  await page
+    .getByRole("navigation", { name: "Arbeitsbereiche" })
+    .getByRole("button", { name: "Räume", exact: true })
+    .click();
+  await expect(
+    areas.getByRole("button", { name: "Westflügel Test", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page
+    .getByRole("button", { name: "Seitenleiste einklappen", exact: true })
+    .click();
+  await card.click();
+  await options
+    .getByRole("button", { name: "Seminarzentrum", exact: true })
+    .click();
+  await expect(page.locator(".room-result-count")).toContainText(
+    "Seminarzentrum",
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "Menü öffnen", exact: true }).click();
+  await card.click();
+  await options
+    .getByRole("button", { name: "Bereich hinzufügen", exact: true })
+    .click();
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Abbrechen", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator(".room-result-count")).toContainText(
+    "Seminarzentrum",
+  );
+  await expect(page.locator(".sidebar-scrim")).toHaveCount(0);
+});
+
 test("Stundenplanung öffnet die aktuelle Woche und folgt der roten Zeitlinie", async ({
   page,
 }) => {

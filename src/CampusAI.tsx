@@ -38,6 +38,7 @@ export default function CampusAI({
   onNavigate,
   onAction,
   view,
+  openRequest = 0,
 }: {
   data: Record<string, Row[]>;
   planId: number | null;
@@ -45,6 +46,7 @@ export default function CampusAI({
   onNavigate: (page: string) => void;
   onAction: (id: string, selection: Row) => string;
   view: Row;
+  openRequest?: number;
 }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -64,6 +66,15 @@ export default function CampusAI({
   const [selectedPlanId, setSelectedPlanId] = useState(planId);
   const launcher = useRef<HTMLButtonElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
+  const handledOpenRequest = useRef(0);
+  useEffect(() => {
+    if (!openRequest || handledOpenRequest.current === openRequest) return;
+    handledOpenRequest.current = openRequest;
+    setSelectedPlanId(planId);
+    setActivated(true);
+    setOpen(true);
+    input.current?.focus();
+  }, [openRequest, planId]);
   useEffect(() => setSelectedPlanId(planId), [planId]);
   useEffect(() => {
     if (open) input.current?.focus();

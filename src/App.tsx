@@ -54,14 +54,35 @@ type SessionState = {
   map_style: string;
 };
 const nav = [
-  { id: "setup", label: "Einrichtung & Studienstruktur", icon: ClipboardList },
-  { id: "schedule", label: "Stundenplanung", icon: CalendarDays },
-  { id: "data", label: "Stammdaten", icon: Layers },
-  { id: "exams", label: "Prüfungen", icon: GraduationCap },
-  { id: "map", label: "Räume", icon: Building2 },
-  { id: "displays", label: "Öffentliche Anzeige", icon: Monitor },
-  { id: "students", label: "Studierendenübersicht", icon: Users },
+  {
+    id: "schedule",
+    label: "Stundenplanung",
+    icon: CalendarDays,
+    group: "Planung",
+  },
+  { id: "exams", label: "Prüfungen", icon: GraduationCap, group: "Planung" },
+  { id: "map", label: "Räume", icon: Building2, group: "Verwaltung" },
+  {
+    id: "setup",
+    label: "Einrichtung & Studienstruktur",
+    icon: ClipboardList,
+    group: "Verwaltung",
+  },
+  { id: "data", label: "Stammdaten", icon: Layers, group: "Verwaltung" },
+  {
+    id: "displays",
+    label: "Öffentliche Anzeige",
+    icon: Monitor,
+    group: "Veröffentlichung",
+  },
+  {
+    id: "students",
+    label: "Studierendenübersicht",
+    icon: Users,
+    group: "Veröffentlichung",
+  },
 ];
+const navGroups = ["Planung", "Verwaltung", "Veröffentlichung"];
 const descriptions: Record<string, string> = {
   areas: "Getrennt planen, gemeinsame Ressourcen berücksichtigen.",
   programs: "Die Grundlage für Lehrpläne und Jahrgänge.",
@@ -875,6 +896,29 @@ export default function App() {
   return <Workspace />;
 }
 function Workspace() {
+  const [institutionMenu, setInstitutionMenu] = useState(false);
+  const institutionMenuRef = useRef<HTMLDivElement>(null);
+  const institutionButtonRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!institutionMenu) return;
+    const outside = (event: PointerEvent) => {
+      if (!institutionMenuRef.current?.contains(event.target as Node))
+        setInstitutionMenu(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        setInstitutionMenu(false);
+        institutionButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [institutionMenu]);
   const [sidebarHidden, setSidebarHidden] = useState(() => {
     try {
       return localStorage.getItem("campuszeit-sidebar-hidden") === "true";
@@ -890,6 +934,7 @@ function Workspace() {
   const [setupStep, setSetupStep] = useState(0);
   const [studyContext, setStudyContext] = useState<Row>({});
   const [roomContext, setRoomContext] = useState<Row>({});
+  const [areaId, setAreaId] = useState<number | null>(null);
   const [session, setSession] = useState<SessionState | null>(null),
     [boot, setBoot] = useState<Row | null>(null),
     [data, setData] = useState<Record<string, Row[]>>({}),
@@ -906,6 +951,8 @@ function Workspace() {
     [roomFilter, setRoomFilter] = useState(""),
     [modal, setModal] = useState<Row | null>(null),
     [scheduleEditor, setScheduleEditor] = useState<Row | null>(null),
+    [freddySessionId, setFreddySessionId] = useState<number | null>(null),
+    [freddyOpenRequest, setFreddyOpenRequest] = useState(0),
     [loggingOut, setLoggingOut] = useState(false),
     [refresh, setRefresh] = useState(0),
     [toast, setToast] = useState(""),
@@ -917,6 +964,7 @@ function Workspace() {
   const searchRef = useRef<HTMLInputElement>(null);
   const editorState = useRef({ dirty: false, busy: false });
   const editorSequence = useRef(0);
+  useEffect(() => setFreddySessionId(null), [planId, week]);
   const updateEditorState = useCallback((dirty: boolean, busy: boolean) => {
     editorState.current = { dirty, busy };
   }, []);
@@ -983,6 +1031,8 @@ function Workspace() {
   const zone = session?.institution?.timezone || "Europe/Berlin",
     plan = data.plans?.find((p) => p.id === planId),
     period = data.periods?.find((p) => p.id === plan?.period);
+  const selectedArea =
+    data.buildings?.find((area) => area.id === areaId) || data.buildings?.[0];
   useEffect(() => {
     setWeek(DateTime.now().setZone(zone).startOf("week").toISODate()!);
   }, [zone]);
@@ -1080,6 +1130,7 @@ function Workspace() {
     if (page === "schedule" && res === "sessions") {
       if (!canLeaveEditor()) return;
       editorState.current = { dirty: false, busy: false };
+      setFreddySessionId(row?.id || null);
       setScheduleEditor({
         record: row,
         defaults,
@@ -1090,7 +1141,8 @@ function Workspace() {
     }
   };
   const go = (id: string) => {
-    if (!canLeaveEditor()) return;
+    setInstitutionMenu(false);
+    if (!canLeaveEditor()) return false;
     clearEditor();
     setDataFilters({});
     setPage(id);
@@ -1102,6 +1154,7 @@ function Workspace() {
     setMenu(false);
     if (id === "exams") setResource("exams");
     if (id === "displays") setResource("displays");
+    return true;
   };
   const assistantAction = (id: string, selection: Row) => {
     const action = campusActions.find((item) => item.id === id);
@@ -1258,36 +1311,110 @@ function Workspace() {
         className={`sidebar ${menu ? "open" : ""}`}
       >
         <Brand />
-        <div className="institution-switch" title={session.institution.name}>
-          <span className="institution-icon">
-            <GraduationCap size={21} />
-          </span>
-          <div>
-            <strong>{session.institution.name.split(" · ")[0]}</strong>
-            <small>
-              {session.institution.kind === "school"
-                ? "Schulverwaltung"
-                : "Hochschulverwaltung"}
-            </small>
-          </div>
-          <ChevronDown size={15} />
+        <div className="institution-menu" ref={institutionMenuRef}>
+          <button
+            type="button"
+            className="institution-switch"
+            ref={institutionButtonRef}
+            title={`Einrichtungsmenü: ${session.institution.name}`}
+            aria-label={`Einrichtungsmenü: ${session.institution.name}`}
+            aria-expanded={institutionMenu}
+            aria-controls="institution-options"
+            onClick={() => setInstitutionMenu((open) => !open)}
+          >
+            <span className="institution-icon">
+              <GraduationCap size={21} />
+            </span>
+            <span className="institution-label">
+              <strong>{session.institution.name.split(" · ")[0]}</strong>
+              <small>
+                {session.institution.kind === "school"
+                  ? "Schulverwaltung"
+                  : "Hochschulverwaltung"}
+              </small>
+            </span>
+            <ChevronDown size={15} />
+          </button>
+          {institutionMenu && (
+            <div id="institution-options" className="institution-options">
+              <small>Aktuelle Einrichtung</small>
+              <strong>{session.institution.name}</strong>
+              <small>Bereiche</small>
+              <div
+                className="institution-area-list"
+                role="group"
+                aria-label="Bereich auswählen"
+              >
+                {data.buildings?.map((area) => (
+                  <button
+                    key={area.id}
+                    type="button"
+                    aria-pressed={selectedArea?.id === area.id}
+                    onClick={() => {
+                      if (go("map")) setAreaId(area.id);
+                    }}
+                  >
+                    <Building2 size={16} />
+                    <span>{area.name}</span>
+                    {selectedArea?.id === area.id && <Check size={16} />}
+                  </button>
+                ))}
+                {!data.buildings?.length && (
+                  <p>Noch keine Bereiche angelegt.</p>
+                )}
+              </div>
+              <button
+                type="button"
+                disabled={initial || !boot}
+                onClick={() => {
+                  if (go("map")) edit("buildings");
+                }}
+              >
+                <Plus size={16} />
+                Bereich hinzufügen
+              </button>
+              <div className="institution-options-divider" />
+              <button
+                type="button"
+                onClick={() => {
+                  if (go("settings")) setSettings(session.institution);
+                }}
+              >
+                <Settings size={16} />
+                Einrichtungseinstellungen
+              </button>
+              <button type="button" onClick={() => go("setup")}>
+                <ClipboardList size={16} />
+                Einrichtung & Studienstruktur
+              </button>
+            </div>
+          )}
         </div>
-        <span className="nav-caption">Arbeitsbereich</span>
-        <nav>
-          {nav.map((item) => (
-            <button
-              key={item.id}
-              aria-label={item.label}
-              title={item.label}
-              className={page === item.id ? "active" : ""}
-              onClick={() => go(item.id)}
+        <nav aria-label="Arbeitsbereiche">
+          {navGroups.map((group) => (
+            <div
+              className="nav-group"
+              role="group"
+              aria-label={group}
+              key={group}
             >
-              <item.icon size={20} />
-              <span className="nav-label">{item.label}</span>
-              {item.id === "schedule" && (
-                <span className="nav-count">{data.plans?.length || 0}</span>
-              )}
-            </button>
+              <span className="nav-caption">{group}</span>
+              {nav
+                .filter((item) => item.group === group)
+                .map((item) => (
+                  <button
+                    key={item.id}
+                    aria-label={item.label}
+                    title={item.label}
+                    aria-current={page === item.id ? "page" : undefined}
+                    className={page === item.id ? "active" : ""}
+                    onClick={() => go(item.id)}
+                  >
+                    <item.icon size={20} />
+                    <span className="nav-label">{item.label}</span>
+                  </button>
+                ))}
+            </div>
           ))}
         </nav>
         <div className="sidebar-spacer" />
@@ -1458,66 +1585,16 @@ function Workspace() {
               <div className="planning-heading">
                 <div>
                   <h1>Stundenplanung</h1>
-                  <p>Wochenplan und Termindetails im Blick.</p>
+                  <p>Termine im Wochenplan auswählen und bearbeiten.</p>
                 </div>
-                <span className="planning-summary">
-                  {inWeek.length} Termine diese Woche
-                </span>
-              </div>
-              <div className="overview-strip planning-overview">
-                <div>
-                  <span className="stat-icon blue-stat">
-                    <CalendarDays size={20} />
-                  </span>
-                  <div>
-                    <strong>{inWeek.length}</strong>
-                    <span>Termine diese Woche</span>
-                  </div>
-                </div>
-                <div>
-                  <span className="stat-icon mint-stat">
-                    <Users size={20} />
-                  </span>
-                  <div>
-                    <strong>{boot?.counts.people || 0}</strong>
-                    <span>Personen erfasst</span>
-                  </div>
-                </div>
-                <div>
-                  <span className="stat-icon violet-stat">
-                    <Building2 size={20} />
-                  </span>
-                  <div>
-                    <strong>{boot?.counts.rooms || 0}</strong>
-                    <span>Räume auf dem Campus</span>
-                  </div>
-                </div>
-                <div>
-                  <span
-                    className={`stat-icon ${conflicts.length ? "amber-stat" : "mint-stat"}`}
-                  >
-                    {conflicts.length ? (
-                      <AlertTriangle size={20} />
-                    ) : (
-                      <CheckCircle2 size={20} />
-                    )}
-                  </span>
-                  <div>
-                    <strong>
-                      {conflicts.length
-                        ? `${conflicts.length} Hinweise`
-                        : DEMO_MODE
-                          ? "Demo geprüft"
-                          : "Konfliktfrei"}
-                    </strong>
-                    <span>
-                      {conflicts.length
-                        ? "Vor Veröffentlichung prüfen"
-                        : DEMO_MODE
-                          ? "Überschneidungen & Kapazitäten"
-                          : "Alle Regeln erfüllt"}
-                    </span>
-                  </div>
+                <div className="planning-summary">
+                  <span>{inWeek.length} Termine diese Woche</span>
+                  {conflicts.length > 0 && (
+                    <a className="planning-hints" href="#planning-status">
+                      <AlertTriangle size={14} />
+                      {conflicts.length} Hinweise
+                    </a>
+                  )}
                 </div>
               </div>
               <div
@@ -1740,8 +1817,9 @@ function Workspace() {
                     ) : (
                       <div className="calendar-scroll">
                         <Timetable
-                          selectedId={scheduleEditor?.record?.id}
-                          compactColumns
+                          selectedId={
+                            scheduleEditor?.record?.id || freddySessionId
+                          }
                           rows={visible}
                           showNow
                           followNow={followNow && !scheduleEditor}
@@ -1796,7 +1874,7 @@ function Workspace() {
                     </div>
                   </div>
                   <div className="below-calendar">
-                    <div>
+                    <div id="planning-status">
                       <span className="small-label">Planungsstatus</span>
                       {conflicts.length ? (
                         <ul className="conflict-list">
@@ -1831,44 +1909,13 @@ function Workspace() {
                     </div>
                   </div>
                 </div>
-                <aside className="planning-details" aria-label="Termindetails">
-                  {scheduleEditor && boot ? (
-                    <RecordForm
-                      key={scheduleEditor.key}
-                      resource="sessions"
-                      fields={boot.schema.sessions}
-                      record={scheduleEditor.record}
-                      defaults={scheduleEditor.defaults}
-                      zone={zone}
-                      presentation="panel"
-                      onStateChange={updateEditorState}
-                      onClose={closeEditor}
-                      onSaved={() => {
-                        editorState.current = { dirty: false, busy: false };
-                        reload();
-                      }}
-                    />
-                  ) : (
-                    <div className="planning-details-empty">
-                      <span className="stat-icon blue-stat">
-                        <CalendarDays size={22} />
-                      </span>
-                      <h2>Termindetails</h2>
-                      <p>
-                        Wähle einen Termin im Wochenplan, um Zeit, Räume und
-                        Lehrpersonen zu bearbeiten.
-                      </p>
-                      <small>
-                        Der Kalender bleibt dabei bedienbar. Änderungen werden
-                        erst mit „Speichern“ übernommen.
-                      </small>
-                    </div>
-                  )}
-                </aside>
               </div>
             </>
           ) : page === "map" ? (
             <RoomOverview
+              key={selectedArea?.id}
+              areaId={selectedArea?.id ?? null}
+              onAreaChange={setAreaId}
               onContextChange={setRoomContext}
               data={data}
               zone={zone}
@@ -2191,6 +2238,7 @@ function Workspace() {
         </footer>
       </div>
       <CampusAI
+        openRequest={freddyOpenRequest}
         data={data}
         planId={planId}
         refresh={refresh}
@@ -2205,7 +2253,7 @@ function Workspace() {
           ...(page === "schedule"
             ? {
                 week,
-                session_id: scheduleEditor?.record?.id || null,
+                session_id: scheduleEditor?.record?.id || freddySessionId,
                 group_filter: groupFilter,
                 room_filter: roomFilter,
               }
@@ -2218,6 +2266,35 @@ function Workspace() {
           {toast}
         </div>
       )}
+      {scheduleEditor && boot && (
+        <div className="schedule-popup">
+          <RecordForm
+            key={scheduleEditor.key}
+            resource="sessions"
+            fields={boot.schema.sessions}
+            record={scheduleEditor.record}
+            defaults={scheduleEditor.defaults}
+            zone={zone}
+            onStateChange={updateEditorState}
+            onClose={closeEditor}
+            onAssist={
+              scheduleEditor.record?.id
+                ? () => {
+                    if (editorState.current.dirty || editorState.current.busy)
+                      return;
+                    clearEditor();
+                    setFreddyOpenRequest((value) => value + 1);
+                  }
+                : undefined
+            }
+            onSaved={(saved) => {
+              setFreddySessionId(saved?.id || null);
+              editorState.current = { dirty: false, busy: false };
+              reload();
+            }}
+          />
+        </div>
+      )}
       {modal?.type === "record" && boot && (
         <RecordForm
           key={`${modal.resource}-${modal.record?.id}`}
@@ -2227,7 +2304,11 @@ function Workspace() {
           defaults={modal.defaults}
           zone={zone}
           onClose={() => setModal(null)}
-          onSaved={reload}
+          onSaved={(saved) => {
+            if (modal.resource === "buildings" && !modal.record && saved)
+              setAreaId(saved.id);
+            reload();
+          }}
         />
       )}{" "}
       {modal?.type === "import" && (

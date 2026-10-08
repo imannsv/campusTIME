@@ -5,47 +5,39 @@ test.describe("Terminbearbeitung", () => {
     await page.clock.install({ time: new Date("2026-10-07T08:00:00Z") });
   });
 
-  test("Planungszentrale: Kalender und Terminbearbeitung bleiben nebeneinander bedienbar", async ({
+  test("Termin öffnet ein Popup; Speichern bleibt nach Neuladen erhalten", async ({
     page,
   }) => {
     await page.goto("/");
     await expect(
       page.getByRole("complementary", { name: "Termindetails" }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     const event = page
       .locator(".calendar-event")
       .filter({ hasText: "Mathematik I" })
       .first();
     await event.click();
-    const editor = page.getByRole("region", {
+    const editor = page.getByRole("dialog", {
       name: "Termin bearbeiten",
       exact: true,
     });
     await expect(editor).toBeVisible();
-    await expect(page.locator(".modal-backdrop")).toHaveCount(0);
+    await expect(page.locator(".modal-backdrop")).toHaveCount(1);
     await expect(event).toHaveAttribute("aria-pressed", "true");
     const saveBounds = await editor
       .getByRole("button", { name: "Speichern", exact: true })
       .boundingBox();
     expect(saveBounds!.y + saveBounds!.height).toBeLessThanOrEqual(1000);
-    const calendarBounds = await page.locator(".schedule-panel").boundingBox();
-    const editorBounds = await editor.boundingBox();
-    expect(editorBounds!.x).toBeGreaterThanOrEqual(
-      calendarBounds!.x + calendarBounds!.width,
-    );
-    const calendarWidth = await page
-      .locator(".calendar-scroll")
-      .evaluate((element) => ({
-        client: element.clientWidth,
-        content: element.scrollWidth,
-      }));
-    expect(calendarWidth.content).toBeLessThanOrEqual(calendarWidth.client);
-    await page
-      .getByLabel("Raum filtern")
-      .selectOption({ label: "Hörsaal H.101" });
-    await expect(editor).toBeVisible();
-    await page.getByLabel("Raum filtern").selectOption("");
-    await expect(page.locator(".calendar-event")).toHaveCount(10);
+    const dialogBounds = await editor.boundingBox();
+    expect(dialogBounds!.width).toBeLessThan(1000);
+    await page.keyboard.press("Shift+Tab");
+    await expect(
+      editor.getByRole("button", { name: "Speichern", exact: true }),
+    ).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(
+      editor.getByRole("button", { name: "Schließen", exact: true }),
+    ).toBeFocused();
     const fixed = editor.getByLabel("Termin fixieren");
     const previous = await fixed.isChecked();
     await fixed.setChecked(!previous);
@@ -59,7 +51,7 @@ test.describe("Terminbearbeitung", () => {
     await expect(fixed).toBeChecked({ checked: !previous });
   });
 
-  test("Planungszentrale: Ungespeicherte Eingaben bleiben beim Termin- und Seitenwechsel erhalten", async ({
+  test("Popup schützt ungespeicherte Eingaben bei Escape, Schließen und Hintergrundklick", async ({
     page,
   }) => {
     await page.goto("/");
@@ -68,35 +60,28 @@ test.describe("Terminbearbeitung", () => {
       .filter({ hasText: "Mathematik I" })
       .first();
     await first.click();
-    const editor = page.getByRole("region", {
+    const editor = page.getByRole("dialog", {
       name: "Termin bearbeiten",
       exact: true,
     });
     await editor
       .getByLabel("Name", { exact: true })
       .fill("Nicht gespeicherter Termin");
-    page.once("dialog", (dialog) => dialog.dismiss());
-    await page
-      .locator(".calendar-event")
-      .filter({ hasText: "Programmierung" })
-      .first()
-      .click();
-    await expect(editor.getByLabel("Name", { exact: true })).toHaveValue(
-      "Nicht gespeicherter Termin",
-    );
-    page.once("dialog", (dialog) => dialog.dismiss());
-    await page
-      .getByRole("navigation")
-      .getByRole("button", { name: "Räume", exact: true })
-      .click();
-    await expect(editor).toBeVisible();
     const saved = await page.evaluate(() =>
       localStorage.getItem("campustime-browser-demo-v1"),
     );
     page.once("dialog", (dialog) => dialog.dismiss());
-    await page
-      .getByRole("button", { name: "Demo zurücksetzen", exact: true })
+    await page.keyboard.press("Escape");
+    await expect(editor.getByLabel("Name", { exact: true })).toHaveValue(
+      "Nicht gespeicherter Termin",
+    );
+    page.once("dialog", (dialog) => dialog.dismiss());
+    await editor
+      .getByRole("button", { name: "Schließen", exact: true })
       .click();
+    await expect(editor).toBeVisible();
+    page.once("dialog", (dialog) => dialog.dismiss());
+    await page.mouse.click(4, 4);
     await expect(editor.getByLabel("Name", { exact: true })).toHaveValue(
       "Nicht gespeicherter Termin",
     );
@@ -119,12 +104,12 @@ test.describe("Terminbearbeitung", () => {
     await expect(first).toBeFocused();
   });
 
-  test("Planungszentrale: Neuer Termin wird validiert, gespeichert und wieder geladen", async ({
+  test("Neuer Termin im Popup wird validiert, gespeichert und wieder geladen", async ({
     page,
   }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Termin", exact: true }).click();
-    const editor = page.getByRole("region", {
+    const editor = page.getByRole("dialog", {
       name: "Termin hinzufügen",
       exact: true,
     });
@@ -180,7 +165,7 @@ test.describe("Terminbearbeitung", () => {
     ).toHaveCount(1);
   });
 
-  test("Planungszentrale: Mobile Bearbeitung bleibt ohne Seitenüberlauf erreichbar", async ({
+  test("Mobiles Popup bleibt ohne Seitenüberlauf erreichbar", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -190,14 +175,17 @@ test.describe("Terminbearbeitung", () => {
       .filter({ hasText: "Mathematik I" })
       .first()
       .click();
-    const editor = page.getByRole("region", {
+    const editor = page.getByRole("dialog", {
       name: "Termin bearbeiten",
       exact: true,
     });
-    await expect(editor.getByRole("heading")).toBeFocused();
+    await expect(
+      editor.getByRole("button", { name: "Schließen", exact: true }),
+    ).toBeFocused();
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(390);
+    await editor.getByLabel("Beginn").scrollIntoViewIfNeeded();
     await expect(editor.getByLabel("Beginn")).toBeVisible();
     await page.clock.runFor(60000);
     await expect(editor.getByLabel("Beginn")).toBeInViewport();

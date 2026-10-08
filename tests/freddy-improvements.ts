@@ -152,6 +152,9 @@ test("Freddy behält Gespräch und Eingabe je Plan und erklärt den ausgewählte
     "Eine offene Rückfrage",
   );
   await page.locator(".calendar-event").first().click();
+  await page
+    .getByRole("button", { name: "Termin mit Freddy prüfen", exact: true })
+    .click();
   await expect(chat.locator(".campus-ai-calendar-context")).toContainText(
     "Mathematik I",
   );
@@ -193,14 +196,74 @@ test("Freddy erklärt nur Konflikte der ausgewählten Wiederholung eines Termins
     .getByRole("button", { name: "Freddy öffnen", exact: true })
     .click();
   await page.getByRole("button", { name: /^Mathematik I ·/ }).click();
+  await page
+    .getByRole("button", { name: "Termin mit Freddy prüfen", exact: true })
+    .click();
   const first = await ask(page, "Warum passt dieser Termin nicht?");
   await expect(first).not.toContainText("blockiert");
   await page
     .getByRole("button", { name: "Nächste Woche", exact: true })
     .click();
   await page.getByRole("button", { name: /^Mathematik I ·/ }).click();
+  await page
+    .getByRole("button", { name: "Termin mit Freddy prüfen", exact: true })
+    .click();
   const second = await ask(page, "Warum passt dieser Termin nicht?");
   await expect(second).toContainText("blockiert");
+});
+
+test("Termin-Popup öffnet Freddy mit gespeichertem Kontext und schützt offene Formularänderungen", async ({
+  page,
+}) => {
+  const chat = await openFreddy(page);
+  await page.getByLabel("Deine Frage an Freddy").fill("Offene Rückfrage");
+  await chat
+    .getByRole("button", { name: "Kontext für Freddy auswählen" })
+    .click();
+  await chat
+    .getByRole("button", {
+      name: "dWI24 · Unterricht & Prüfungen",
+      exact: true,
+    })
+    .click();
+  await page
+    .getByLabel("Deine Frage an Freddy")
+    .fill("Rückfrage zum anderen Plan");
+  await chat
+    .getByRole("button", { name: "Chat schließen", exact: true })
+    .click();
+  await page.locator(".calendar-event").first().click();
+  const editor = page.getByRole("dialog", {
+    name: "Termin bearbeiten",
+    exact: true,
+  });
+  const assist = editor.getByRole("button", {
+    name: "Termin mit Freddy prüfen",
+    exact: true,
+  });
+  const name = editor.getByLabel("Name", { exact: true });
+  const original = await name.inputValue();
+  await name.fill("Nicht gespeicherte Änderung");
+  await expect(assist).toBeDisabled();
+  await expect(name).toHaveValue("Nicht gespeicherte Änderung");
+  await name.fill(original);
+  await expect(assist).toBeEnabled();
+  await assist.click();
+  await expect(editor).toHaveCount(0);
+  await expect(chat).toBeVisible();
+  await expect(chat.locator(".campus-ai-calendar-context")).toContainText(
+    "Mathematik I",
+  );
+  await expect(page.getByLabel("Deine Frage an Freddy")).toHaveValue(
+    "Offene Rückfrage",
+  );
+  await expect(page.getByLabel("Deine Frage an Freddy")).toBeFocused();
+  await page.locator(".calendar-event").first().click();
+  await editor.getByRole("button", { name: "Löschen", exact: true }).click();
+  await expect(chat.locator(".campus-ai-calendar-context")).toContainText(
+    "Woche ab",
+  );
+  await expect(chat.locator(".campus-ai-error")).toHaveCount(0);
 });
 
 test("Freddy begrenzt lange Raumantworten ohne Räume aus der Prüfung zu verlieren", async ({
@@ -252,6 +315,9 @@ test("Freddy bietet eine größere Lesefläche und mobile Schaltflächen", async
   await page.setViewportSize({ width: 1120, height: 900 });
   const withEditor = await chat.boundingBox();
   expect(withEditor!.x).toBeGreaterThanOrEqual(12);
+  await page
+    .getByRole("button", { name: "Termin mit Freddy prüfen", exact: true })
+    .click();
   await chat
     .getByRole("button", { name: "Freddy verkleinern", exact: true })
     .click();

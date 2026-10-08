@@ -141,10 +141,13 @@ test("Freddy API: Ansichtwechsel bricht ab und Kalenderkontext enthält Termin u
   page,
 }) => {
   const api = await freddyAPI(page, true);
-  await page.locator(".calendar-event").first().click();
   await page
     .getByRole("combobox", { name: "Raum filtern", exact: true })
     .selectOption({ label: "Hörsaal H.101" });
+  await page.locator(".calendar-event").first().click();
+  await page
+    .getByRole("button", { name: "Termin mit Freddy prüfen", exact: true })
+    .click();
   await expect.poll(() => api.contexts.at(-1)?.get("session_id")).toBe("1");
   await expect
     .poll(() => api.contexts.at(-1)?.get("room_filter"))

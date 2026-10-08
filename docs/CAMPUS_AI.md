@@ -93,6 +93,10 @@ Zeitfenster führen zur Rückfrage. Das bestätigt keine organisatorische Freiga
 ausgewählten, gespeicherten Termins. Noch nicht gespeicherte Formularänderungen
 sind kein Teil dieser Prüfung. Kalenderwoche und aktive Raum-/Gruppenfilter sind
 sichtbarer Kontext; die Raumabfrage beschränkt sich nur auf ausdrücklich genannte Räume.
+Im Termin-Popup öffnet „Termin mit Freddy prüfen“ den Chat und schließt das
+unveränderte Formular. Bei ungespeicherten Änderungen ist der Übergang gesperrt;
+speichere sie zuerst. Der ausgewählte Termin bleibt nach dem Schließen als Kontext
+erhalten. Wechsel von Plan oder Woche sowie Löschen des Termins löschen die Auswahl.
 Fehlende Hinweise bestätigen nicht die vollständige fachliche oder organisatorische
 Freigabe eines Plans. Vorschläge werden über die vorhandenen Planungsansichten
 geprüft und übernommen.

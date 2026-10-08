@@ -18,12 +18,14 @@ export function Modal({
   children,
   onClose,
   wide = false,
+  busy = false,
 }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
   onClose: () => void;
   wide?: boolean;
+  busy?: boolean;
 }) {
   const section = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -82,6 +84,7 @@ export function Modal({
             className="icon-button"
             aria-label="Schließen"
             onClick={onClose}
+            disabled={busy}
           >
             <X size={20} />
           </button>
@@ -712,6 +715,7 @@ export function RecordForm({
   onSaved,
   presentation = "modal",
   onStateChange,
+  onAssist,
 }: {
   resource: string;
   fields: Field[];
@@ -719,9 +723,10 @@ export function RecordForm({
   defaults?: Row;
   zone: string;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (saved?: Row) => void;
   presentation?: "modal" | "panel";
   onStateChange?: (dirty: boolean, busy: boolean) => void;
+  onAssist?: () => void;
 }) {
   const initial: Row = {};
   fields.forEach((f) => {
@@ -742,14 +747,18 @@ export function RecordForm({
     onStateChange?.(dirty, busy);
   }, [dirty, busy, onStateChange]);
   useEffect(() => {
-    if (presentation !== "panel" || (!dirty && !busy)) return;
+    if (
+      (presentation !== "panel" && resource !== "sessions") ||
+      (!dirty && !busy)
+    )
+      return;
     const warn = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = "";
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [presentation, dirty, busy]);
+  }, [presentation, resource, dirty, busy]);
   const change = (key: string, value: any) =>
     setValues((v) => ({
       ...v,
@@ -790,12 +799,12 @@ export function RecordForm({
         if (value === "" && ["relation", "date"].includes(f.type)) value = null;
         body[f.name] = value;
       }
-      await api(
+      const saved = await api(
         `${resource}/${record ? record.id + "/" : ""}`,
         record ? "PATCH" : "POST",
         body,
       );
-      onSaved();
+      onSaved(saved);
       onClose();
     } catch (e) {
       setError((e as Error).message);
@@ -831,7 +840,7 @@ export function RecordForm({
     "repeat_interval",
   ];
   const displayedFields =
-    presentation === "panel"
+    resource === "sessions"
       ? [...fields].sort((a, b) => {
           const order = (name: string) =>
             sessionOrder.includes(name)
@@ -843,7 +852,7 @@ export function RecordForm({
   return (
     <Container
       title={
-        presentation === "panel"
+        resource === "sessions"
           ? record
             ? "Termin bearbeiten"
             : "Termin hinzufügen"
@@ -852,7 +861,7 @@ export function RecordForm({
             : `${labels[resource]} hinzufügen`
       }
       subtitle={
-        presentation === "panel"
+        resource === "sessions"
           ? record?.name || "Neuen Termin im Entwurf anlegen."
           : defaults.assessment_template
             ? "Prüfungsvorlage übernehmen. Teilnehmer, Zeitraum und Aufsichten prüfen."
@@ -1135,6 +1144,21 @@ export function RecordForm({
             </button>
           )}
           <div className="spacer" />
+          {onAssist && (
+            <button
+              type="button"
+              className="button secondary freddy-assist"
+              disabled={busy || dirty}
+              onClick={onAssist}
+              title={
+                dirty
+                  ? "Speichere Änderungen zuerst. Freddy prüft den gespeicherten Termin."
+                  : "Gespeicherten Termin mit Freddy prüfen"
+              }
+            >
+              Termin mit Freddy prüfen
+            </button>
+          )}
           <button
             type="button"
             className="button secondary"

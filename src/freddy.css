@@ -92,15 +92,8 @@
   display: block;
   margin-top: 8px;
 }
-@media (min-width: 1101px) {
-  .app-shell:has(.planning-workspace.is-editing) .campus-ai-expanded {
-    width: min(680px, calc(100% - 448px));
-  }
-}
-@media (min-width: 1600px) {
-  .app-shell:has(.planning-workspace.is-editing) .campus-ai-expanded {
-    width: min(680px, calc(100% - 480px));
-  }
+.freddy-assist {
+  min-height: 44px;
 }
 @media (max-width: 600px) {
   .campus-ai,
