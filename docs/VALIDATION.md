@@ -1,5 +1,24 @@
 # Verifikation der ersten Version
 
+## Lokale Vorschau und selbstständige Testläufe — 08.10.2026
+
+- `npm test` startet eine eigene gebaute Demo auf Port 5175 und beendet sie
+  nach dem Lauf. Zwei vollständige Starts aus freiem Testport wurden geprüft;
+  der zweite Lauf bestand mit allen 23 Browsertests in 1,8 Minuten.
+- Ein erster Lauf mit standardmäßiger Trace-Aufzeichnung bestand mit 22 von
+  23 Tests; ein Browserkontext überschritt beim Beenden das Zeitlimit. Traces
+  sind deshalb nur noch mit `CAMPUS_TEST_TRACE=1` für die Diagnose aktiv.
+- Der reguläre TypeScript-/Vite-Build und der separate Demo-Testbuild bestanden.
+- `dev:local` startet Backend und Oberfläche gemeinsam, wartet auf
+  Erreichbarkeit und beendet beide bei Abbruch. Beenden, erneuter Start und
+  Zurückweisen eines zweiten Starts bei belegtem Port wurden geprüft.
+- Backend und API über den Frontend-Proxy melden HTTP 200 und `status: ok`.
+  Die Anmeldung auf Port 5173 lädt im Browser ohne JavaScript-Fehler.
+- Die Prüfungen verwendeten isolierte Browser-Demodaten oder lesende
+  Gesundheits-/Anmeldeseitenaufrufe. Keine Migrationen oder Datenimporte.
+
+## Frühere Prüfungen
+
 Geprüft am 03.10.2026 im lokalen Arbeitsbereich.
 
 | Prüfung | Ergebnis |

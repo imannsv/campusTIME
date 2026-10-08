@@ -50,11 +50,19 @@ weitergehende API-Aufrufe melden die Einschränkung ausdrücklich.
 ## Lokal prüfen
 
 ```powershell
-npm.cmd run build:demo
-npm.cmd exec vite preview -- --host 127.0.0.1 --port 4173
+npm.cmd test
 ```
 
-In einem zweiten Terminal:
+Playwright baut dafür eine eigene Demo unter `.playwright/demo`, startet die
+fertige Vorschau auf Port 5175, wartet auf Erreichbarkeit und beendet sie nach
+dem Testlauf. Ein manuell gestarteter Entwicklungsserver ist nicht erforderlich.
+Ein bereits belegter Testport wird ausdrücklich abgelehnt. Der reguläre Build
+unter `dist` und die lokalen LFH-Daten bleiben unberührt. Screenshots
+fehlgeschlagener Tests liegen unter `test-results`. Für eine gezielte
+Diagnose aktiviert `$env:CAMPUS_TEST_TRACE = '1'` zusätzlich Traces;
+danach mit `Remove-Item Env:CAMPUS_TEST_TRACE` wieder deaktivieren.
+
+Eine bereits laufende Demo lässt sich weiterhin ausdrücklich verwenden:
 
 ```powershell
 $env:DEMO_TEST_URL = 'http://127.0.0.1:4173'
@@ -64,8 +72,18 @@ Remove-Item Env:DEMO_TEST_URL
 
 Die Demotests sperren Backend-Anfragen und prüfen Raumänderungen einschließlich
 Persistenz, Stockwerkfilter, Zurücksetzen, mobile Breite und feste Anzeigezeiträume.
-Die regulären lokalen Tests bleiben unter `npm test` mit dem
-Django-Backend ausführbar. `npm run build` baut weiterhin die reguläre Variante.
+Die Tests gegen das echte lokale Django-Backend benötigen laufende Server auf
+Port 5173 und 8000 und werden ausdrücklich aktiviert. Diese Tests legen Daten
+in der angeschlossenen Einrichtung an und löschen ihre Testeinträge wieder:
+
+```powershell
+$env:CAMPUS_TEST_MODE = 'platform'
+npm.cmd test
+Remove-Item Env:CAMPUS_TEST_MODE
+```
+
+`PLANNING_API_TEST_URL` wählt weiterhin die API-Fixture-Tests.
+`npm run build` baut weiterhin die reguläre Variante.
 
 ## Später auf echten Betrieb wechseln
 
