@@ -3,6 +3,8 @@ import { DateTime } from "luxon";
 import { api, fmt, Row } from "./api";
 
 type Props = {
+  areaId: number | null;
+  onAreaChange: (id: number) => void;
   onContextChange: (context: Row) => void;
   data: Record<string, Row[]>;
   zone: string;
@@ -11,13 +13,14 @@ type Props = {
 };
 
 export default function RoomOverview({
+  areaId,
+  onAreaChange,
   data,
   zone,
   query,
   onEdit,
   onContextChange,
 }: Props) {
-  const [areaId, setAreaId] = useState<number | null>(null);
   const [floorId, setFloorId] = useState<number | null>(null);
   const [roomId, setRoomId] = useState<number | null>(null);
   const [occupancy, setOccupancy] = useState<Row[]>([]);
@@ -77,7 +80,7 @@ export default function RoomOverview({
   }, [selected]);
 
   function chooseArea(id: number) {
-    setAreaId(id);
+    onAreaChange(id);
     setFloorId(null);
     setRoomId(null);
   }
