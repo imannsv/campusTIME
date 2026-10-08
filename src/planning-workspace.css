@@ -16,10 +16,22 @@
 .planning-summary {
   color: var(--muted);
   font-size: 12px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 16px;
 }
-.planning-overview {
-  padding: 16px 20px;
-  margin-bottom: 20px;
+.planning-hints {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #84662f;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+#planning-status {
+  scroll-margin-top: 20px;
 }
 .planning-workspace {
   display: grid;
@@ -224,16 +236,15 @@
 @media (max-width: 720px) {
   .planning-heading {
     margin: 4px 0 18px;
+    flex-wrap: wrap;
+    gap: 12px;
   }
   .planning-heading h1 {
     font-size: 22px;
   }
   .planning-summary {
-    display: none;
-  }
-  .planning-overview {
-    gap: 16px;
-    padding: 16px;
+    justify-content: flex-start;
+    width: 100%;
   }
   .planning-calendar .plan-actions {
     width: 100%;

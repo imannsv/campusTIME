@@ -798,7 +798,18 @@ small {
 .sidebar nav {
   display: flex;
   flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+  overflow-y: auto;
+}
+.nav-group {
+  display: flex;
+  flex-direction: column;
   gap: 5px;
+}
+.nav-group .nav-caption {
+  display: block;
+  margin: 0 0 4px;
 }
 .sidebar nav button,
 .settings-nav {
@@ -830,16 +841,9 @@ small {
   background: #214b76;
   border-radius: 0 3px 3px 0;
 }
-.nav-count {
-  margin-left: auto;
-  background: #d7e5f3;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-}
 .sidebar-spacer {
   flex: 1;
-  min-height: 50px;
+  min-height: 18px;
 }
 .settings-nav {
   margin-bottom: 14px;
@@ -911,7 +915,6 @@ small {
   .sidebar-collapsed .sidebar .brand > span:last-child,
   .sidebar-collapsed .nav-label,
   .sidebar-collapsed .nav-caption,
-  .sidebar-collapsed .nav-count,
   .sidebar-collapsed .institution-switch > div,
   .sidebar-collapsed .institution-switch > svg,
   .sidebar-collapsed .user-profile > div {
@@ -933,6 +936,16 @@ small {
   }
   .sidebar-collapsed .user-profile {
     flex-direction: column;
+  }
+  .sidebar-collapsed .sidebar nav {
+    gap: 12px;
+  }
+  .sidebar-collapsed .nav-group .nav-caption {
+    display: none;
+  }
+  .sidebar-collapsed .nav-group + .nav-group {
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
   }
   .app-shell.sidebar-collapsed .workspace {
     margin-left: 72px;
@@ -1016,25 +1029,6 @@ small {
   background: #fcf4e3;
   color: #84662f;
 }
-.overview-strip {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  padding: 19px 23px;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  margin-bottom: 26px;
-}
-.overview-strip > div {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  border-right: 1px solid var(--line);
-}
-.overview-strip > div:last-child {
-  border: 0;
-}
 .stat-icon {
   width: 40px;
   height: 40px;
@@ -1058,18 +1052,6 @@ small {
 .amber-stat {
   background: #fcf4e3;
   color: #b3944f;
-}
-.overview-strip strong {
-  font-size: 17px;
-  letter-spacing: -0.35px;
-  font-weight: 650;
-  display: block;
-}
-.overview-strip span:not(.stat-icon) {
-  font-size: 10px;
-  color: #8795a4;
-  display: block;
-  margin-top: 5px;
 }
 .schedule-panel {
   background: #fff;
@@ -3008,22 +2990,9 @@ tbody tr:hover {
   .topbar {
     padding: 0 24px;
   }
-  .overview-strip {
-    gap: 12px;
-    padding: 17px;
-  }
-  .overview-strip > div {
-    gap: 9px;
-  }
   .stat-icon {
     width: 34px;
     height: 34px;
-  }
-  .overview-strip strong {
-    font-size: 15px;
-  }
-  .overview-strip span:not(.stat-icon) {
-    font-size: 9px;
   }
   .schedule-toolbar {
     flex-wrap: wrap;
@@ -3071,13 +3040,6 @@ tbody tr:hover {
   .section-heading > .button {
     font-size: 11px;
     padding: 9px 10px;
-  }
-  .overview-strip {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-  }
-  .overview-strip > div:nth-child(2) {
-    border: 0;
   }
   .below-calendar {
     gap: 20px;
@@ -3155,11 +3117,6 @@ tbody tr:hover {
   }
   h1 {
     font-size: 26px;
-  }
-  .overview-strip {
-    margin-bottom: 20px;
-    padding: 16px;
-    gap: 19px;
   }
   .schedule-panel-top {
     padding: 14px;

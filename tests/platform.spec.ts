@@ -406,7 +406,9 @@ test("Verwaltung: Kalender, Pflege, Raumkacheln und öffentliche Anzeige", async
   await expect(
     page.getByRole("button", { name: "Automatisch planen", exact: true }),
   ).toBeVisible();
-  await expect(page.getByText("Konfliktfrei", { exact: true })).toBeVisible();
+  await expect(page.locator("#planning-status")).toContainText(
+    "Keine Überschneidungen. Unterrichtssoll und Kapazitäten sind geprüft.",
+  );
   await expect(page.locator(".calendar-event")).toHaveCount(10);
   await page.screenshot({
     path: "test-results/stundenplan.png",
