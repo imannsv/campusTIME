@@ -54,14 +54,35 @@ type SessionState = {
   map_style: string;
 };
 const nav = [
-  { id: "setup", label: "Einrichtung & Studienstruktur", icon: ClipboardList },
-  { id: "schedule", label: "Stundenplanung", icon: CalendarDays },
-  { id: "data", label: "Stammdaten", icon: Layers },
-  { id: "exams", label: "Prüfungen", icon: GraduationCap },
-  { id: "map", label: "Räume", icon: Building2 },
-  { id: "displays", label: "Öffentliche Anzeige", icon: Monitor },
-  { id: "students", label: "Studierendenübersicht", icon: Users },
+  {
+    id: "schedule",
+    label: "Stundenplanung",
+    icon: CalendarDays,
+    group: "Planung",
+  },
+  { id: "exams", label: "Prüfungen", icon: GraduationCap, group: "Planung" },
+  { id: "map", label: "Räume", icon: Building2, group: "Verwaltung" },
+  {
+    id: "setup",
+    label: "Einrichtung & Studienstruktur",
+    icon: ClipboardList,
+    group: "Verwaltung",
+  },
+  { id: "data", label: "Stammdaten", icon: Layers, group: "Verwaltung" },
+  {
+    id: "displays",
+    label: "Öffentliche Anzeige",
+    icon: Monitor,
+    group: "Veröffentlichung",
+  },
+  {
+    id: "students",
+    label: "Studierendenübersicht",
+    icon: Users,
+    group: "Veröffentlichung",
+  },
 ];
+const navGroups = ["Planung", "Verwaltung", "Veröffentlichung"];
 const descriptions: Record<string, string> = {
   areas: "Getrennt planen, gemeinsame Ressourcen berücksichtigen.",
   programs: "Die Grundlage für Lehrpläne und Jahrgänge.",
@@ -1272,22 +1293,31 @@ function Workspace() {
           </div>
           <ChevronDown size={15} />
         </div>
-        <span className="nav-caption">Arbeitsbereich</span>
-        <nav>
-          {nav.map((item) => (
-            <button
-              key={item.id}
-              aria-label={item.label}
-              title={item.label}
-              className={page === item.id ? "active" : ""}
-              onClick={() => go(item.id)}
+        <nav aria-label="Arbeitsbereiche">
+          {navGroups.map((group) => (
+            <div
+              className="nav-group"
+              role="group"
+              aria-label={group}
+              key={group}
             >
-              <item.icon size={20} />
-              <span className="nav-label">{item.label}</span>
-              {item.id === "schedule" && (
-                <span className="nav-count">{data.plans?.length || 0}</span>
-              )}
-            </button>
+              <span className="nav-caption">{group}</span>
+              {nav
+                .filter((item) => item.group === group)
+                .map((item) => (
+                  <button
+                    key={item.id}
+                    aria-label={item.label}
+                    title={item.label}
+                    aria-current={page === item.id ? "page" : undefined}
+                    className={page === item.id ? "active" : ""}
+                    onClick={() => go(item.id)}
+                  >
+                    <item.icon size={20} />
+                    <span className="nav-label">{item.label}</span>
+                  </button>
+                ))}
+            </div>
           ))}
         </nav>
         <div className="sidebar-spacer" />
@@ -1460,64 +1490,14 @@ function Workspace() {
                   <h1>Stundenplanung</h1>
                   <p>Wochenplan und Termindetails im Blick.</p>
                 </div>
-                <span className="planning-summary">
-                  {inWeek.length} Termine diese Woche
-                </span>
-              </div>
-              <div className="overview-strip planning-overview">
-                <div>
-                  <span className="stat-icon blue-stat">
-                    <CalendarDays size={20} />
-                  </span>
-                  <div>
-                    <strong>{inWeek.length}</strong>
-                    <span>Termine diese Woche</span>
-                  </div>
-                </div>
-                <div>
-                  <span className="stat-icon mint-stat">
-                    <Users size={20} />
-                  </span>
-                  <div>
-                    <strong>{boot?.counts.people || 0}</strong>
-                    <span>Personen erfasst</span>
-                  </div>
-                </div>
-                <div>
-                  <span className="stat-icon violet-stat">
-                    <Building2 size={20} />
-                  </span>
-                  <div>
-                    <strong>{boot?.counts.rooms || 0}</strong>
-                    <span>Räume auf dem Campus</span>
-                  </div>
-                </div>
-                <div>
-                  <span
-                    className={`stat-icon ${conflicts.length ? "amber-stat" : "mint-stat"}`}
-                  >
-                    {conflicts.length ? (
-                      <AlertTriangle size={20} />
-                    ) : (
-                      <CheckCircle2 size={20} />
-                    )}
-                  </span>
-                  <div>
-                    <strong>
-                      {conflicts.length
-                        ? `${conflicts.length} Hinweise`
-                        : DEMO_MODE
-                          ? "Demo geprüft"
-                          : "Konfliktfrei"}
-                    </strong>
-                    <span>
-                      {conflicts.length
-                        ? "Vor Veröffentlichung prüfen"
-                        : DEMO_MODE
-                          ? "Überschneidungen & Kapazitäten"
-                          : "Alle Regeln erfüllt"}
-                    </span>
-                  </div>
+                <div className="planning-summary">
+                  <span>{inWeek.length} Termine diese Woche</span>
+                  {conflicts.length > 0 && (
+                    <a className="planning-hints" href="#planning-status">
+                      <AlertTriangle size={14} />
+                      {conflicts.length} Hinweise
+                    </a>
+                  )}
                 </div>
               </div>
               <div
@@ -1796,7 +1776,7 @@ function Workspace() {
                     </div>
                   </div>
                   <div className="below-calendar">
-                    <div>
+                    <div id="planning-status">
                       <span className="small-label">Planungsstatus</span>
                       {conflicts.length ? (
                         <ul className="conflict-list">
