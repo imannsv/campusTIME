@@ -751,8 +751,16 @@ small {
 .brand-symbol i:nth-child(4) {
   background: #c7d9e6;
 }
-.institution-switch {
+.institution-menu {
+  position: relative;
   margin: 31px 0 27px;
+  flex-shrink: 0;
+}
+.institution-switch {
+  width: 100%;
+  background: white;
+  color: inherit;
+  text-align: left;
   border: 1px solid var(--line);
   padding: 12px 9px;
   display: flex;
@@ -770,7 +778,7 @@ small {
   border-radius: 7px;
   flex-shrink: 0;
 }
-.institution-switch div {
+.institution-label {
   flex: 1;
   min-width: 0;
 }
@@ -788,6 +796,57 @@ small {
 }
 .institution-switch > svg {
   color: #9aa8b6;
+}
+.institution-switch:hover,
+.institution-switch[aria-expanded="true"] {
+  border-color: #b8ccdf;
+  background: #f5f8fc;
+}
+.institution-options {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 260px;
+  max-width: calc(100vw - 28px);
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: white;
+  box-shadow: 0 12px 32px #17314b24;
+}
+.institution-options > small,
+.institution-options > strong {
+  display: block;
+  padding: 0 8px;
+}
+.institution-options > small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.institution-options > strong {
+  margin: 4px 0 12px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.institution-options button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-radius: 6px;
+  background: white;
+  text-align: left;
+  font-size: 12px;
+}
+.institution-options button:hover {
+  background: #eaf1f8;
+}
+.institution-options button > svg {
+  flex-shrink: 0;
 }
 .nav-caption {
   font-size: 11px;
@@ -915,7 +974,7 @@ small {
   .sidebar-collapsed .sidebar .brand > span:last-child,
   .sidebar-collapsed .nav-label,
   .sidebar-collapsed .nav-caption,
-  .sidebar-collapsed .institution-switch > div,
+  .sidebar-collapsed .institution-label,
   .sidebar-collapsed .institution-switch > svg,
   .sidebar-collapsed .user-profile > div {
     display: none;

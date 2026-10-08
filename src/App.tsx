@@ -896,6 +896,29 @@ export default function App() {
   return <Workspace />;
 }
 function Workspace() {
+  const [institutionMenu, setInstitutionMenu] = useState(false);
+  const institutionMenuRef = useRef<HTMLDivElement>(null);
+  const institutionButtonRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!institutionMenu) return;
+    const outside = (event: PointerEvent) => {
+      if (!institutionMenuRef.current?.contains(event.target as Node))
+        setInstitutionMenu(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        setInstitutionMenu(false);
+        institutionButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [institutionMenu]);
   const [sidebarHidden, setSidebarHidden] = useState(() => {
     try {
       return localStorage.getItem("campuszeit-sidebar-hidden") === "true";
@@ -1111,6 +1134,7 @@ function Workspace() {
     }
   };
   const go = (id: string) => {
+    setInstitutionMenu(false);
     if (!canLeaveEditor()) return;
     clearEditor();
     setDataFilters({});
@@ -1279,19 +1303,50 @@ function Workspace() {
         className={`sidebar ${menu ? "open" : ""}`}
       >
         <Brand />
-        <div className="institution-switch" title={session.institution.name}>
-          <span className="institution-icon">
-            <GraduationCap size={21} />
-          </span>
-          <div>
-            <strong>{session.institution.name.split(" · ")[0]}</strong>
-            <small>
-              {session.institution.kind === "school"
-                ? "Schulverwaltung"
-                : "Hochschulverwaltung"}
-            </small>
-          </div>
-          <ChevronDown size={15} />
+        <div className="institution-menu" ref={institutionMenuRef}>
+          <button
+            type="button"
+            className="institution-switch"
+            ref={institutionButtonRef}
+            title={`Einrichtungsmenü: ${session.institution.name}`}
+            aria-label={`Einrichtungsmenü: ${session.institution.name}`}
+            aria-expanded={institutionMenu}
+            aria-controls="institution-options"
+            onClick={() => setInstitutionMenu((open) => !open)}
+          >
+            <span className="institution-icon">
+              <GraduationCap size={21} />
+            </span>
+            <span className="institution-label">
+              <strong>{session.institution.name.split(" · ")[0]}</strong>
+              <small>
+                {session.institution.kind === "school"
+                  ? "Schulverwaltung"
+                  : "Hochschulverwaltung"}
+              </small>
+            </span>
+            <ChevronDown size={15} />
+          </button>
+          {institutionMenu && (
+            <div id="institution-options" className="institution-options">
+              <small>Aktuelle Einrichtung</small>
+              <strong>{session.institution.name}</strong>
+              <button
+                type="button"
+                onClick={() => {
+                  go("settings");
+                  setSettings(session.institution);
+                }}
+              >
+                <Settings size={16} />
+                Einrichtungseinstellungen
+              </button>
+              <button type="button" onClick={() => go("setup")}>
+                <ClipboardList size={16} />
+                Einrichtung & Studienstruktur
+              </button>
+            </div>
+          )}
         </div>
         <nav aria-label="Arbeitsbereiche">
           {navGroups.map((group) => (
