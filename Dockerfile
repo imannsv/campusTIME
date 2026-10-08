@@ -5,6 +5,7 @@ RUN npm ci
 COPY index.html vite.config.ts tsconfig.json ./
 COPY src ./src
 COPY shared ./shared
+COPY scripts/wiki-content.mjs ./scripts/wiki-content.mjs
 RUN npm run build
 
 FROM python:3.12-slim
