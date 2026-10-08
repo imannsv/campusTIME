@@ -2,6 +2,7 @@ import { DateTime } from "luxon";
 import example from "./demo-data.json";
 import type { Field, Row } from "./api";
 import { demoAIStatus, demoAIContext, demoAIReply } from "./demo-campus-ai";
+import { demoPlanningReply } from "./demo-ai-planning";
 import { cohortProgression, limitFields } from "./demo-progression";
 import {
   prepareAssessments,
@@ -309,7 +310,19 @@ function blocksFor(state: Store, start: string, end: string): Row[] {
     const result: Row[] = [];
     let from = DateTime.fromISO(block.start, { zone: ZONE });
     let to = DateTime.fromISO(block.end, { zone: ZONE });
-    for (let index = 0; index < 80; index++) {
+    if (block.repeat_weekly && block.repeat_until) {
+      const queryStart = DateTime.fromISO(start, { zone: ZONE });
+      const skip = Math.max(0, Math.floor(queryStart.diff(to, "weeks").weeks));
+      from = from.plus({ weeks: skip });
+      to = to.plus({ weeks: skip });
+    }
+    while (from.toMillis() < Date.parse(end)) {
+      if (
+        block.repeat_weekly &&
+        block.repeat_until &&
+        from.toISODate()! > block.repeat_until
+      )
+        break;
       const row = {
         ...block,
         start: from.toISO(),
@@ -331,13 +344,18 @@ function blocksFor(state: Store, start: string, end: string): Row[] {
   });
 }
 // Only basic overlap and capacity checks. The real Django validation remains local.
-function conflictsFor(state: Store, planId: number): string[] {
+function conflictsFor(
+  state: Store,
+  planId: number,
+  focusSession?: number,
+): string[] {
   const own = rowsFor(state, planId);
   const other = state.publications
     .filter((publication) => publication.plan_id !== planId)
     .flatMap((publication) => publication.snapshot);
   const errors = new Set<string>();
   for (const row of own) {
+    if (focusSession != null && row.id !== focusSession) continue;
     const rooms = row.room_ids.map((id: number) => get(state, "rooms", id));
     if (rooms.some((room: Row) => room.capacity == null))
       errors.add(`${row.name}: Raumkapazität ist noch nicht erfasst.`);
@@ -513,12 +531,57 @@ export async function demoApi(
       ((key === "context" && method === "GET") ||
         (key === "chat" && method === "POST"))
     ) {
+      const planId = Number(selection.plan);
+      const checkedRows = planId ? rowsFor(state, planId) : [];
+      const selectedRow = selection.session_id
+        ? checkedRows.find((row) => row.id === Number(selection.session_id))
+        : null;
+      if (selection.session_id && !selectedRow)
+        throw new Error(
+          "Der ausgewählte Termin gehört nicht zum Semesterplan.",
+        );
+      const conflicts = planId ? conflictsFor(state, planId) : [];
       const context = demoAIContext(
         state,
         selection,
-        selection.plan ? conflictsFor(state, Number(selection.plan)) : [],
+        conflicts,
+        selectedRow
+          ? {
+              id: selectedRow.id,
+              name: selectedRow.name,
+              start: selectedRow.start,
+              end: selectedRow.end,
+              participants: selectedRow.count,
+              room_ids: selectedRow.room_ids,
+              equipment: selectedRow.equipment,
+              issues: conflictsFor(
+                state,
+                Number(selection.plan),
+                selectedRow.id,
+              ),
+            }
+          : null,
       );
-      return key === "chat" ? demoAIReply(body || {}, context) : context;
+      const occupancy = (start: string, end: string) =>
+        [
+          ...checkedRows,
+          ...state.publications
+            .filter((publication) => publication.plan_id !== planId)
+            .flatMap((publication) => publication.snapshot),
+          ...blocksFor(state, start, end),
+        ].filter((row) => overlap(row, { start, end }));
+      return key === "chat"
+        ? demoAIReply(
+            body || {},
+            context,
+            demoPlanningReply(
+              String(body?.question || ""),
+              context,
+              state,
+              occupancy,
+            ),
+          )
+        : context;
     }
     throw new Error("Diese campusAI-Aktion ist nicht verfügbar.");
   }

@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests",
   testMatch: process.env.PLANNING_API_TEST_URL
-    ? "planning-api.spec.ts"
+    ? ["planning-api.spec.ts", "freddy-api.spec.ts"]
     : process.env.DEMO_TEST_URL
       ? "demo.spec.ts"
       : "platform.spec.ts",

@@ -17,6 +17,7 @@ export function demoAIContext(
   state: Store,
   selection: Row,
   conflicts: string[],
+  selectedSession: Row | null = null,
 ) {
   if (
     selection.page &&
@@ -320,6 +321,12 @@ export function demoAIContext(
     (a, b) => Number(a.severity !== "error") - Number(b.severity !== "error"),
   );
   const result = {
+    calendar: {
+      week: selection.week || "",
+      group_filter: selection.group_filter || "",
+      room_filter: selection.room_filter || "",
+      selected_session: selectedSession,
+    },
     revision: state.institution.revision,
     facts,
     semesters,
@@ -338,13 +345,18 @@ export function demoAIContext(
   return { ...result, ...proactiveContext({ ...result, notices }, selection) };
 }
 
-export function demoAIReply(body: Row, context: Row) {
+export function demoAIReply(
+  body: Row,
+  context: Row,
+  verified: Row | null = null,
+) {
   if (
     typeof body.question !== "string" ||
     !body.question.trim() ||
     body.question.length > 2000
   )
     throw new Error("Eine Frage mit höchstens 2.000 Zeichen eingeben.");
+  if (verified) return verified;
   const response = campusHelp(body.question, context, body.history);
   return {
     ...response,

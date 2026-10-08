@@ -175,6 +175,7 @@ export async function campusAIFlow(page: Page) {
     .toBeLessThan(-0.5);
   await launcher.click();
   await expect(answer).toHaveCount(2);
+  await answer.first().locator(".campus-ai-sources summary").click();
   await answer
     .first()
     .getByRole("button", { name: "Jahrgang und Gruppen", exact: true })

@@ -113,30 +113,37 @@ def session_row(session, cached_data=None):
 
 def plan_rows(plan):
     entities = {}
-    for c in Course.objects.filter(plan=plan).prefetch_related(
-        "learners", "teachers", "groups__people"
-    ):
+    for c in Course.objects.filter(
+        plan=plan, institution=plan.institution
+    ).prefetch_related("learners", "teachers", "groups__people"):
         entities[("course", c.id)] = entity_data(c)
-    for e in Exam.objects.filter(plan=plan).prefetch_related("learners", "supervisors"):
+    for e in Exam.objects.filter(
+        plan=plan, institution=plan.institution
+    ).prefetch_related("learners", "supervisors"):
         entities[("exam", e.id)] = entity_data(e)
     return [
         session_row(
             s, entities[("exam", s.exam_id) if s.exam_id else ("course", s.course_id)]
         )
-        for s in plan.sessions.select_related("course", "exam").prefetch_related(
-            "rooms", "teachers"
-        )
+        for s in plan.sessions.filter(institution=plan.institution)
+        .select_related("course", "exam")
+        .prefetch_related("rooms", "teachers")
     ]
 
 
 def latest_publications(institution):
     latest = (
-        Publication.objects.filter(institution=institution)
+        Publication.objects.filter(
+            institution=institution, plan__institution=institution
+        )
         .values("plan_id")
         .annotate(n=Max("number"))
     )
     return [
-        Publication.objects.get(plan_id=p["plan_id"], number=p["n"]) for p in latest
+        Publication.objects.get(
+            institution=institution, plan_id=p["plan_id"], number=p["n"]
+        )
+        for p in latest
     ]
 
 
@@ -268,7 +275,7 @@ def course_chunks(course):
     return result
 
 
-def validate_rows(plan, rows, coverage=False):
+def validate_rows(plan, rows, coverage=False, focus_session=None):
     institution, period = plan.institution, plan.period
     problems = []
     room_map = {r.id: r for r in Room.objects.filter(institution=institution)}
@@ -277,17 +284,24 @@ def validate_rows(plan, rows, coverage=False):
     }
     courses = {
         c.id: c
-        for c in Course.objects.filter(plan=plan).prefetch_related(
-            "learners", "teachers", "groups__people"
-        )
+        for c in Course.objects.filter(
+            plan=plan, institution=institution
+        ).prefetch_related("learners", "teachers", "groups__people")
     }
     exams = {
         e.id: e
-        for e in Exam.objects.filter(plan=plan).prefetch_related(
-            "learners", "supervisors"
-        )
+        for e in Exam.objects.filter(
+            plan=plan, institution=institution
+        ).prefetch_related("learners", "supervisors")
     }
-    for row in rows:
+    focused = {
+        index
+        for index, row in enumerate(rows)
+        if focus_session is None or row.get("id") == focus_session
+    }
+    for index, row in enumerate(rows):
+        if index not in focused:
+            continue
         label = row["name"]
         start, end = local(row["start"], institution), local(row["end"], institution)
         entity = (
@@ -372,7 +386,7 @@ def validate_rows(plan, rows, coverage=False):
         for start, end, i in entries:
             active = [(e, j) for e, j in active if e > start]
             for _, j in active:
-                if i < len(rows) or j < len(rows):
+                if i in focused or j in focused:
                     conflicts.add(tuple(sorted((i, j))))
             active.append((end, i))
     for i, j in conflicts:
@@ -397,7 +411,7 @@ def validate_rows(plan, rows, coverage=False):
             dates[s.date()].append(i)
         for day, indices in dates.items():
             if len(indices) > institution.exam_max_per_day and any(
-                i < len(rows) for i in indices
+                i in focused for i in indices
             ):
                 problems.append(
                     f"Prüfungsbelastung am {day}: Zu viele Prüfungen pro Person."
@@ -406,7 +420,7 @@ def validate_rows(plan, rows, coverage=False):
             if (
                 nxt[0] - prev[1]
             ).total_seconds() < institution.exam_gap_hours * 3600 and (
-                prev[2] < len(rows) or nxt[2] < len(rows)
+                prev[2] in focused or nxt[2] in focused
             ):
                 problems.append("Mindestabstand zwischen Prüfungen unterschritten.")
     if coverage:

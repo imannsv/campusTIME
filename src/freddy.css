@@ -1,0 +1,114 @@
+.campus-ai {
+  width: min(448px, calc(100% - 32px));
+  height: min(700px, calc(100dvh - 120px));
+  font-size: 15px;
+}
+.campus-ai-expanded {
+  width: min(680px, calc(100% - 32px));
+}
+.campus-ai-icon {
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  flex-shrink: 0;
+}
+.campus-ai-input button {
+  width: 44px;
+  height: 44px;
+}
+.campus-ai-input textarea {
+  font-size: 16px;
+}
+.campus-ai-message {
+  line-height: 1.6;
+}
+.campus-ai-message strong,
+.campus-ai-message small,
+.campus-ai-footer small {
+  font-size: 12px;
+}
+.campus-ai-actions button,
+.campus-ai-questions button,
+.campus-ai-popover button {
+  min-height: 44px;
+  font-size: 14px;
+}
+.campus-ai-view {
+  font-size: 12px;
+}
+.campus-ai-calendar-context {
+  padding: 0 18px 10px;
+  color: var(--ink);
+  font-size: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.campus-ai-calendar-context span {
+  display: block;
+  color: #64778b;
+}
+.campus-ai-sources {
+  display: block;
+  font-size: 12px;
+}
+.campus-ai-sources summary {
+  cursor: pointer;
+  padding-block: 6px;
+}
+.campus-ai-sources button {
+  min-height: 44px;
+  font-size: 12px;
+}
+.campus-ai-read-more,
+.campus-ai-stop,
+.campus-ai-error button {
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--navy);
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+.campus-ai-read-more {
+  margin-top: 8px;
+}
+.campus-ai-working {
+  display: block;
+}
+.campus-ai-working p {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.campus-ai-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.campus-ai-error button {
+  display: block;
+  margin-top: 8px;
+}
+.freddy-assist {
+  min-height: 44px;
+}
+@media (max-width: 600px) {
+  .campus-ai,
+  .campus-ai-expanded {
+    width: calc(100% - 24px);
+    height: min(720px, calc(100dvh - 96px - env(safe-area-inset-bottom)));
+  }
+  .campus-ai-heading {
+    gap: 4px;
+    padding-inline: 12px;
+  }
+  .campus-ai-identity {
+    gap: 8px;
+  }
+  .campus-ai-header-actions {
+    gap: 0;
+  }
+}

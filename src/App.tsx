@@ -951,6 +951,8 @@ function Workspace() {
     [roomFilter, setRoomFilter] = useState(""),
     [modal, setModal] = useState<Row | null>(null),
     [scheduleEditor, setScheduleEditor] = useState<Row | null>(null),
+    [freddySessionId, setFreddySessionId] = useState<number | null>(null),
+    [freddyOpenRequest, setFreddyOpenRequest] = useState(0),
     [loggingOut, setLoggingOut] = useState(false),
     [refresh, setRefresh] = useState(0),
     [toast, setToast] = useState(""),
@@ -962,6 +964,7 @@ function Workspace() {
   const searchRef = useRef<HTMLInputElement>(null);
   const editorState = useRef({ dirty: false, busy: false });
   const editorSequence = useRef(0);
+  useEffect(() => setFreddySessionId(null), [planId, week]);
   const updateEditorState = useCallback((dirty: boolean, busy: boolean) => {
     editorState.current = { dirty, busy };
   }, []);
@@ -1127,6 +1130,7 @@ function Workspace() {
     if (page === "schedule" && res === "sessions") {
       if (!canLeaveEditor()) return;
       editorState.current = { dirty: false, busy: false };
+      setFreddySessionId(row?.id || null);
       setScheduleEditor({
         record: row,
         defaults,
@@ -1813,7 +1817,9 @@ function Workspace() {
                     ) : (
                       <div className="calendar-scroll">
                         <Timetable
-                          selectedId={scheduleEditor?.record?.id}
+                          selectedId={
+                            scheduleEditor?.record?.id || freddySessionId
+                          }
                           rows={visible}
                           showNow
                           followNow={followNow && !scheduleEditor}
@@ -2232,6 +2238,7 @@ function Workspace() {
         </footer>
       </div>
       <CampusAI
+        openRequest={freddyOpenRequest}
         data={data}
         planId={planId}
         refresh={refresh}
@@ -2243,6 +2250,14 @@ function Workspace() {
           step: page === "setup" ? setupStep : 0,
           ...(page === "setup" && setupStep >= 2 ? studyContext : {}),
           ...(page === "map" ? roomContext : {}),
+          ...(page === "schedule"
+            ? {
+                week,
+                session_id: scheduleEditor?.record?.id || freddySessionId,
+                group_filter: groupFilter,
+                room_filter: roomFilter,
+              }
+            : {}),
         }}
       />
       {toast && (
@@ -2262,7 +2277,18 @@ function Workspace() {
             zone={zone}
             onStateChange={updateEditorState}
             onClose={closeEditor}
-            onSaved={() => {
+            onAssist={
+              scheduleEditor.record?.id
+                ? () => {
+                    if (editorState.current.dirty || editorState.current.busy)
+                      return;
+                    clearEditor();
+                    setFreddyOpenRequest((value) => value + 1);
+                  }
+                : undefined
+            }
+            onSaved={(saved) => {
+              setFreddySessionId(saved?.id || null);
               editorState.current = { dirty: false, busy: false };
               reload();
             }}

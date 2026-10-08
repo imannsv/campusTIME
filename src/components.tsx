@@ -715,6 +715,7 @@ export function RecordForm({
   onSaved,
   presentation = "modal",
   onStateChange,
+  onAssist,
 }: {
   resource: string;
   fields: Field[];
@@ -725,6 +726,7 @@ export function RecordForm({
   onSaved: (saved?: Row) => void;
   presentation?: "modal" | "panel";
   onStateChange?: (dirty: boolean, busy: boolean) => void;
+  onAssist?: () => void;
 }) {
   const initial: Row = {};
   fields.forEach((f) => {
@@ -1142,6 +1144,21 @@ export function RecordForm({
             </button>
           )}
           <div className="spacer" />
+          {onAssist && (
+            <button
+              type="button"
+              className="button secondary freddy-assist"
+              disabled={busy || dirty}
+              onClick={onAssist}
+              title={
+                dirty
+                  ? "Speichere Änderungen zuerst. Freddy prüft den gespeicherten Termin."
+                  : "Gespeicherten Termin mit Freddy prüfen"
+              }
+            >
+              Termin mit Freddy prüfen
+            </button>
+          )}
           <button
             type="button"
             className="button secondary"
