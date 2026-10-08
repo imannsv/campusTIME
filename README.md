@@ -46,6 +46,10 @@ Start neu ausführen; die Oberfläche lädt Änderungen weiterhin automatisch.
 `npm.cmd test` baut und startet eine eigene Browser-Demo für die Tests.
 Die LFH-Daten werden dabei nicht verwendet. Details: [Browser-Demo](docs/BROWSER_DEMO.md).
 
+## Wiki & Hilfe
+
+Die angemeldete Vollversion öffnet die Wiki über **Wiki & Hilfe** in einem eigenen Tab. Sie enthält Einrichtungsschritte mit Bildern, Suche und Anleitungen zu allen Arbeitsbereichen. Inhalte werden über GitHub gepflegt; die öffentliche Demo erhält keinen Artikelzugriff. Pflege und Tests: [Wiki](docs/WIKI.md).
+
 ## Geführte Einrichtung
 
 Unter **Einrichtung & Studienstruktur**: Räume → Lehrende → Studiengänge →

@@ -24,6 +24,7 @@ import {
   isFollowup,
 } from "./campus-ai-language";
 import { campusHelp } from "./campus-ai-help";
+import { wikiLink } from "./wiki-links";
 import FreddyAnswer from "./FreddyAnswer";
 
 const questions = [
@@ -755,17 +756,25 @@ export default function CampusAI({
                   >
                     <summary>Verwendete Anleitung</summary>
                     {message.sources.map((source: Row) => (
-                      <button
-                        key={source.id}
-                        onClick={() => {
-                          const action = actionForGuide(source.id);
-                          if (action) runAction(action.id);
-                          else onNavigate(source.page);
-                        }}
-                      >
-                        {source.title}
-                        <ArrowRight size={12} />
-                      </button>
+                      <div key={source.id} className="campus-ai-guide">
+                        <button
+                          onClick={() => {
+                            const action = actionForGuide(source.id);
+                            if (action) runAction(action.id);
+                            else onNavigate(source.page);
+                          }}
+                        >
+                          {source.title}
+                          <ArrowRight size={12} />
+                        </button>
+                        <a
+                          href={wikiLink(source.id)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Anleitung lesen
+                        </a>
+                      </div>
                     ))}
                   </details>
                 )}

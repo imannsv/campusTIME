@@ -12,7 +12,18 @@
     "prepreview:test": "npm run build:test",
     "preview:test": "vite preview --outDir .playwright/demo --host 127.0.0.1 --port 5175 --strictPort",
     "test": "playwright test",
-    "deployment:check": "node scripts/check-deployment.mjs"
+    "deployment:check": "node scripts/check-deployment.mjs",
+    "wiki:generate": "node scripts/wiki-content.mjs",
+    "wiki:check": "node scripts/wiki-content.mjs --check",
+    "test:wiki": "playwright test -c playwright.wiki.config.ts",
+    "wiki:screenshots": "node scripts/wiki-screenshots.mjs",
+    "prebuild": "npm run wiki:check",
+    "prebuild:demo": "npm run wiki:check",
+    "postbuild:demo": "node scripts/check-wiki-demo.mjs",
+    "prebuild:test": "npm run wiki:check",
+    "postbuild:test": "node scripts/check-wiki-demo.mjs .playwright/demo",
+    "build:wiki-test": "tsc --noEmit && vite build --outDir .playwright/wiki",
+    "prebuild:wiki-test": "npm run wiki:check"
   },
   "keywords": [],
   "author": "",
@@ -26,7 +37,9 @@
     "lucide-react": "^1.51.0",
     "luxon": "^3.7.2",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

@@ -112,3 +112,14 @@
     gap: 0;
   }
 }
+.campus-ai-guide {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.campus-ai-guide > a {
+  font-size: 13px;
+  color: #234f7c;
+  padding: 8px 0;
+}

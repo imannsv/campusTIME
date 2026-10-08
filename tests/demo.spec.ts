@@ -8,6 +8,37 @@ import "./planning-workspace";
 import "./freddy-improvements";
 test.use({ actionTimeout: 10000 });
 
+test("Wiki bleibt in der öffentlichen Demo gesperrt, auch über direkte Artikellinks", async ({
+  page,
+}) => {
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/wiki")) requests.push(request.url());
+  });
+  await page.goto("/wiki/setup");
+  await expect(
+    page.getByRole("heading", { name: "Wiki & Hilfe", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Diese öffentliche Browser-Demo hat keine echte Anmeldung.",
+      { exact: false },
+    ),
+  ).toBeVisible();
+  await expect(page.locator(".wiki-article")).toHaveCount(0);
+  await expect(
+    page.getByRole("textbox", { name: "Wiki durchsuchen" }),
+  ).toHaveCount(0);
+  expect(requests).toEqual([]);
+  await page.getByRole("link", { name: "Zur Demo", exact: true }).click();
+  await expect(
+    page.getByRole("navigation", { name: "Arbeitsbereiche" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Wiki & Hilfe", exact: true }),
+  ).toHaveAttribute("target", "_blank");
+});
+
 test("Einrichtungskarte öffnet ein bedienbares Menü statt eines inaktiven Schalters", async ({
   page,
 }) => {
