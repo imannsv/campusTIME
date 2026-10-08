@@ -5,6 +5,7 @@ import { overviewFlow } from "./overview-flow";
 import { assessmentFlow } from "./assessment-flow";
 import { campusAIFlow } from "./campus-ai-flow";
 import "./planning-workspace";
+import "./freddy-improvements";
 test.use({ actionTimeout: 10000 });
 
 test("Stundenplanung öffnet die aktuelle Woche und folgt der roten Zeitlinie", async ({

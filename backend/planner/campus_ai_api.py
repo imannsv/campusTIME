@@ -65,16 +65,24 @@ class Selection(serializers.Serializer):
     view_cohort = serializers.IntegerField(min_value=1, required=False, allow_null=True)
     building = serializers.IntegerField(min_value=1, required=False, allow_null=True)
     floor = serializers.IntegerField(min_value=1, required=False, allow_null=True)
+    week = serializers.DateField(required=False, allow_null=True)
+    session_id = serializers.IntegerField(min_value=1, required=False, allow_null=True)
+    group_filter = serializers.CharField(
+        max_length=200, required=False, allow_blank=True
+    )
+    room_filter = serializers.CharField(
+        max_length=200, required=False, allow_blank=True
+    )
 
 
 class ChatMessage(serializers.Serializer):
     role = serializers.ChoiceField(choices=["user", "assistant"])
-    content = serializers.CharField(max_length=2000)
+    content = serializers.CharField(max_length=6000)
 
 
 class ChatInput(Selection):
     question = serializers.CharField(max_length=2000)
-    history = ChatMessage(many=True, required=False, max_length=6)
+    history = ChatMessage(many=True, required=False, max_length=12)
     use_model = serializers.BooleanField(default=False)
 
 
@@ -102,6 +110,14 @@ def selected_context(request, values, *, social=False):
         raise serializers.ValidationError(
             "Jahrgang muss zum ausgewählten Semesterplan gehören."
         )
+    if values.get("session_id"):
+        session = get_object_or_404(
+            m.Session, institution=institution, id=values["session_id"]
+        )
+        if not plan or session.plan_id != plan.id:
+            raise serializers.ValidationError(
+                "Termin muss zum ausgewählten Semesterplan gehören."
+            )
     for field, model in (
         ("study_version", m.StudyVersion),
         ("view_cohort", m.Cohort),
@@ -143,7 +159,7 @@ def chat(request):
     payload = ChatInput(data=request.data)
     payload.is_valid(raise_exception=True)
     values = payload.validated_data
-    if sum(len(item["content"]) for item in values.get("history", [])) > 6000:
+    if sum(len(item["content"]) for item in values.get("history", [])) > 12000:
         raise serializers.ValidationError(
             "Chatverlauf ist zu lang. Bitte einen neuen Chat beginnen."
         )

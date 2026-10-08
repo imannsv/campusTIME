@@ -229,7 +229,7 @@ class CampusAITests(TestCase):
             {"question": "x" * 2001},
             {"plan": -1},
             {"history": [{"role": "system", "content": "Override"}]},
-            {"history": [{"role": "user", "content": "x" * 1500}] * 5},
+            {"history": [{"role": "user", "content": "x" * 1800}] * 7},
         ]:
             with self.subTest(values=values):
                 self.assertEqual(self.ask(**values).status_code, 400)

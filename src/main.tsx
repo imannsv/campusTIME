@@ -4,6 +4,7 @@ import App from "./App";
 import "./styles.css";
 import "./current-time.css";
 import "./planning-workspace.css";
+import "./freddy.css";
 import "@fontsource/dm-sans/400.css";
 import "@fontsource/dm-sans/500.css";
 import "@fontsource/dm-sans/600.css";

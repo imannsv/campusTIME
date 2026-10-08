@@ -1,5 +1,10 @@
 import knowledge from "../shared/campus-ai-knowledge.json";
-import { socialReply, resolveFAQ, isFollowup } from "./campus-ai-language";
+import {
+  socialReply,
+  resolveFAQ,
+  isFollowup,
+  normalizeQuestion,
+} from "./campus-ai-language";
 import type { Row } from "./api";
 import { replyActions } from "./campus-ai-actions";
 
@@ -55,15 +60,24 @@ export function campusHelp(
       actions: [],
       auto_action: null,
     };
-  const normalized = question.toLocaleLowerCase("de");
+  const normalized = normalizeQuestion(question);
   const guides = knowledge
     .map((item) => ({
       ...item,
-      score: item.keywords.filter((word) => normalized.includes(word)).length,
+      score: item.keywords.filter((word) =>
+        normalized
+          .split(/[^a-z0-9]+/)
+          .some(
+            (token) =>
+              token === normalizeQuestion(word) ||
+              (normalizeQuestion(word).length >= 4 &&
+                token.startsWith(normalizeQuestion(word))),
+          ),
+      ).length,
     }))
     .filter((item) => item.score)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 3);
+    .slice(0, 1);
   if (!guides.length) guides.push({ ...knowledge[0], score: 0 });
   return {
     answer:
@@ -73,8 +87,8 @@ export function campusHelp(
       guides.map((item) => item.answer).join("\n\n") +
       (context.notices.length
         ? "\n\nAktuelle Planungshinweise:\n" +
-          context.notices
-            .slice(0, 4)
+          (context.proactive?.notices || [])
+            .slice(0, 1)
             .map((item: Row) => "• " + item.text)
             .join("\n")
         : ""),

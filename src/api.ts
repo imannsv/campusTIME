@@ -112,10 +112,15 @@ export async function api(
   path: string,
   method = "GET",
   body?: any,
+  options: { signal?: AbortSignal } = {},
 ): Promise<any> {
+  options.signal?.throwIfAborted();
   if (DEMO_MODE) {
     const { demoApi } = await import("./demo");
-    return demoApi(path, method, body);
+    options.signal?.throwIfAborted();
+    const result = await demoApi(path, method, body);
+    options.signal?.throwIfAborted();
+    return result;
   }
   const csrf =
     document.cookie
@@ -126,6 +131,7 @@ export async function api(
       .join("=") || "";
   const form = body instanceof FormData;
   const response = await fetch("/api/" + path, {
+    signal: options.signal,
     method,
     credentials: "same-origin",
     headers: {

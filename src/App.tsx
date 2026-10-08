@@ -2202,6 +2202,14 @@ function Workspace() {
           step: page === "setup" ? setupStep : 0,
           ...(page === "setup" && setupStep >= 2 ? studyContext : {}),
           ...(page === "map" ? roomContext : {}),
+          ...(page === "schedule"
+            ? {
+                week,
+                session_id: scheduleEditor?.record?.id || null,
+                group_filter: groupFilter,
+                room_filter: roomFilter,
+              }
+            : {}),
         }}
       />
       {toast && (

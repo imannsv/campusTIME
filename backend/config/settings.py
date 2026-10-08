@@ -93,7 +93,7 @@ LOCAL_WORKER = os.getenv("LOCAL_WORKER", "1" if DEBUG else "0") == "1"
 CAMPUS_AI_ENABLED = os.getenv("CAMPUS_AI_ENABLED", "1" if DEBUG else "0") == "1"
 CAMPUS_AI_URL = os.getenv("CAMPUS_AI_URL", "http://127.0.0.1:11434")
 CAMPUS_AI_MODEL = os.getenv("CAMPUS_AI_MODEL", "qwen3.5:2b-q4_K_M")
-CAMPUS_AI_TIMEOUT = min(max(int(os.getenv("CAMPUS_AI_TIMEOUT", "90")), 5), 120)
+CAMPUS_AI_TIMEOUT = min(max(int(os.getenv("CAMPUS_AI_TIMEOUT", "30")), 5), 120)
 CAMPUS_AI_THINK = os.getenv("CAMPUS_AI_THINK", "0") == "1"
 MAP_STYLE_URL = os.getenv(
     "MAP_STYLE_URL", "https://tiles.openfreemap.org/styles/liberty"

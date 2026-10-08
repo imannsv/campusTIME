@@ -10,6 +10,9 @@ import {
   Send,
   X,
   ChevronDown,
+  Maximize2,
+  Minimize2,
+  Square,
 } from "lucide-react";
 import { api, type Row, DEMO_MODE } from "./api";
 import FreddyAvatar from "./FreddyAvatar";
@@ -21,6 +24,7 @@ import {
   isFollowup,
 } from "./campus-ai-language";
 import { campusHelp } from "./campus-ai-help";
+import FreddyAnswer from "./FreddyAnswer";
 
 const questions = [
   "Wie lege ich einen neuen Jahrgang an?",
@@ -43,6 +47,7 @@ export default function CampusAI({
   view: Row;
 }) {
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [activated, setActivated] = useState(false);
   const [picker, setPicker] = useState<"plan" | "options" | null>(null);
   const panel = useRef<HTMLElement>(null);
@@ -64,6 +69,7 @@ export default function CampusAI({
     if (open) input.current?.focus();
   }, [open]);
   function close() {
+    cancelRequest();
     setPicker(null);
     setOpen(false);
     launcher.current?.focus();
@@ -71,8 +77,17 @@ export default function CampusAI({
   const [cohortId, setCohortId] = useState("");
   const [context, setContext] = useState<Row | null>(null),
     [status, setStatus] = useState<Row | null>(null);
-  const [question, setQuestion] = useState(""),
-    [messages, setMessages] = useState<Row[]>([]);
+  const [conversations, setConversations] = useState<
+    Record<string, { messages: Row[]; question: string }>
+  >({});
+  const request = useRef<{
+    controller: AbortController;
+    scope: string;
+    question: string;
+    messageId: number;
+  } | null>(null);
+  const sequence = useRef(0);
+  const [elapsed, setElapsed] = useState(0);
   const [actionFeedback, setActionFeedback] = useState("");
   const [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true),
@@ -84,19 +99,81 @@ export default function CampusAI({
   const plan = data.plans?.find((item) => item.id === selectedPlanId);
   const cohort =
     plan?.cohort || (!selectedPlanId ? Number(cohortId) || null : null);
-  const selection = { plan: selectedPlanId, cohort, ...view };
+  const scope = selectedPlanId
+    ? `plan:${selectedPlanId}`
+    : `cohort:${cohort || "general"}`;
+  const messages = conversations[scope]?.messages || [];
+  const question = conversations[scope]?.question || "";
+  function setMessages(value: Row[] | ((current: Row[]) => Row[])) {
+    setConversations((current) => {
+      const entry = current[scope] || { messages: [], question: "" };
+      return {
+        ...current,
+        [scope]: {
+          ...entry,
+          messages: typeof value === "function" ? value(entry.messages) : value,
+        },
+      };
+    });
+  }
+  function setQuestion(value: string | ((current: string) => string)) {
+    setConversations((current) => {
+      const entry = current[scope] || { messages: [], question: "" };
+      return {
+        ...current,
+        [scope]: {
+          ...entry,
+          question: typeof value === "function" ? value(entry.question) : value,
+        },
+      };
+    });
+  }
+  function cancelRequest(
+    reason = "Antwort abgebrochen. Deine Frage bleibt zur erneuten Bearbeitung erhalten.",
+  ) {
+    const pending = request.current;
+    if (!pending) return;
+    request.current = null;
+    pending.controller.abort();
+    generation.current++;
+    setBusy(false);
+    setConversations((current) => {
+      const entry = current[pending.scope] || { messages: [], question: "" };
+      return {
+        ...current,
+        [pending.scope]: {
+          ...entry,
+          question: entry.question || pending.question,
+          messages: entry.messages.map((message) =>
+            message.id === pending.messageId
+              ? { ...message, unanswered: true }
+              : message,
+          ),
+        },
+      };
+    });
+    setActionFeedback(reason);
+  }
+  const selection = {
+    ...view,
+    // The independently selected chat plan must not inherit a term from another plan.
+    ...(selectedPlanId !== planId ? { session_id: null } : {}),
+    plan: selectedPlanId,
+    cohort,
+  };
   const query = new URLSearchParams();
   if (selectedPlanId) query.set("plan", String(selectedPlanId));
   if (cohort) query.set("cohort", String(cohort));
-  const selectionQuery = query.toString();
-  Object.entries(view).forEach(([key, value]) => {
+  Object.entries(selection).forEach(([key, value]) => {
     if (value !== null && value !== undefined) query.set(key, String(value));
   });
   const contextQuery = query.toString();
   useEffect(() => {
     if (!activated) return;
     let active = true;
-    api("campusai/status/")
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 15000);
+    api("campusai/status/", "GET", undefined, { signal: controller.signal })
       .then((result) => {
         if (active) {
           setStatus(result);
@@ -108,39 +185,68 @@ export default function CampusAI({
           setStatus({ ready: false, reason: err.message });
           setUseModel(false);
         }
-      });
+      })
+      .finally(() => window.clearTimeout(timer));
     return () => {
       active = false;
+      window.clearTimeout(timer);
+      controller.abort();
     };
   }, [reload, activated]);
   useEffect(() => {
     if (!activated) return;
     let active = true;
+    cancelRequest(
+      "Ansicht gewechselt. Die laufende Antwort wurde abgebrochen; deine Frage bleibt erhalten.",
+    );
     generation.current++;
     setBusy(false);
     setLoading(true);
     setError("");
     setContext(null);
-    api(`campusai/context/?${contextQuery}`)
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 15000);
+    api(`campusai/context/?${contextQuery}`, "GET", undefined, {
+      signal: controller.signal,
+    })
       .then((result) => {
         if (active) setContext(result);
       })
       .catch((err) => {
-        if (active) setError(err.message);
+        if (active)
+          setError(
+            controller.signal.aborted
+              ? "Die Datenprüfung dauert zu lange. Aktualisiere die Hinweise und versuche es erneut."
+              : err.message,
+          );
       })
       .finally(() => {
         if (active) setLoading(false);
+        window.clearTimeout(timer);
       });
     return () => {
       active = false;
       generation.current++;
+      window.clearTimeout(timer);
+      controller.abort();
     };
   }, [contextQuery, refresh, reload, activated]);
   useEffect(() => {
-    setMessages([]);
-    setQuestion("");
     setActionFeedback("");
-  }, [selectionQuery]);
+  }, [scope]);
+  useEffect(() => {
+    if (!busy) {
+      setElapsed(0);
+      return;
+    }
+    const started = Date.now();
+    const timer = window.setInterval(
+      () => setElapsed(Math.floor((Date.now() - started) / 1000)),
+      1000,
+    );
+    return () => window.clearInterval(timer);
+  }, [busy]);
+  useEffect(() => () => request.current?.controller.abort(), []);
   useEffect(() => {
     if (conversation.current)
       conversation.current.scrollTop =
@@ -156,12 +262,19 @@ export default function CampusAI({
     }
   }
   async function ask(value: string) {
-    if (!value.trim() || value.length > 2000) return;
+    if (!value.trim() || value.length > 2000 || busy) return;
     // Static greetings never wait for the server, planning checks or a model.
     const social = socialReply(value, context?.revision);
-    const history = messages
-      .slice(-6)
-      .map(({ role, content }) => ({ role, content: content.slice(0, 950) }));
+    let historySize = 0;
+    const history: { role: string; content: string }[] = [];
+    for (const message of messages
+      .filter((item) => !item.unanswered)
+      .slice(-12)
+      .reverse()) {
+      if (historySize + message.content.length > 12000) break;
+      history.unshift({ role: message.role, content: message.content });
+      historySize += message.content.length;
+    }
     if (
       social ||
       (!useModel &&
@@ -187,19 +300,41 @@ export default function CampusAI({
     }
     if (busy || loading || !context) return;
     const current = generation.current;
+    const controller = new AbortController();
+    const messageId = ++sequence.current;
+    request.current = { controller, scope, question: value, messageId };
+    const timer = window.setTimeout(() => {
+      cancelRequest(
+        "Die Antwort dauert zu lange. Du kannst die Frage erneut senden oder Schnellhilfe nutzen.",
+      );
+    }, 45000);
     setBusy(true);
     setPicker(null);
     setError("");
     setActionFeedback("");
     setQuestion("");
-    setMessages((items) => [...items, { role: "user", content: value.trim() }]);
+    setMessages((items) => [
+      ...items.filter(
+        (item) => !(item.unanswered && item.content === value.trim()),
+      ),
+      { id: messageId, role: "user", content: value.trim() },
+    ]);
     try {
-      const result = await api("campusai/chat/", "POST", {
-        ...selection,
-        question: value.trim(),
-        history,
-        use_model: useModel,
-      });
+      const result = await api(
+        "campusai/chat/",
+        "POST",
+        {
+          ...selection,
+          question: value.trim(),
+          history,
+          use_model: useModel,
+        },
+        { signal: controller.signal },
+      );
+      if (typeof result.answer !== "string" || !result.answer.trim())
+        throw new Error(
+          "Freddy hat keine gültige Antwort geliefert. Deine Frage bleibt erhalten; versuche es erneut.",
+        );
       if (generation.current === current) {
         setMessages((items) => [
           ...items,
@@ -214,10 +349,22 @@ export default function CampusAI({
       }
     } catch (err) {
       if (generation.current === current) {
-        setError((err as Error).message);
-        setQuestion(value);
+        setError(
+          (err as Error).message ||
+            "Die Verbindung ist fehlgeschlagen. Sende deine Frage erneut.",
+        );
+        setQuestion((draft) => draft || value);
+        setMessages((items) =>
+          items.map((message) =>
+            message.id === messageId
+              ? { ...message, unanswered: true }
+              : message,
+          ),
+        );
       }
     } finally {
+      window.clearTimeout(timer);
+      if (request.current?.controller === controller) request.current = null;
       if (generation.current === current) setBusy(false);
     }
   }
@@ -248,7 +395,7 @@ export default function CampusAI({
         <section
           ref={panel}
           id="campus-ai-chat"
-          className="campus-ai"
+          className={`campus-ai${expanded ? " campus-ai-expanded" : ""}`}
           hidden={!open}
           role="dialog"
           aria-modal="false"
@@ -275,6 +422,16 @@ export default function CampusAI({
               </div>
             </div>
             <div className="campus-ai-header-actions">
+              <button
+                className="campus-ai-icon"
+                aria-label={
+                  expanded ? "Freddy verkleinern" : "Freddy vergrößern"
+                }
+                aria-pressed={expanded}
+                onClick={() => setExpanded(!expanded)}
+              >
+                {expanded ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+              </button>
               <button
                 ref={optionsButton}
                 className="campus-ai-icon"
@@ -325,6 +482,19 @@ export default function CampusAI({
           <div className="campus-ai-view" aria-live="polite">
             {context?.view?.label || "Ansicht laden …"}
           </div>
+          {context?.calendar && view.page === "schedule" && (
+            <div className="campus-ai-calendar-context">
+              {context.calendar.selected_session
+                ? `Termin: ${context.calendar.selected_session.name}`
+                : `Woche ab ${context.calendar.week || view.week}`}
+              {!!context.calendar.room_filter && (
+                <span>Raum: {context.calendar.room_filter}</span>
+              )}
+              {!!context.calendar.group_filter && (
+                <span>Gruppe: {context.calendar.group_filter}</span>
+              )}
+            </div>
+          )}
           {picker === "plan" && (
             <div
               id="campus-ai-plan-picker"
@@ -440,6 +610,11 @@ export default function CampusAI({
           {error && (
             <div className="campus-ai-error" role="alert">
               {error}
+              {!busy && (
+                <button onClick={() => setReload((value) => value + 1)}>
+                  Hinweise erneut laden
+                </button>
+              )}
             </div>
           )}
           <div
@@ -523,13 +698,24 @@ export default function CampusAI({
                 <strong>
                   {message.role === "user"
                     ? "Du"
-                    : message.intent
-                      ? "Freddy"
-                      : message.mode === "local"
-                        ? "Freddy · lokale KI"
-                        : "Freddy · Schnellhilfe"}
+                    : message.mode === "verified"
+                      ? "Freddy · Datenprüfung"
+                      : message.intent
+                        ? "Freddy"
+                        : message.mode === "local"
+                          ? "Freddy · lokale KI"
+                          : "Freddy · Schnellhilfe"}
                 </strong>
-                <div className="campus-ai-answer">{message.content}</div>
+                {message.role === "assistant" ? (
+                  <FreddyAnswer content={message.content} />
+                ) : (
+                  <div className="campus-ai-answer">{message.content}</div>
+                )}
+                {message.unanswered && (
+                  <small>
+                    Noch nicht beantwortet · du kannst die Frage erneut senden.
+                  </small>
+                )}
                 {message.service_note && (
                   <p className="campus-ai-service-note">
                     {message.service_note}
@@ -552,10 +738,11 @@ export default function CampusAI({
                   </div>
                 )}
                 {message.sources?.length > 0 && (
-                  <div
+                  <details
                     className="campus-ai-sources"
                     aria-label="Verwendete Hilfe"
                   >
+                    <summary>Verwendete Anleitung</summary>
                     {message.sources.map((source: Row) => (
                       <button
                         key={source.id}
@@ -569,7 +756,7 @@ export default function CampusAI({
                         <ArrowRight size={12} />
                       </button>
                     ))}
-                  </div>
+                  </details>
                 )}
                 {message.role === "assistant" && !message.intent && (
                   <small>
@@ -607,12 +794,23 @@ export default function CampusAI({
                 </div>
               )}
             {busy && (
-              <p className="campus-ai-working" role="status">
-                <LoaderCircle className="spin" size={17} />
-                {useModel
-                  ? "Freddy prüft deine Frage und überlegt …"
-                  : "Hilfe zusammenstellen …"}
-              </p>
+              <div className="campus-ai-working">
+                <p role="status">
+                  <LoaderCircle className="spin" size={17} />
+                  {useModel
+                    ? "Freddy prüft deine Frage und überlegt …"
+                    : "Hilfe zusammenstellen …"}
+                  {elapsed > 1 && <span>{elapsed} s</span>}
+                </p>
+                <button
+                  type="button"
+                  className="campus-ai-stop"
+                  onClick={() => cancelRequest()}
+                >
+                  <Square size={14} />
+                  Antwort abbrechen
+                </button>
+              </div>
             )}
           </div>
           <form className="campus-ai-composer" onSubmit={submit}>
@@ -644,6 +842,7 @@ export default function CampusAI({
                 aria-label="Frage senden"
                 title="Frage senden"
                 disabled={
+                  busy ||
                   !question.trim() ||
                   question.length > 2000 ||
                   (!socialReply(question) &&
@@ -667,6 +866,7 @@ export default function CampusAI({
                     ? "Lokale KI · Antworten prüfen"
                     : "Anleitung und geprüfte Hinweise"}
               </small>
+              <small>Gespräch je Plan · nur in dieser Sitzung</small>
             </div>
           </form>
         </section>

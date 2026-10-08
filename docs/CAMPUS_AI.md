@@ -17,6 +17,9 @@ Die Kontextauswahl allein verändert nicht den Plan in der Arbeitsansicht. Eine
 anschließend ausgeführte Aktion zur Stundenplanung, zu Veranstaltungen oder
 Prüfungen öffnet den gewählten Plan. Beim Wechsel des aktiven Arbeitsplans
 übernimmt der Chat den neuen Plan.
+Gespräch und offene Eingabe bleiben für jeden Plan bzw. Jahrgang getrennt erhalten.
+Der Chat lässt sich vergrößern; lange Antworten lassen sich vollständig aufklappen.
+Anleitungsquellen liegen unter „Verwendete Anleitung“.
 Freddy kann Ansichten öffnen, Einrichtungsschritte auswählen und Formulare mit
 passenden Vorgaben vorbereiten. „Öffne Prüfungen“, „Öffne die Jahrgänge“ und
 „Lege einen Raum an“ werden als eindeutige Befehle direkt ausgeführt. Bei
@@ -79,6 +82,17 @@ oder überschrittene Abgabefristen. Für Jahrgänge mit freigegebener Lehrplanve
 werden Semesterbelastung und Voraussetzungen geprüft.
 
 Passende Raumkandidaten sind noch kein Nachweis zeitlicher Verfügbarkeit.
+Konkrete Fragen nach freien Räumen mit Datum, Startzeit, Endzeit oder Dauer und
+Personenzahl werden separat aus dem Datenbestand geprüft. Diese Antworten tragen
+„Datenprüfung“ und werden nicht vom Sprachmodell formuliert. Berücksichtigt werden
+Kapazität, hinterlegte Ausstattung, Termine des ausgewählten Entwurfs, veröffentlichte
+Belegungen anderer Pläne und wiederholte Raumsperren. Ohne ausgewählten Entwurf
+werden die veröffentlichten Belegungen geprüft. Unbekannte Bedingungen oder mehrere
+Zeitfenster führen zur Rückfrage. Das bestätigt keine organisatorische Freigabe.
+„Warum passt dieser Termin nicht?“ zeigt die aktuellen Prüfergebnisse des im Kalender
+ausgewählten, gespeicherten Termins. Noch nicht gespeicherte Formularänderungen
+sind kein Teil dieser Prüfung. Kalenderwoche und aktive Raum-/Gruppenfilter sind
+sichtbarer Kontext; die Raumabfrage beschränkt sich nur auf ausdrücklich genannte Räume.
 Fehlende Hinweise bestätigen nicht die vollständige fachliche oder organisatorische
 Freigabe eines Plans. Vorschläge werden über die vorhandenen Planungsansichten
 geprüft und übernommen.
@@ -126,18 +140,23 @@ Modelle werden abgewiesen.
 
 Backend-Einstellungen:
 
-| Variable | Bedeutung |
-|---|---|
-| `CAMPUS_AI_ENABLED` | Bei `DEBUG=1` standardmäßig aktiv; im Produktionsbetrieb standardmäßig aus. |
-| `CAMPUS_AI_URL` | Standard: `http://127.0.0.1:11434`. |
-| `CAMPUS_AI_MODEL` | Standard: `qwen3.5:2b-q4_K_M`; installierter lokaler Modellname. Bestehende andere lokale Modelle bleiben konfigurierbar. |
-| `CAMPUS_AI_TIMEOUT` | Standard 90 Sekunden; erlaubter Bereich 5–120 Sekunden. |
-| `CAMPUS_AI_THINK` | Standard `0`: Antworten stammen vom Sprachmodell ohne zusätzlichen Thinking-Durchgang. `1` aktiviert ihn bei anspruchsvolleren Fragen, sofern das Modell dies unterstützt. Auf CPU kann das erheblich länger dauern. |
+| Variable            | Bedeutung                                                                                                                                                                                                            |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CAMPUS_AI_ENABLED` | Bei `DEBUG=1` standardmäßig aktiv; im Produktionsbetrieb standardmäßig aus.                                                                                                                                          |
+| `CAMPUS_AI_URL`     | Standard: `http://127.0.0.1:11434`.                                                                                                                                                                                  |
+| `CAMPUS_AI_MODEL`   | Standard: `qwen3.5:2b-q4_K_M`; installierter lokaler Modellname. Bestehende andere lokale Modelle bleiben konfigurierbar.                                                                                            |
+| `CAMPUS_AI_TIMEOUT` | Standard 30 Sekunden; erlaubter Bereich 5–120 Sekunden.                                                                                                                                                              |
+| `CAMPUS_AI_THINK`   | Standard `0`: Antworten stammen vom Sprachmodell ohne zusätzlichen Thinking-Durchgang. `1` aktiviert ihn bei anspruchsvolleren Fragen, sofern das Modell dies unterstützt. Auf CPU kann das erheblich länger dauern. |
 
 Es wird höchstens eine Modellantwort pro Backend-Prozess gleichzeitig erzeugt.
 Bei mehreren Serverprozessen ist dies keine globale Warteschlange. Nicht
 erreichbare, beschäftigte oder zu langsame Modelle führen zur gekennzeichneten
 Schnellhilfe. Gekürzte Modellantworten werden gekennzeichnet.
+Im Browser zeigt Freddy die Wartezeit und „Antwort abbrechen“. Nach 45 Sekunden
+bricht der Browser die Anfrage ab und erhält die Frage für einen erneuten Versuch.
+Schließen oder Kontextwechsel brechen ebenfalls ab; verspätete Antworten werden
+verworfen. Ein Browser-Abbruch beendet eine bereits laufende Berechnung im
+Modelldienst nicht zuverlässig. Es gibt weiterhin keine Ausgabe einzelner Tokens.
 Das Modell bleibt zehn Minuten geladen, damit Folgefragen keinen erneuten
 Kaltstart benötigen. Auf einem Rechner ohne geeignete GPU können KI-Antworten
 trotzdem deutlich länger dauern als die Schnellhilfe. Thinking und JSON-Antworten
@@ -148,20 +167,23 @@ und [Structured-Outputs](https://docs.ollama.com/capabilities/structured-outputs
 
 Alle echten Backend-Anfragen erfordern Anmeldung und eine zugeordnete Einrichtung.
 Der Kontext enthält die aktuelle Ansicht, Einrichtungszahlen, Plan-/Jahrgangsnamen, Semesterbelastung,
-Planungshinweise sowie begrenzte Raum- und Veranstaltungslisten. Einzelne
+Planungshinweise sowie Raum- und Veranstaltungslisten. Einzelne
 Studierenden- und Lehrendennamen sowie E-Mail-Adressen werden nicht in den
 Modellkontext übernommen. Die aktuell angemeldete Einrichtung liefert den Kontext;
-fremde Plan-, Jahrgangs-, Versions-, Bereichs- und Etagenauswahlen werden abgewiesen,
+fremde Plan-, Termin-, Jahrgangs-, Versions-, Bereichs- und Etagenauswahlen werden abgewiesen,
 bevor das Modell aufgerufen wird. Raum-/Veranstaltungsnamen können dennoch interne
 Informationen enthalten; der Modelldienst muss unter eigener Kontrolle bleiben.
 
-Der Modellkontext ist ein Ausschnitt: höchstens vier allgemeine Hinweise und zwei
-Hinweise zur aktuellen Ansicht, acht Semester, acht Veranstaltungen und acht Räume.
+Der Modellkontext ist ein Ausschnitt: höchstens vier zur Frage passende allgemeine
+Hinweise und zwei Hinweise zur aktuellen Ansicht, acht Semester, acht Veranstaltungen
+und acht Räume. Genannte Datensätze werden bevorzugt; Gesamtzahlen und Angaben zur
+Abdeckung kennzeichnen ausgelassene Datensätze. Die separate Raumprüfung verwendet
+alle Räume der Einrichtung. Der ausgewählte Termin wird gesondert übergeben.
 Hinweistexte werden auf 300 Zeichen begrenzt. Bei Bedienfragen mit „Wie …“ werden
 Raum- und Veranstaltungslisten weggelassen; es werden nur Hinweise zur aktuellen
 Ansicht mitgeschickt. Ein geprüftes Frage-Antwort-
 Beispiel zum erkannten Thema zeigt dem Modell die gewünschten Begriffe und Schritte.
-Die Datenprüfung zeigt bis zu 40 Hinweise mit Gesamtzahl an.
+Der Kontext enthält die vollständige Liste der Planungshinweise mit Gesamtzahl.
 Ein Backend-Frageaufruf berechnet die Fakten erneut; Standardfragen im Browser
 verwenden den zuletzt geladenen Kontext. **Hinweise aktualisieren**
 lädt die sichtbaren Prüfungen neu. Antworten tragen den verwendeten Datenstand;
@@ -173,10 +195,13 @@ des bisherigen Verlaufs. Ein Ansichtswechsel verwirft eine noch laufende Antwort
 damit sie keine Aktionen mit veraltetem Seitenkontext ausführt.
 Der Chat lässt sich per Schließen-Button, Icon
 oder Escape im Fenster schließen; der Fokus kehrt zum Icon zurück.
-Plan-/Jahrgangswechsel, Neuladen der Seite und Abmelden leeren den Verlauf.
-Er wird nicht als Chat in der Datenbank gespeichert. Für Anschlussfragen werden höchstens sechs
-vorherige Nachrichten an das lokale Modell übergeben. Backend: 2.000 Zeichen
-pro Frage, maximal sechs Verlaufsnachrichten und 6.000 Zeichen Verlauf,
+Plan-/Jahrgangswechsel stellen das jeweilige Gespräch wieder her. Neuladen der Seite
+und Abmelden leeren alle Gespräche. Sie werden weder in der Datenbank noch im
+Browser-Speicher abgelegt. Für Anschlussfragen werden höchstens zwölf vorherige,
+beantwortete Nachrichten innerhalb eines Budgets von 12.000 Zeichen übergeben.
+Es werden ganze Nachrichten erhalten; abgebrochene Fragen gehen nicht in den Kontext ein.
+Backend: 2.000 Zeichen pro Frage, maximal zwölf Verlaufsnachrichten,
+6.000 Zeichen je Verlaufsnachricht und 12.000 Zeichen Verlauf insgesamt,
 zwölf Chat-Anfragen pro Minute je angemeldetem Benutzer. Es werden keine
 Schreibwerkzeuge an das Modell übergeben. Das Modell liefert die finale Antwort
 und bis zu drei vorgeschlagene Aktionskennungen als JSON. Nur bekannte Kennungen
