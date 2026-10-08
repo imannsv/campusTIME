@@ -18,12 +18,14 @@ export function Modal({
   children,
   onClose,
   wide = false,
+  busy = false,
 }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
   onClose: () => void;
   wide?: boolean;
+  busy?: boolean;
 }) {
   const section = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -82,6 +84,7 @@ export function Modal({
             className="icon-button"
             aria-label="Schließen"
             onClick={onClose}
+            disabled={busy}
           >
             <X size={20} />
           </button>
@@ -742,14 +745,18 @@ export function RecordForm({
     onStateChange?.(dirty, busy);
   }, [dirty, busy, onStateChange]);
   useEffect(() => {
-    if (presentation !== "panel" || (!dirty && !busy)) return;
+    if (
+      (presentation !== "panel" && resource !== "sessions") ||
+      (!dirty && !busy)
+    )
+      return;
     const warn = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = "";
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [presentation, dirty, busy]);
+  }, [presentation, resource, dirty, busy]);
   const change = (key: string, value: any) =>
     setValues((v) => ({
       ...v,
@@ -831,7 +838,7 @@ export function RecordForm({
     "repeat_interval",
   ];
   const displayedFields =
-    presentation === "panel"
+    resource === "sessions"
       ? [...fields].sort((a, b) => {
           const order = (name: string) =>
             sessionOrder.includes(name)
@@ -843,7 +850,7 @@ export function RecordForm({
   return (
     <Container
       title={
-        presentation === "panel"
+        resource === "sessions"
           ? record
             ? "Termin bearbeiten"
             : "Termin hinzufügen"
@@ -852,7 +859,7 @@ export function RecordForm({
             : `${labels[resource]} hinzufügen`
       }
       subtitle={
-        presentation === "panel"
+        resource === "sessions"
           ? record?.name || "Neuen Termin im Entwurf anlegen."
           : defaults.assessment_template
             ? "Prüfungsvorlage übernehmen. Teilnehmer, Zeitraum und Aufsichten prüfen."
