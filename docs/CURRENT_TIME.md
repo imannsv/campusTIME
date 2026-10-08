@@ -20,10 +20,11 @@ Anzeigen behalten die fest konfigurierte Woche-, Heute- oder Morgen-Ansicht.
 QA läuft mit isolierten Browser-Demodaten:
 
 ```powershell
-$env:DEMO_TEST_URL = 'http://127.0.0.1:5174'
 npm.cmd test
-Remove-Item Env:DEMO_TEST_URL
 node --test tests/timetable-layout.test.ts
 npm.cmd run build
 npm.cmd run build:demo
 ```
+
+`npm test` startet und beendet seine eigene fertig gebaute Demo-Vorschau auf
+Port 5175. Die manuell gestartete lokale Anwendung wird dafür nicht verwendet.

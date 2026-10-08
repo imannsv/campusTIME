@@ -13,3 +13,4 @@ staticfiles/
 .vercel/
 test-results/
 playwright-report/
+.playwright/

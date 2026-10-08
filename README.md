@@ -36,6 +36,16 @@ Für den umfangreichen Produkttest anschließend `seed_showcase` ausführen. Die
 
 Alternativ `npm.cmd run build` ausführen und die vollständige Anwendung über http://127.0.0.1:8000 öffnen. Ohne Redis nutzt die lokale Entwicklung einen Hintergrundthread; im Dockerbetrieb werden Celery-Worker verwendet.
 
+Für eine bereits eingerichtete lokale Umgebung startet `npm.cmd run dev:local`
+Oberfläche und Backend gemeinsam. Strg+C beendet beide Server; fällt einer aus,
+wird auch der andere beendet. Belegte Ports werden ausdrücklich gemeldet und
+nicht automatisch gewechselt. Die Datenbank wird dabei weder neu angelegt noch
+mit Beispieldaten befüllt. Nach Änderungen an Python-Dateien diesen gemeinsamen
+Start neu ausführen; die Oberfläche lädt Änderungen weiterhin automatisch.
+
+`npm.cmd test` baut und startet eine eigene Browser-Demo für die Tests.
+Die LFH-Daten werden dabei nicht verwendet. Details: [Browser-Demo](docs/BROWSER_DEMO.md).
+
 ## Geführte Einrichtung
 
 Unter **Einrichtung & Studienstruktur**: Räume → Lehrende → Studiengänge →
