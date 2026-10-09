@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, RefreshCw, Search } from "lucide-react";
 import { api, Row } from "./api";
 import { Modal } from "./components";
 import MiniCalendar from "./MiniCalendar";
+import TeacherAvailabilityDialog from "./TeacherAvailabilityDialog";
 import { dayAxis, resourceSegments, timelineHours } from "./resource-timeline";
 import "./resource-overview.css";
 
@@ -15,6 +16,7 @@ type Props = {
   query?: string;
   roomIds?: number[];
   onEdit: (resource: string, record?: Row, defaults?: Row) => void;
+  onChanged?: () => void;
 };
 const statusLabels: Record<string, string> = {
   published: "Freigegeben",
@@ -35,6 +37,7 @@ export default function ResourceOverview({
   query = "",
   roomIds,
   onEdit,
+  onChanged,
 }: Props) {
   const [date, setDate] = useState(() =>
     DateTime.now().setZone(zone).toISODate()!,
@@ -50,6 +53,12 @@ export default function ResourceOverview({
   const [loading, setLoading] = useState(true);
   const [reload, setReload] = useState(0);
   const [selected, setSelected] = useState<Row | null>(null);
+  const [teacherEditor, setTeacherEditor] = useState<{
+    teacher: Row;
+    mode: "availability" | "block";
+  } | null>(null);
+  const [notice, setNotice] = useState("");
+  const closeTeacherEditor = useCallback(() => setTeacherEditor(null), []);
   const [openingEditor, setOpeningEditor] = useState(false);
   const editorRequest = useRef<AbortController | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
@@ -209,6 +218,11 @@ export default function ResourceOverview({
         </span>
       </div>
       <div className="resource-overview-card">
+        {notice && (
+          <p className="resource-empty" role="status">
+            {notice}
+          </p>
+        )}
         <div className="resource-period-controls">
           <div role="group" aria-label="Zeitraum" className="resource-presets">
             {kind === "teachers" && (
@@ -405,7 +419,7 @@ export default function ResourceOverview({
               </div>
               {displayed.map(({ resource, segments }) => {
                 const height = Math.max(
-                  84,
+                  kind === "teachers" ? 152 : 84,
                   (Math.max(-1, ...segments.map((segment) => segment.lane)) +
                     1) *
                     (mode === "week" ? 88 : 68) +
@@ -416,7 +430,7 @@ export default function ResourceOverview({
                     className="resource-timeline-row"
                     role="row"
                     key={resource.id}
-                    style={{ height }}
+                    style={{ minHeight: height }}
                   >
                     <div className="resource-label" role="rowheader">
                       <strong>{resource.name}</strong>
@@ -425,6 +439,41 @@ export default function ResourceOverview({
                           ? `${data.floors?.find((floor) => floor.id === resource.floor)?.name || "Stockwerk nicht erfasst"} · ${resource.capacity == null ? "Kapazität offen" : `${resource.capacity} Plätze`}`
                           : `${new Set(segments.map((segment) => `${segment.row.plan_id}:${segment.row.id}:${segment.row.start}`)).size} Termine`}
                       </small>
+                      {kind === "teachers" && (
+                        <>
+                          <small>
+                            {resource.availability?.unrestricted
+                              ? "Uneingeschränkt verfügbar"
+                              : "Zeitfenster"}
+                          </small>
+                          <div className="resource-teacher-actions">
+                            <button
+                              className="text-button"
+                              aria-label={`${resource.name}: Verfügbarkeit bearbeiten`}
+                              onClick={() =>
+                                setTeacherEditor({
+                                  teacher: resource,
+                                  mode: "availability",
+                                })
+                              }
+                            >
+                              Verfügbarkeit
+                            </button>
+                            <button
+                              className="text-button"
+                              aria-label={`${resource.name}: Blockzeit hinzufügen`}
+                              onClick={() =>
+                                setTeacherEditor({
+                                  teacher: resource,
+                                  mode: "block",
+                                })
+                              }
+                            >
+                              + Blockzeit
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                     <div className="resource-row-days">
                       {days.map((day) => (
@@ -443,7 +492,7 @@ export default function ResourceOverview({
                             .map((segment, index) => (
                               <button
                                 key={`${segment.row.id}:${segment.row.start}:${index}`}
-                                className={`resource-event ${segment.row.status} ${segment.row.kind === "exam" ? "exam" : ""}`}
+                                className={`resource-event ${segment.row.status} ${segment.row.kind === "exam" ? "exam" : ""} ${segment.row.cancelled ? "cancelled" : ""}`}
                                 style={{
                                   left: `${((segment.start - axes[day].start) / axes[day].duration) * 100}%`,
                                   width: `calc(${((segment.end - segment.start) / axes[day].duration) * 100}% - 2px)`,
@@ -451,7 +500,7 @@ export default function ResourceOverview({
                                     8 +
                                     segment.lane * (mode === "week" ? 88 : 68),
                                 }}
-                                aria-label={`${resource.name}: ${segment.row.name}, ${fmt(segment.row.start, zone, "dd.MM. HH:mm")} bis ${fmt(segment.row.end, zone, "dd.MM. HH:mm")}, ${statusLabels[segment.row.status]}`}
+                                aria-label={`${resource.name}: ${segment.row.name}, ${fmt(segment.row.start, zone, "dd.MM. HH:mm")} bis ${fmt(segment.row.end, zone, "dd.MM. HH:mm")}, ${segment.row.cancelled ? "Abgesagt" : statusLabels[segment.row.status]}`}
                                 title={`${segment.row.name}\n${fmt(segment.row.start, zone)}–${fmt(segment.row.end, zone)} · ${segment.row.room_names?.join(", ")}\n${statusLabels[segment.row.status]}`}
                                 onClick={() => setSelected(segment.row)}
                               >
@@ -459,7 +508,10 @@ export default function ResourceOverview({
                                   {fmt(segment.row.start, zone)}–
                                   {fmt(segment.row.end, zone)}
                                 </span>
-                                <strong>{segment.row.name}</strong>
+                                <strong>
+                                  {segment.row.cancelled && "Abgesagt · "}
+                                  {segment.row.name}
+                                </strong>
                                 <small>
                                   {kind === "teachers"
                                     ? segment.row.room_names?.join(", ")
@@ -494,10 +546,28 @@ export default function ResourceOverview({
           </p>
         )}
       </div>
+      {teacherEditor && (
+        <TeacherAvailabilityDialog
+          teacher={teacherEditor.teacher}
+          mode={teacherEditor.mode}
+          date={date}
+          zone={zone}
+          onClose={closeTeacherEditor}
+          onSaved={(message) => {
+            setNotice(message);
+            setReload((value) => value + 1);
+            onChanged?.();
+          }}
+        />
+      )}
       {selected && (
         <Modal
           title={
-            selected.kind === "block" ? "Raumblockierung" : "Termindetails"
+            selected.kind === "block"
+              ? "Raumblockierung"
+              : selected.kind === "teacher_block"
+                ? "Lehrenden-Blockzeit"
+                : "Termindetails"
           }
           subtitle={selected.plan_name || undefined}
           onClose={close}
@@ -507,7 +577,7 @@ export default function ResourceOverview({
             <span
               className={`badge ${selected.status === "published" ? "success" : ""}`}
             >
-              {statusLabels[selected.status]}
+              {selected.cancelled ? "Abgesagt" : statusLabels[selected.status]}
             </span>
             <dl>
               <dt>Zeit</dt>
@@ -530,34 +600,36 @@ export default function ResourceOverview({
               <button className="button secondary" onClick={close}>
                 Schließen
               </button>
-              {selected.kind !== "block" && source === "planning" && (
-                <button
-                  className="button primary"
-                  disabled={openingEditor}
-                  onClick={async () => {
-                    const controller = new AbortController();
-                    editorRequest.current = controller;
-                    setOpeningEditor(true);
-                    try {
-                      const record = await api(
-                        `sessions/${selected.id}/`,
-                        "GET",
-                        undefined,
-                        { signal: controller.signal },
-                      );
-                      if (controller.signal.aborted) return;
-                      close();
-                      onEdit("sessions", record);
-                    } catch (err) {
-                      if (controller.signal.aborted) return;
-                      setError((err as Error).message);
-                      close();
-                    }
-                  }}
-                >
-                  {openingEditor ? "Termin laden …" : "Termin bearbeiten"}
-                </button>
-              )}
+              {selected.kind !== "block" &&
+                selected.kind !== "teacher_block" &&
+                source === "planning" && (
+                  <button
+                    className="button primary"
+                    disabled={openingEditor}
+                    onClick={async () => {
+                      const controller = new AbortController();
+                      editorRequest.current = controller;
+                      setOpeningEditor(true);
+                      try {
+                        const record = await api(
+                          `sessions/${selected.id}/`,
+                          "GET",
+                          undefined,
+                          { signal: controller.signal },
+                        );
+                        if (controller.signal.aborted) return;
+                        close();
+                        onEdit("sessions", record);
+                      } catch (err) {
+                        if (controller.signal.aborted) return;
+                        setError((err as Error).message);
+                        close();
+                      }
+                    }}
+                  >
+                    {openingEditor ? "Termin laden …" : "Termin bearbeiten"}
+                  </button>
+                )}
             </div>
           </div>
         </Modal>

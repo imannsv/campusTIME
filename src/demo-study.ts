@@ -243,6 +243,13 @@ export function validateStudy(
         "Person ist als Lehrende oder Aufsicht zugeordnet; die Art kann nicht geändert werden.",
       );
     const availability = row.availability || {};
+    if (
+      availability.unrestricted !== undefined &&
+      typeof availability.unrestricted !== "boolean"
+    )
+      throw new Error(
+        "Uneingeschränkte Verfügbarkeit muss wahr oder falsch sein.",
+      );
     const validTime = (value: unknown) =>
       typeof value === "string" &&
       /^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(value);

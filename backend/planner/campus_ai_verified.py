@@ -321,14 +321,16 @@ def verified_reply(question, context):
         .first()
     )
     selected_id = selected["id"] if selected and SELECTED.search(text) else None
-    draft = [row for row in plan_rows(plan) if row["id"] != selected_id] if plan else []
+    draft = [row for row in plan_rows(plan) if row["id"] != selected_id and not row.get("cancelled")] if plan else []
+    from .teacher_availability import overlay_cancellations
     published = (
         external_rows(plan)
         if plan
         else [
             row
             for publication in latest_publications(institution)
-            for row in publication.snapshot
+            for row in overlay_cancellations(publication.snapshot, institution, publication.plan_id)
+            if not row.get("cancelled")
         ]
     )
     zone = ZoneInfo(institution.timezone)

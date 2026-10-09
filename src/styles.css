@@ -3758,3 +3758,18 @@ button.study-card {
     padding: 12px;
   }
 }
+
+.calendar-event.cancelled,
+.student-event.cancelled {
+  background: #fdebec;
+  color: #9a242c;
+  border-left-color: #b72d35;
+}
+.calendar-event.cancelled > strong,
+.student-event.cancelled h3 {
+  text-decoration: line-through;
+}
+.cancelled-label {
+  color: #9a242c;
+  font-weight: 600;
+}

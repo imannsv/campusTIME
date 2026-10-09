@@ -58,6 +58,82 @@ class ResourceOccupancyTests(TestCase):
         self.session.teachers.set([self.second_teacher])
         self.assertEqual(self.get().data["rows"][0]["teacher_ids"], [self.second_teacher.id])
 
+    def test_unrestricted_availability_still_respects_individual_blocks(self):
+        from .services import available
+        self.teacher.availability = {"unrestricted": True, "windows": [], "exclusions": [{"start": "2026-10-11T11:00:00+02:00", "end": "2026-10-11T12:00:00+02:00"}]}
+        self.assertTrue(available(self.teacher, self.dt("2026-10-11T10:00"), self.dt("2026-10-11T11:00"), self.institution))
+        self.assertFalse(available(self.teacher, self.dt("2026-10-11T11:00"), self.dt("2026-10-11T12:00"), self.institution))
+
+    def test_block_time_cancels_persistently_and_updates_published_views(self):
+        m.Publication.objects.create(institution=self.institution, plan=self.plan, number=1, snapshot=self.snapshot())
+        display = self.make(m.Display, "DISPLAY", show_teachers=True)
+        display.plans.set([self.plan])
+        response = self.client.post(f"/api/people/{self.teacher.id}/block-time/", {"start": "2026-10-09T10:00:00+02:00", "end": "2026-10-09T11:00:00+02:00"}, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["cancelled_count"], 1)
+        self.session.refresh_from_db()
+        self.assertTrue(self.session.cancelled)
+        for source in ["planning", "published"]:
+            rows = self.get(source=source).data["rows"]
+            self.assertTrue(next(row for row in rows if row["id"] == self.session.id)["cancelled"])
+            self.assertTrue(any(row["kind"] == "teacher_block" for row in rows))
+        public = APIClient().get(f"/api/public/{display.token}/")
+        self.assertEqual(public.status_code, 200)
+        self.assertTrue(public.data["rows"][0]["cancelled"])
+        result = self.client.patch(f"/api/people/{self.teacher.id}/", {"availability": {"unrestricted": True, "exclusions": []}}, format="json")
+        self.assertEqual(result.status_code, 200)
+        self.session.refresh_from_db()
+        self.assertTrue(self.session.cancelled)
+
+    def test_block_time_has_strict_boundaries_and_uses_actual_teacher_team(self):
+        self.session.teachers.set([self.second_teacher])
+        response = self.client.post(f"/api/people/{self.teacher.id}/block-time/", {"start": "2026-10-09T09:00:00+02:00", "end": "2026-10-09T10:30:00+02:00"}, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["cancelled_count"], 0)
+        response = self.client.post(f"/api/people/{self.second_teacher.id}/block-time/", {"start": "2026-10-09T10:30:00+02:00", "end": "2026-10-09T11:30:00+02:00"}, format="json")
+        self.assertEqual(response.data["cancelled_count"], 0)
+
+    def test_block_time_validation_and_tenant_scope(self):
+        other = m.Institution.objects.create(name="Andere", slug="blocked-other")
+        foreign = m.Person.objects.create(institution=other, code="FOREIGN", name="Andere Lehrperson", kind="teacher")
+        payload = {"start": "2026-10-09T10:00:00+02:00", "end": "2026-10-09T11:00:00+02:00"}
+        self.assertEqual(self.client.post(f"/api/people/{foreign.id}/block-time/", payload, format="json").status_code, 404)
+        payload["end"] = payload["start"]
+        self.assertEqual(self.client.post(f"/api/people/{self.teacher.id}/block-time/", payload, format="json").status_code, 400)
+        self.assertEqual(APIClient().post(f"/api/people/{self.teacher.id}/block-time/", payload, format="json").status_code, 403)
+
+    def test_regular_availability_update_cancels_and_ignores_cancelled_resources(self):
+        from .services import resource_keys, validate_rows
+        response = self.client.patch(f"/api/people/{self.teacher.id}/", {"availability": {"unrestricted": True, "exclusions": [{"start": "2026-10-09T10:00:00+02:00", "end": "2026-10-09T11:00:00+02:00"}]}}, format="json")
+        self.assertEqual(response.status_code, 200)
+        rows = self.snapshot()
+        self.assertTrue(rows[0]["cancelled"])
+        self.assertEqual(resource_keys(rows[0]), [])
+        self.assertEqual(validate_rows(self.plan, rows), [])
+        restore = self.client.patch(f"/api/sessions/{self.session.id}/", {"cancelled": False}, format="json")
+        self.assertEqual(restore.status_code, 400)
+        self.session.refresh_from_db()
+        self.assertTrue(self.session.cancelled)
+
+    def test_solver_application_keeps_cancelled_history(self):
+        self.session.cancelled = True
+        self.session.save()
+        job = m.Job.objects.create(institution=self.institution, plan=self.plan, status="ready", kind="teaching", revision=self.institution.revision, result=[])
+        response = self.client.post(f"/api/jobs/{job.id}/", {"action": "apply"}, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(m.Session.objects.filter(pk=self.session.id, cancelled=True).exists())
+
+    def test_block_time_cancels_exams_and_rejects_non_boolean_availability(self):
+        exam = self.make(m.Exam, "BLOCK-EXAM", plan=self.plan, window_start="2026-10-09", window_end="2026-10-09")
+        exam.supervisors.set([self.teacher])
+        appointment = m.Session.objects.create(institution=self.institution, plan=self.plan, exam=exam, start=self.dt("2026-10-09T12:00"), end=self.dt("2026-10-09T13:00"))
+        response = self.client.post(f"/api/people/{self.teacher.id}/block-time/", {"start": "2026-10-09T11:00:00+02:00", "end": "2026-10-09T13:00:00+02:00"}, format="json")
+        self.assertEqual(response.data["cancelled_count"], 1)
+        appointment.refresh_from_db()
+        self.assertTrue(appointment.cancelled)
+        response = self.client.patch(f"/api/people/{self.teacher.id}/", {"availability": {"unrestricted": "false"}}, format="json")
+        self.assertEqual(response.status_code, 400)
+
     def test_latest_publication_and_changed_draft_are_distinguished(self):
         old = self.snapshot()
         m.Publication.objects.create(institution=self.institution, plan=self.plan, number=1, snapshot=old)

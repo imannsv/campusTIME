@@ -1,4 +1,5 @@
 import { test, expect, Page } from "@playwright/test";
+import { DateTime } from "luxon";
 
 async function login(page: Page, path = "/wiki") {
   await page.goto(path);
@@ -71,6 +72,66 @@ test("resource timelines use the authenticated backend and save appointments in 
   );
   expect(context.status()).toBe(200);
   expect((await context.json()).view.label).toBe("Lehrendenübersicht");
+});
+
+test("teacher block times cancel real appointments without deleting them", async ({
+  page,
+}) => {
+  await login(page);
+  const data = await (
+    await page.request.get(
+      "/api/resource-occupancy/?start=2026-10-09&end=2026-10-09",
+    )
+  ).json();
+  const session = data.rows.find(
+    (row: any) =>
+      row.teacher_ids.length && row.kind === "teaching" && !row.cancelled,
+  );
+  const teacher = data.teachers.find(
+    (person: any) => person.id === session.teacher_ids[0],
+  );
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Lehrendenübersicht", exact: true })
+    .click();
+  const overview = page.getByRole("region", {
+    name: "Lehrendenübersicht",
+    exact: true,
+  });
+  await overview
+    .getByLabel("Lehrende suchen", { exact: true })
+    .fill(teacher.name);
+  const row = overview
+    .locator(".resource-timeline-row")
+    .filter({ hasText: teacher.name });
+  await row.getByRole("button", { name: /Blockzeit hinzufügen/ }).click();
+  const popup = page.getByRole("dialog", {
+    name: "Blockzeit hinzufügen",
+    exact: true,
+  });
+  await popup
+    .getByLabel("Beginn", { exact: true })
+    .fill(
+      DateTime.fromISO(session.start)
+        .setZone("Europe/Berlin")
+        .toFormat("yyyy-MM-dd'T'HH:mm"),
+    );
+  await popup
+    .getByLabel("Ende", { exact: true })
+    .fill(
+      DateTime.fromISO(session.end)
+        .setZone("Europe/Berlin")
+        .toFormat("yyyy-MM-dd'T'HH:mm"),
+    );
+  await expect(popup).toContainText("aktive Termine betroffen.");
+  await popup.getByRole("button", { name: "Speichern", exact: true }).click();
+  await expect(popup).toHaveCount(0);
+  await expect(row.locator(".resource-event.cancelled")).not.toHaveCount(0);
+  const saved = await (
+    await page.request.get(`/api/sessions/${session.id}/`)
+  ).json();
+  expect(saved.cancelled).toBe(true);
+  expect(Date.parse(saved.start)).toBe(Date.parse(session.start));
 });
 
 test("deep links require login, preserve destination, and show protected images", async ({
@@ -207,7 +268,9 @@ test("Freddy links to the same protected guide in a new tab", async ({
   await page.getByLabel("Passwort", { exact: true }).fill("WikiBuildOnly2026!");
   await page.getByRole("button", { name: "Anmelden", exact: true }).click();
   // Wait for the initial plan selection before typing into its chat draft.
-  await expect(page.getByRole("button", { name: "Termin", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Termin", exact: true }),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Freddy öffnen", exact: true })
     .click();

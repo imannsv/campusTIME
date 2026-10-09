@@ -9,6 +9,7 @@ from rest_framework import serializers
 
 from . import models as m
 from .services import block_rows, dt, latest_publications
+from .teacher_availability import cancellation_map
 
 
 def date_range(params, institution):
@@ -55,7 +56,7 @@ def overview(institution, params):
     teachers = list(
         m.Person.objects.filter(institution=institution, kind="teacher")
         .order_by("name", "id")
-        .values("id", "name", "code")
+        .values("id", "name", "code", "availability")
     )
     rooms = list(
         m.Room.objects.filter(institution=institution)
@@ -67,6 +68,7 @@ def overview(institution, params):
     plans = dict(m.Plan.objects.filter(institution=institution).values_list("id", "name"))
     published = {}
     rows = []
+    cancelled = cancellation_map(institution)
 
     def safe_row(row, plan_id, status):
         room_ids = [pk for pk in row.get("room_ids", []) if pk in room_names]
@@ -86,6 +88,7 @@ def overview(institution, params):
             "color": row.get("color", "blue"),
             "kind": "exam" if row.get("exam") else "teaching",
             "status": status,
+            "cancelled": bool(row.get("cancelled") or (plan_id, row.get("id")) in cancelled),
         }
 
     for publication in latest_publications(institution):
@@ -140,6 +143,7 @@ def overview(institution, params):
                 "exam": session.exam_id,
                 "group_names": groups,
                 "color": "rose" if session.exam else entity.color,
+                "cancelled": session.cancelled,
             }
             status = (
                 "published"
@@ -154,6 +158,14 @@ def overview(institution, params):
                 **safe_row(row, None, "blocked"), "id": None,
                 "kind": "block", "color": "amber",
             })
+    for teacher in teachers:
+        for index, block in enumerate(teacher["availability"].get("exclusions", [])):
+            if dt(block["start"]) < upper and dt(block["end"]) > lower:
+                rows.append({
+                    **safe_row({**block, "name": "Blockzeit", "teacher_ids": [teacher["id"]]}, None, "blocked"),
+                    "id": f"teacher-block-{teacher['id']}-{block.get('id', index)}",
+                    "kind": "teacher_block", "color": "amber",
+                })
     return {
         "teachers": teachers,
         "rooms": rooms,

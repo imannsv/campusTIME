@@ -242,7 +242,7 @@ test("Anschlusstermine stehen auch in der Wochenansicht nebeneinander", async ({
       ).toBeLessThan(5);
     }
     expect(boxes[0].width).toBeGreaterThanOrEqual(180);
-    expect(await row.evaluate((el) => el.clientHeight)).toBeLessThan(120);
+    expect(await row.evaluate((el) => el.clientHeight)).toBeLessThan(240);
     await expect(overview.locator(".resource-hours").first()).toBeVisible();
   }
 });
@@ -383,6 +383,93 @@ test("Belegung: Kalender per Tastatur und schmale Ansichten ohne Seitenüberlauf
       }
     }
   }
+});
+
+test("Lehrende: uneingeschränkte Verfügbarkeit, einzelne Blockzeit und dauerhafte Absage", async ({
+  page,
+}) => {
+  await fixture(page);
+  await page
+    .getByRole("button", { name: "Lehrendenübersicht", exact: true })
+    .click();
+  const overview = page.getByRole("region", {
+    name: "Lehrendenübersicht",
+    exact: true,
+  });
+  const row = overview
+    .locator(".resource-timeline-row")
+    .filter({ hasText: "Testlehrende Lange Namen" });
+  await row.getByRole("button", { name: /Verfügbarkeit bearbeiten/ }).click();
+  const availability = page.getByRole("dialog", {
+    name: "Verfügbarkeit bearbeiten",
+    exact: true,
+  });
+  await availability
+    .getByLabel("Zeitlich uneingeschränkt verfügbar", { exact: true })
+    .check();
+  await expect(
+    availability.getByRole("button", {
+      name: "Zeitfenster hinzufügen",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.keyboard.press("Escape");
+  await expect(availability).toBeVisible();
+  await availability
+    .getByRole("button", { name: "Speichern", exact: true })
+    .click();
+  await expect(availability).toHaveCount(0);
+  await expect(row).toContainText("Uneingeschränkt verfügbar");
+  await row.getByRole("button", { name: /Blockzeit hinzufügen/ }).click();
+  const block = page.getByRole("dialog", {
+    name: "Blockzeit hinzufügen",
+    exact: true,
+  });
+  await block.getByLabel("Beginn", { exact: true }).fill("2026-10-09T10:00");
+  await block.getByLabel("Ende", { exact: true }).fill("2026-10-09T11:00");
+  await expect(block).toContainText("2 aktive Termine betroffen.");
+  await block.getByRole("button", { name: "Speichern", exact: true }).click();
+  await expect(block).toHaveCount(0);
+  await expect(row.locator(".resource-event.cancelled")).toHaveCount(2);
+  await expect(
+    row.locator(".resource-event.cancelled strong").first(),
+  ).toHaveCSS("text-decoration-line", "line-through");
+  await expect(row.locator(".resource-event.cancelled").first()).toHaveCSS(
+    "background-color",
+    "rgb(253, 235, 236)",
+  );
+  const stored = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("campustime-browser-demo-v1")!),
+  );
+  expect(stored.data.sessions).toHaveLength(4);
+  expect(
+    stored.data.sessions.filter((session: any) => session.cancelled),
+  ).toHaveLength(2);
+  const display = stored.data.displays.find((display: any) =>
+    display.plans.includes(stored.data.sessions[0].plan),
+  );
+  await page.goto(`/display/${display.token}`);
+  await expect(page.locator(".calendar-event.cancelled")).toHaveCount(1);
+  await expect(page.locator(".calendar-event.cancelled")).toContainText(
+    "Abgesagt",
+  );
+  await page.goto(`/overview/${display.token}`);
+  await expect(page.locator(".student-event.cancelled")).toHaveCount(1);
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Lehrendenübersicht", exact: true })
+    .click();
+  await expect(row.locator(".resource-event.cancelled")).toHaveCount(2);
+  await row.getByRole("button", { name: /Verfügbarkeit bearbeiten/ }).click();
+  await availability
+    .getByRole("button", { name: "Sperrzeit 1 entfernen", exact: true })
+    .click();
+  await availability
+    .getByRole("button", { name: "Speichern", exact: true })
+    .click();
+  await expect(row.locator(".resource-event.cancelled")).toHaveCount(2);
+  await expect(row.locator(".resource-event.blocked")).toHaveCount(0);
 });
 
 test("Zeitleistenlayout: lokale Tage, kurze Termine und Überlappungen", () => {

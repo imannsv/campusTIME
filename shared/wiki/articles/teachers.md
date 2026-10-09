@@ -9,8 +9,17 @@
 4. Ergänze datierte Sperrzeiten für Urlaub, Hauptberuf oder andere Abwesenheit. Speichere.
 5. Ordne Lehrende den konkreten Veranstaltungen des Semesterplans zu.
 ## Zeitfenster richtig verstehen
-Ein Termin muss vollständig in erlaubten Zeitfenstern liegen. Ein Termin von 09:00–12:15 passt nicht in ein Fenster von 09:00–12:00. Ohne Zeitfenster ist die Person nicht verfügbar. Die Verwaltung pflegt die Zeiten nach Abstimmung mit den Lehrenden.
-## Mehrere Lehrende
+Bei eingeschränkter Verfügbarkeit muss ein Termin vollständig in erlaubten Zeitfenstern liegen. Ein Termin von 09:00–12:15 passt nicht in ein Fenster von 09:00–12:00. Ohne Zeitfenster ist die Person nicht verfügbar, außer bei aktivierter uneingeschränkter Verfügbarkeit. Die Verwaltung pflegt die Zeiten nach Abstimmung mit den Lehrenden.
+## Verfügbarkeit und einzelne Blockzeiten in der Übersicht
+1. Öffne **Planung → Lehrendenübersicht**. Wähle bei der Person **Verfügbarkeit**.
+2. Pflege wöchentliche Zeitfenster oder aktiviere **Zeitlich uneingeschränkt verfügbar**. Diese Option bedeutet, dass für die Person keine regelmäßigen Zeitfenster nötig sind; der Unterrichtskalender und konkrete Blockzeiten gelten weiterhin.
+3. Über **+ Blockzeit** legst du direkt einen einzelnen Zeitraum mit Beginn und Ende an. Das Formular zeigt vor dem Speichern die Anzahl betroffener aktiver Termine.
+4. Speichere. Alle zeitlich überlappenden Termine mit dieser Person im tatsächlichen Lehrenden- oder Aufsichtsteam werden dauerhaft **abgesagt**, einschließlich gemeinsam unterrichteter Termine. Der ganze Termin bleibt erhalten, rot markiert und durchgestrichen. Bereits veröffentlichte Anzeigen und Studierendenübersichten zeigen die Absage beim nächsten automatischen Abruf; eine erneute Veröffentlichung ist dafür nicht nötig.
+5. Unter **Verfügbarkeit** kannst du Blockzeiten ändern und entfernen. Bereits abgesagte Termine werden dadurch nicht automatisch wieder aktiv. Öffne **Termin bearbeiten** und deaktiviere **Termin abgesagt**, wenn ein Ersatzteam oder ein neuer Zeitpunkt feststeht. Die regulären Planungsprüfungen gelten wieder.
+
+Abgesagte Termine belegen keine Räume oder Personen für die automatische Planung und zählen nicht zum erfüllten Unterrichtssoll. Eine erneute automatische Planung erhält die abgesagten Termine als Historie. Benachrichtigungen an Lehrende und Lernende sind für eine spätere Erweiterung vorgesehen; aktuell wird keine Nachricht versendet.
+
+## Gemeinsame Lehrendenteams
 Gemeinsam ausgewählte Lehrende werden gemeinsam eingeplant. Lehrendenteams je Termin erlauben eine chronologische Aufteilung. Die genaue Nutzung erklärt [Wahlpflicht und gemeinsame Veranstaltungen](/wiki/electives).
 ## Personen und Gruppen
 Unter **Stammdaten → Personen** verwaltest du weitere Personen. Ordne Lernende den richtigen Gruppen zu. Personenkennungen müssen stabil und innerhalb der Einrichtung eindeutig sein.

@@ -383,6 +383,47 @@
   justify-content: flex-end;
   flex-wrap: wrap;
 }
+.resource-teacher-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.resource-teacher-actions .text-button {
+  padding: 2px 0;
+  font-size: 14px;
+  min-height: 32px;
+  text-align: left;
+}
+.teacher-availability-form {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.teacher-availability-form > label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.availability-unrestricted {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.availability-unrestricted input {
+  width: 18px;
+  height: 18px;
+}
+.resource-event.cancelled {
+  background: #fdebec;
+  border: 1px solid #d4878b;
+  border-left: 3px solid #b72d35;
+  color: #9a242c;
+}
+.resource-event.cancelled strong {
+  text-decoration: line-through;
+}
 .mini-calendar {
   position: relative;
 }
@@ -474,6 +515,9 @@
   font-weight: 600;
 }
 @media (max-width: 767px) {
+  .resource-teacher-actions .text-button {
+    min-height: 44px;
+  }
   .resource-overview {
     --resource-label-width: 140px;
   }

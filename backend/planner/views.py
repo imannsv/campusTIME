@@ -249,6 +249,11 @@ class ResourceViewSet(viewsets.ModelViewSet):
                     {"code": "Kennung ist bereits vergeben."}
                 )
             instance = serializer.save(institution=institution)
+            if isinstance(instance, m.Person):
+                from .teacher_availability import cancel_for_teacher
+                count = cancel_for_teacher(instance)
+                if count:
+                    bump(self.request, institution, f"{count} Termine wegen Lehrenden-Blockzeit abgesagt")
             if isinstance(instance, m.Session):
                 if self.request.data.get("repeat_weekly"):
                     if serializer.instance and self.request.method != "POST":
@@ -694,7 +699,7 @@ def job_detail(request, pk):
         errors = validate_rows(job.plan, job.result)
         if errors:
             raise serializers.ValidationError({"conflicts": errors})
-        job.plan.sessions.all().delete()
+        job.plan.sessions.filter(cancelled=False).delete()
         for row in job.result:
             session = m.Session.objects.create(
                 institution=institution,
@@ -789,7 +794,8 @@ def display_payload(request, token, overview=False):
             ) from None
     for publication in publications:
         blocks = block_rows(display.institution, publication.plan.period)
-        for row in publication.snapshot:
+        from .teacher_availability import overlay_cancellations
+        for row in overlay_cancellations(publication.snapshot, display.institution, publication.plan_id):
             if overview and not matches_scope(row, filters):
                 continue
             if (since and dt(row["end"]) <= since) or (
@@ -861,14 +867,39 @@ def resource_occupancy(request):
     return response
 
 
+@api_view(["GET", "POST"])
+def teacher_block_time(request, pk):
+    from .teacher_availability import affected_session_ids, cancel_for_teacher
+    from uuid import uuid4
+
+    with transaction.atomic():
+        institution = lock_tenant(request) if request.method == "POST" else tenant(request)
+        person = get_object_or_404(m.Person, institution=institution, pk=pk, kind="teacher")
+        payload = request.data if request.method == "POST" else request.query_params
+        block = {"start": payload.get("start"), "end": payload.get("end")}
+        availability = {**person.availability, "exclusions": [*person.availability.get("exclusions", []), block]}
+        serializer = serializer_for(m.Person)(person, data={"availability": availability}, partial=True, context={"institution": institution})
+        serializer.is_valid(raise_exception=True)
+        affected = affected_session_ids(person, [block])
+        if request.method == "GET":
+            return Response({"affected_count": len(affected)})
+        block["id"] = str(uuid4())
+        person.availability = availability
+        person.save(update_fields=["availability"])
+        count = cancel_for_teacher(person)
+        bump(request, institution, f"Lehrenden-Blockzeit gespeichert; {count} Termine abgesagt")
+        return Response({"cancelled_count": count, "person": serializer_for(m.Person)(person, context={"institution": institution}).data})
+
+
 @api_view(["GET"])
 def room_occupancy(request, pk):
+    from .teacher_availability import overlay_cancellations
     institution = tenant(request)
     room = get_object_or_404(m.Room, institution=institution, pk=pk)
     rows = [
         public_row(r, True)
         for p in latest_publications(institution)
-        for r in p.snapshot
+        for r in overlay_cancellations(p.snapshot, institution, p.plan_id)
         if room.id in r["room_ids"]
     ]
     return Response({"rows": rows})
@@ -962,7 +993,10 @@ def imports(request, resource):
                     context={"institution": institution},
                 )
                 serializer.is_valid(raise_exception=True)
-                serializer.save(institution=institution)
+                imported = serializer.save(institution=institution)
+                if isinstance(imported, m.Person):
+                    from .teacher_availability import cancel_for_teacher
+                    cancel_for_teacher(imported)
             batch.committed = True
             batch.save(update_fields=["committed"])
             bump(request, institution, f"{len(batch.rows)} {resource} importiert")

@@ -1837,6 +1837,7 @@ function Workspace() {
           ) : page === "teachers" ? (
             <ResourceOverview
               kind="teachers"
+              onChanged={reload}
               zone={zone}
               data={data}
               revision={refresh}

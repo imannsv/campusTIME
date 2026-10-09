@@ -138,6 +138,7 @@ export function demoAIContext(
     notice("Noch kein Jahrgang angelegt.", "setup", "hint", "add_cohort", 4);
   const unavailable = teachers.filter(
     (person) =>
+      !person.availability?.unrestricted &&
       !(
         person.availability?.windows ??
         person.availability?.weekdays ?? [0, 1, 2, 3, 4]
@@ -225,10 +226,13 @@ export function demoAIContext(
       if (
         course.teachers.some((id: number) => {
           const person = teachers.find((item) => item.id === id);
-          return !(
-            person?.availability?.windows ??
-            person?.availability?.weekdays ?? [0, 1, 2, 3, 4]
-          ).length;
+          return (
+            !person?.availability?.unrestricted &&
+            !(
+              person?.availability?.windows ??
+              person?.availability?.weekdays ?? [0, 1, 2, 3, 4]
+            ).length
+          );
         })
       )
         notice(
