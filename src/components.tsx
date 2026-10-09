@@ -458,7 +458,7 @@ function TeamEditor({
   );
 }
 
-function AvailabilityEditor({
+export function AvailabilityEditor({
   value,
   onChange,
   zone,
@@ -481,87 +481,107 @@ function AvailabilityEditor({
     <div className="availability-editor">
       <small>
         Die Studienverwaltung trägt die mit den Lehrenden abgestimmten Zeiten
-        ein. Mehrere Zeitfenster je Tag sind möglich. Ohne Zeitfenster ist die
-        Person nicht verfügbar.
+        ein. Blockzeiten gelten auch bei uneingeschränkter Verfügbarkeit.
       </small>
+      <label className="availability-unrestricted">
+        <input
+          type="checkbox"
+          checked={!!a.unrestricted}
+          onChange={(event) =>
+            onChange({ ...a, unrestricted: event.target.checked })
+          }
+        />
+        Zeitlich uneingeschränkt verfügbar
+      </label>
+      {!a.unrestricted && (
+        <small>Ohne Zeitfenster ist die Person nicht verfügbar.</small>
+      )}
       {a.test_assumption && (
         <small className="availability-assumption">{a.test_assumption}</small>
       )}
-      {windows.map((window, index) => (
-        <div className="availability-window" key={index}>
-          <select
-            aria-label={`Zeitfenster ${index + 1}: Wochentag`}
-            value={window.weekday}
-            onChange={(e) =>
-              setWindows(
-                windows.map((row, i) =>
-                  i === index
-                    ? { ...row, weekday: Number(e.target.value) }
-                    : row,
-                ),
-              )
-            }
-          >
-            {[
-              "Montag",
-              "Dienstag",
-              "Mittwoch",
-              "Donnerstag",
-              "Freitag",
-              "Samstag",
-              "Sonntag",
-            ].map((day, i) => (
-              <option value={i} key={i}>
-                {day}
-              </option>
-            ))}
-          </select>
-          <input
-            aria-label={`Zeitfenster ${index + 1}: Beginn`}
-            type="time"
-            required
-            value={window.from}
-            onChange={(e) =>
-              setWindows(
-                windows.map((row, i) =>
-                  i === index ? { ...row, from: e.target.value } : row,
-                ),
-              )
-            }
-          />
-          <input
-            aria-label={`Zeitfenster ${index + 1}: Ende`}
-            type="time"
-            required
-            value={window.to}
-            onChange={(e) =>
-              setWindows(
-                windows.map((row, i) =>
-                  i === index ? { ...row, to: e.target.value } : row,
-                ),
-              )
-            }
-          />
-          <button
-            className="button secondary"
-            type="button"
-            aria-label={`Zeitfenster ${index + 1} entfernen`}
-            onClick={() => setWindows(windows.filter((_, i) => i !== index))}
-          >
-            Entfernen
-          </button>
-        </div>
-      ))}
-      <button
-        type="button"
-        className="button secondary"
-        onClick={() =>
-          setWindows([...windows, { weekday: 0, from: "08:00", to: "12:00" }])
-        }
-      >
-        Zeitfenster hinzufügen
-      </button>
+      {!a.unrestricted &&
+        windows.map((window, index) => (
+          <div className="availability-window" key={index}>
+            <select
+              aria-label={`Zeitfenster ${index + 1}: Wochentag`}
+              value={window.weekday}
+              onChange={(e) =>
+                setWindows(
+                  windows.map((row, i) =>
+                    i === index
+                      ? { ...row, weekday: Number(e.target.value) }
+                      : row,
+                  ),
+                )
+              }
+            >
+              {[
+                "Montag",
+                "Dienstag",
+                "Mittwoch",
+                "Donnerstag",
+                "Freitag",
+                "Samstag",
+                "Sonntag",
+              ].map((day, i) => (
+                <option value={i} key={i}>
+                  {day}
+                </option>
+              ))}
+            </select>
+            <input
+              aria-label={`Zeitfenster ${index + 1}: Beginn`}
+              type="time"
+              required
+              value={window.from}
+              onChange={(e) =>
+                setWindows(
+                  windows.map((row, i) =>
+                    i === index ? { ...row, from: e.target.value } : row,
+                  ),
+                )
+              }
+            />
+            <input
+              aria-label={`Zeitfenster ${index + 1}: Ende`}
+              type="time"
+              required
+              value={window.to}
+              onChange={(e) =>
+                setWindows(
+                  windows.map((row, i) =>
+                    i === index ? { ...row, to: e.target.value } : row,
+                  ),
+                )
+              }
+            />
+            <button
+              className="button secondary"
+              type="button"
+              aria-label={`Zeitfenster ${index + 1} entfernen`}
+              onClick={() => setWindows(windows.filter((_, i) => i !== index))}
+            >
+              Entfernen
+            </button>
+          </div>
+        ))}
+      {!a.unrestricted && (
+        <button
+          type="button"
+          className="button secondary"
+          onClick={() =>
+            setWindows([...windows, { weekday: 0, from: "08:00", to: "12:00" }])
+          }
+        >
+          Zeitfenster hinzufügen
+        </button>
+      )}
       <strong>Zusätzliche Sperrzeiten</strong>
+      <small>
+        Überlappende Termine werden beim Speichern dauerhaft abgesagt. Sie
+        bleiben rot durchgestrichen sichtbar. Das Entfernen einer Sperrzeit
+        aktiviert sie nicht automatisch wieder.
+      </small>
       {exclusions.map((entry, index) => (
         <div className="availability-window exclusions" key={index}>
           <input

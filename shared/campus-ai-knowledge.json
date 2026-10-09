@@ -62,10 +62,14 @@
       "bereich",
       "beamer",
       "pc-labor",
-      "gebäude"
+      "gebäude",
+      "raumbelegung",
+      "tagesübersicht",
+      "heute",
+      "kalender"
     ],
     "page": "map",
-    "answer": "Unter Räume legst du zuerst einen Bereich an, dann Stockwerke und darin Räume. Jeder Raum braucht eine Bezeichnung, Kapazität und bei Bedarf Ausstattung wie PC oder Beamer. Die Planung berücksichtigt diese Angaben und Raumblockierungen. Ein ausreichend großer und ausgestatteter Raum ist erst dann für einen Termin geeignet, wenn er zu dieser Zeit verfügbar ist."
+    "answer": "Unter Räume legst du zuerst einen Bereich an, dann Stockwerke und darin Räume. Jeder Raum braucht eine Bezeichnung, Kapazität und bei Bedarf Ausstattung wie PC oder Beamer. Die Planung berücksichtigt diese Angaben und Raumblockierungen. Ein ausreichend großer und ausgestatteter Raum ist erst dann für einen Termin geeignet, wenn er zu dieser Zeit verfügbar ist. Räume → Raumbelegung zeigt alle Raumzeilen für genau einen Tag und startet mit heute. Kalender und Tagespfeile wählen andere Tage; Heute setzt zurück. Bereich, Stockwerk und Suche grenzen Räume ein. Aktuelle Planung enthält Entwürfe, Nur freigegebene Pläne den veröffentlichten Stand. Raumblockierungen stehen in beiden Ansichten. Ein Klick öffnet Details als Popup. Die Belegung aktualisiert sich alle 30 Sekunden. Beim Öffnen von Räume erscheint zuerst die heutige Raumbelegung. Über Raumverwaltung wechselst du zu Raumkacheln und Anlageaktionen."
   },
   {
     "id": "teachers",
@@ -77,10 +81,15 @@
       "verfügbar",
       "verfügbarkeit",
       "zeitfenster",
-      "aufsicht"
+      "aufsicht",
+      "lehrendenübersicht",
+      "lehrerübersicht",
+      "belegung",
+      "heute",
+      "morgen"
     ],
     "page": "setup",
-    "answer": "Öffne Einrichtung & Studienstruktur → Schritt 2: Lehrende. Über Lehrende hinzufügen erfasst die Verwaltung Personen und die mit ihnen abgestimmten Zeitfenster. Mehrere Zeitfenster je Tag sowie zusätzliche datierte Sperrzeiten sind möglich. Ohne Zeitfenster ist eine Person nicht verfügbar. Bei Veranstaltungen können mehrere Lehrende zugeordnet werden; ohne einzelne Lehrendenteams unterrichten sie gemeinsam."
+    "answer": "Öffne Einrichtung & Studienstruktur → Schritt 2: Lehrende. Über Lehrende hinzufügen erfasst die Verwaltung Personen und die mit ihnen abgestimmten Zeitfenster. Mehrere Zeitfenster je Tag sowie zusätzliche datierte Sperrzeiten sind möglich. Ohne Zeitfenster ist eine Person nicht verfügbar, außer bei uneingeschränkter Verfügbarkeit. Bei Veranstaltungen können mehrere Lehrende zugeordnet werden; ohne einzelne Lehrendenteams unterrichten sie gemeinsam. Unter Planung zeigt die Lehrendenübersicht alle zugewiesenen Termine und Prüfungsaufsichten mit Tagen nebeneinander. Diese Woche, Heute, Morgen und der kleine Kalender wählen den Zeitraum. Aktuelle Planung enthält Entwürfe, Nur freigegebene Pläne den zuletzt veröffentlichten Stand. Ein Klick öffnet Termindetails als Popup; in der aktuellen Planung kann der Termin bearbeitet werden. Leere Zeilen bedeuten keine Termine und ersetzen keine Verfügbarkeitsprüfung. Jeder Tag hat eine horizontale Uhrzeitachse. Anschlusstermine stehen nebeneinander in derselben Zeile; nur tatsächliche Überschneidungen nutzen getrennte Zeilen. Direkt in der Lehrendenübersicht lassen sich Verfügbarkeit und einzelne Blockzeiten bearbeiten. Zeitlich uneingeschränkt verfügbar hebt wöchentliche Fenster auf, aber keine Blockzeiten. Überlappende Termine werden dauerhaft abgesagt, rot durchgestrichen erhalten und auch in veröffentlichten Ansichten sofort als abgesagt gezeigt. Das Entfernen einer Blockzeit aktiviert abgesagte Termine nicht automatisch. Termin bearbeiten und Termin abgesagt deaktivieren ermöglicht eine geprüfte Reaktivierung. Benachrichtigungen sind erst für später vorgesehen."
   },
   {
     "id": "blocks",

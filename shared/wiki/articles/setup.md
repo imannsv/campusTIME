@@ -28,7 +28,7 @@ Kontrolliere Name, Einrichtungsart, Zeitzone und die Länge einer Unterrichtsein
 
 ## 2. Räume anlegen
 
-**Öffnen:** Räume.
+**Öffnen:** Räume → Raumverwaltung.
 
 Wähle Bereich hinzufügen und erfasse beispielsweise Standort Nord. Lege über Stockwerk hinzufügen das Erdgeschoss und weitere Etagen an. Öffne Raum hinzufügen und erfasse vorhandene Bezeichnung, Stockwerk, Kapazität und Ausstattung.
 

@@ -365,7 +365,7 @@ export default function StudentOverview({
                   .sort((a, b) => a.start.localeCompare(b.start))
                   .map((row, index) => (
                     <article
-                      className={`student-event ${row.blocked ? "blocked" : ""}`}
+                      className={`student-event ${row.blocked ? "blocked" : ""} ${row.cancelled ? "cancelled" : ""}`}
                       key={`${row.course_key}-${row.start}-${index}`}
                     >
                       <div className="student-event-time">
@@ -376,7 +376,10 @@ export default function StudentOverview({
                           </span>
                         )}
                       </div>
-                      <h3>{row.name}</h3>
+                      <h3>
+                        {row.cancelled && "Abgesagt · "}
+                        {row.name}
+                      </h3>
                       <p>
                         <Users size={14} />
                         {row.group_names?.join(" & ") || "Teilnehmerauswahl"}

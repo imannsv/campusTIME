@@ -33,6 +33,7 @@ const KEY = "campustime-browser-demo-v1";
 const ZONE = "Europe/Berlin";
 function initial(): Store {
   const copy = structuredClone(example) as unknown as Store;
+  upgradeCancellationSchema(copy);
   const capacity = copy.schema.rooms.find((field) => field.name === "capacity");
   if (capacity) {
     capacity.default = null;
@@ -192,6 +193,7 @@ function read(): Store {
           );
         localStorage.setItem(KEY, JSON.stringify(value));
       }
+      upgradeCancellationSchema(value);
       return value;
     }
     const value = initial();
@@ -204,6 +206,20 @@ function read(): Store {
       "Demodaten können nicht geladen werden. Erlaube Browserspeicher oder setze die Demo zurück.",
     );
   }
+}
+function upgradeCancellationSchema(state: Store) {
+  if (!state.schema.sessions.some((field) => field.name === "cancelled")) {
+    state.schema.sessions.push({
+      name: "cancelled",
+      type: "boolean",
+      required: false,
+      default: false,
+      choices: [],
+    });
+  }
+  state.data.sessions.forEach((session) => {
+    session.cancelled ??= false;
+  });
 }
 export function resetDemo() {
   localStorage.removeItem(KEY);
@@ -296,6 +312,7 @@ function rowsFor(state: Store, planId: number): Row[] {
           : entity.groups.map((id: number) => get(state, "groups", id).name),
         ...(!isExam ? { group_ids: entity.groups } : {}),
         locked: session.locked,
+        cancelled: !!session.cancelled,
         room_allocations: [],
       };
     });
@@ -305,6 +322,45 @@ const overlap = (a: Row, b: Row) =>
   Date.parse(b.start) < Date.parse(a.end);
 const intersects = (a: number[] = [], b: number[] = []) =>
   a.some((id) => b.includes(id));
+function cancelledRow(state: Store, row: Row) {
+  return {
+    ...row,
+    cancelled:
+      !!row.cancelled ||
+      state.data.sessions.some(
+        (session) =>
+          session.plan === row.plan_id &&
+          session.id === row.id &&
+          session.cancelled,
+      ),
+  };
+}
+function affectedSessions(state: Store, person: Row, blocks: Row[]) {
+  return state.data.sessions.filter((session) => {
+    if (session.cancelled || !blocks.some((block) => overlap(session, block)))
+      return false;
+    const entity = get(
+      state,
+      session.exam ? "exams" : "courses",
+      session.exam || session.course,
+    );
+    const teachers = session.teachers?.length
+      ? session.teachers
+      : entity[session.exam ? "supervisors" : "teachers"] || [];
+    return teachers.includes(person.id);
+  });
+}
+function cancelForTeacher(state: Store, person: Row) {
+  const sessions = affectedSessions(
+    state,
+    person,
+    person.availability?.exclusions || [],
+  );
+  sessions.forEach((session) => {
+    session.cancelled = true;
+  });
+  return sessions.length;
+}
 function blocksFor(state: Store, start: string, end: string): Row[] {
   return state.data.blocks.flatMap((block) => {
     const result: Row[] = [];
@@ -349,13 +405,27 @@ function conflictsFor(
   planId: number,
   focusSession?: number,
 ): string[] {
-  const own = rowsFor(state, planId);
+  const own = rowsFor(state, planId).filter((row) => !row.cancelled);
   const other = state.publications
     .filter((publication) => publication.plan_id !== planId)
-    .flatMap((publication) => publication.snapshot);
+    .flatMap((publication) =>
+      publication.snapshot.map((row: Row) =>
+        cancelledRow(state, { ...row, plan_id: publication.plan_id }),
+      ),
+    )
+    .filter((row) => !row.cancelled);
   const errors = new Set<string>();
   for (const row of own) {
     if (focusSession != null && row.id !== focusSession) continue;
+    for (const id of row.teacher_ids) {
+      const teacher = get(state, "people", id);
+      if (
+        (teacher.availability?.exclusions || []).some((block: Row) =>
+          overlap(row, block),
+        )
+      )
+        errors.add(`${row.name}: Lehrperson ist blockiert.`);
+    }
     const rooms = row.room_ids.map((id: number) => get(state, "rooms", id));
     if (rooms.some((room: Row) => room.capacity == null))
       errors.add(`${row.name}: Raumkapazität ist noch nicht erfasst.`);
@@ -423,7 +493,9 @@ function displayFor(
   const publications = state.publications.filter((item) =>
     display.plans.includes(item.plan_id),
   );
-  const allRows: Row[] = publications.flatMap((item) => item.snapshot);
+  const allRows: Row[] = publications.flatMap((item) =>
+    item.snapshot.map((row: Row) => ({ ...row, plan_id: item.plan_id })),
+  );
   const catalog = overview ? overviewCatalog(allRows) : null;
   const filters: Row = {};
   if (catalog) {
@@ -458,7 +530,7 @@ function displayFor(
           (!end || Date.parse(row.start) < Date.parse(end)),
       )
       .map((row) => ({
-        ...publicRow(row, display.show_teachers),
+        ...publicRow(cancelledRow(state, row), display.show_teachers),
         ...(overview
           ? {
               course_key: row.overview_scope.course,
@@ -522,6 +594,169 @@ export async function demoApi(
   const [resource, key, operation] = url.pathname.split("/").filter(Boolean);
   const id = Number(key);
   const query = url.searchParams;
+  if (resource === "people" && operation === "block-time") {
+    const person = get(state, "people", id);
+    if (person.kind !== "teacher")
+      throw new Error("Lehrperson nicht gefunden.");
+    const block = {
+      start: method === "GET" ? query.get("start") : body?.start,
+      end: method === "GET" ? query.get("end") : body?.end,
+      id: crypto.randomUUID(),
+    };
+    if (
+      !Number.isFinite(Date.parse(block.start!)) ||
+      !Number.isFinite(Date.parse(block.end!)) ||
+      Date.parse(block.end!) <= Date.parse(block.start!)
+    )
+      throw new Error("Ende muss nach Beginn liegen.");
+    if (method === "GET")
+      return {
+        affected_count: affectedSessions(state, person, [block]).length,
+      };
+    if (method !== "POST") throw new Error("GET oder POST erforderlich.");
+    person.availability = {
+      ...person.availability,
+      exclusions: [...(person.availability?.exclusions || []), block],
+    };
+    const cancelled_count = cancelForTeacher(state, person);
+    save(
+      state,
+      `Lehrenden-Blockzeit gespeichert; ${cancelled_count} Termine abgesagt`,
+    );
+    return { person, cancelled_count };
+  }
+  if (resource === "resource-occupancy" && method === "GET") {
+    const start =
+      query.get("start") || DateTime.now().setZone(ZONE).toISODate()!;
+    const end = query.get("end") || start;
+    const lower = DateTime.fromISO(start, { zone: ZONE }).startOf("day");
+    const upper = DateTime.fromISO(end, { zone: ZONE })
+      .startOf("day")
+      .plus({ days: 1 });
+    const source = query.get("source") || "planning";
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(start) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(end) ||
+      !lower.isValid ||
+      !upper.isValid ||
+      upper <= lower ||
+      upper.diff(lower, "days").days > 31
+    )
+      throw new Error("Bitte einen Zeitraum von 1 bis 31 Tagen wählen.");
+    if (!["planning", "published"].includes(source))
+      throw new Error("Unbekannter Planungsstand.");
+    const signature = (row: Row) =>
+      JSON.stringify([
+        Date.parse(row.start),
+        Date.parse(row.end),
+        row.name,
+        [...(row.room_ids || [])].sort((a, b) => a - b),
+        [...(row.teacher_ids || [])].sort((a, b) => a - b),
+        row.course || null,
+        row.exam || null,
+        [...(row.group_names || [])].sort(),
+      ]);
+    const published = state.publications.flatMap((publication) =>
+      publication.snapshot.map((row: Row) => ({
+        ...row,
+        plan_id: publication.plan_id,
+      })),
+    );
+    const candidates =
+      source === "published"
+        ? published
+        : state.data.plans.flatMap((plan) => rowsFor(state, plan.id));
+    const selectedRows = candidates
+      .filter((row) =>
+        overlap(row, { start: lower.toISO(), end: upper.toISO() }),
+      )
+      .map((row) => ({
+        ...cancelledRow(state, row),
+        status:
+          source === "published" ||
+          published.some(
+            (other) =>
+              other.plan_id === row.plan_id &&
+              other.id === row.id &&
+              signature(other) === signature(row),
+          )
+            ? "published"
+            : "draft",
+      }));
+    const rows = [
+      ...selectedRows,
+      ...state.data.people
+        .filter((person) => person.kind === "teacher")
+        .flatMap((person) =>
+          (person.availability?.exclusions || [])
+            .filter((block: Row) =>
+              overlap(block, { start: lower.toISO(), end: upper.toISO() }),
+            )
+            .map((block: Row) => ({
+              ...block,
+              name: "Blockzeit",
+              teacher_ids: [person.id],
+              teacher_names: [person.name],
+              status: "blocked",
+              kind: "teacher_block",
+            })),
+        ),
+      ...blocksFor(state, lower.toISO()!, upper.toISO()!).map((row) => ({
+        ...row,
+        room_names: row.room_ids.map(
+          (pk: number) => get(state, "rooms", pk).name,
+        ),
+        teacher_ids: [],
+        teacher_names: [],
+        group_names: [],
+        status: "blocked",
+        kind: "block",
+      })),
+    ]
+      .map((row) => ({
+        id: row.status === "blocked" ? null : row.id,
+        plan_id: row.plan_id || null,
+        plan_name:
+          state.data.plans.find((plan) => plan.id === row.plan_id)?.name || "",
+        name: row.name,
+        start: row.start,
+        end: row.end,
+        room_ids: row.room_ids || [],
+        room_names: row.room_names || [],
+        teacher_ids: row.teacher_ids || [],
+        teacher_names: row.teacher_names || [],
+        group_names: row.group_names || [],
+        color: row.color || "blue",
+        status: row.status,
+        kind: row.kind || (row.exam ? "exam" : "teaching"),
+        cancelled: !!row.cancelled,
+      }))
+      .sort((a, b) => a.start.localeCompare(b.start));
+    return {
+      start,
+      end,
+      source,
+      rows,
+      teachers: state.data.people
+        .filter((person) => person.kind === "teacher")
+        .map(({ id, name, code, availability }) => ({
+          id,
+          name,
+          code,
+          availability,
+        })),
+      rooms: state.data.rooms.map(
+        ({ id, name, code, floor, capacity, equipment }) => ({
+          id,
+          name,
+          code,
+          floor,
+          capacity,
+          equipment,
+        }),
+      ),
+    };
+  }
   if (resource === "campusai") {
     if (key === "status" && method === "GET") return demoAIStatus;
     const selection =
@@ -567,9 +802,13 @@ export async function demoApi(
           ...checkedRows,
           ...state.publications
             .filter((publication) => publication.plan_id !== planId)
-            .flatMap((publication) => publication.snapshot),
+            .flatMap((publication) =>
+              publication.snapshot.map((row: Row) =>
+                cancelledRow(state, { ...row, plan_id: publication.plan_id }),
+              ),
+            ),
           ...blocksFor(state, start, end),
-        ].filter((row) => overlap(row, { start, end }));
+        ].filter((row) => !row.cancelled && overlap(row, { start, end }));
       return key === "chat"
         ? demoAIReply(
             body || {},
@@ -700,7 +939,11 @@ export async function demoApi(
     get(state, resource, id);
     return {
       rows: state.publications
-        .flatMap((item) => item.snapshot)
+        .flatMap((item) =>
+          item.snapshot.map((row: Row) =>
+            cancelledRow(state, { ...row, plan_id: item.plan_id }),
+          ),
+        )
         .filter((row) => row.room_ids.includes(id))
         .map((row) => publicRow(row, true)),
     };
@@ -875,6 +1118,8 @@ export async function demoApi(
     const conflicts = conflictsFor(state, record.plan);
     if (conflicts.length) throw new Error(conflicts.join("\n"));
   }
+  if (resource === "people" && record.kind === "teacher")
+    cancelForTeacher(state, record);
   save(state, `${resource}: Demo-Eintrag gespeichert`);
   return record;
 }

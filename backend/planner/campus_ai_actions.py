@@ -82,6 +82,7 @@ def proactive_context(context, selection):
     names = {
         "map": "Räume",
         "schedule": "Stundenplanung",
+        "teachers": "Lehrendenübersicht",
         "data": "Stammdaten",
         "exams": "Prüfungen",
         "displays": "Öffentliche Anzeigen",
@@ -99,6 +100,7 @@ def proactive_context(context, selection):
     defaults = {
         "map": ["add_room", "blocks"],
         "schedule": ["courses", "semester"],
+        "teachers": ["teachers", "schedule"],
         "exams": ["exams", "add_exam"],
         "displays": ["displays", "schedule"],
         "students": ["students", "displays"],

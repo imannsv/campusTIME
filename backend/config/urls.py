@@ -33,6 +33,8 @@ urlpatterns = [
     path("api/public/<uuid:token>/", views.public_display),
     path("api/public/<uuid:token>/overview/", views.public_overview),
     path("api/rooms/<int:pk>/occupancy/", views.room_occupancy),
+    path("api/resource-occupancy/", views.resource_occupancy),
+    path("api/people/<int:pk>/block-time/", views.teacher_block_time),
     path("api/imports/<str:resource>/", views.imports),
     path("api/", include(router.urls)),
     re_path(

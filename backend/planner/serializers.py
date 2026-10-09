@@ -203,6 +203,8 @@ class TenantSerializer(serializers.ModelSerializer):
             a = value("availability", {})
             if not isinstance(a, dict):
                 raise serializers.ValidationError("Verfügbarkeit muss ein Objekt sein.")
+            if "unrestricted" in a and type(a["unrestricted"]) is not bool:
+                raise serializers.ValidationError({"availability": "Uneingeschränkte Verfügbarkeit muss wahr oder falsch sein."})
             try:
                 from datetime import datetime, time
 
@@ -229,6 +231,8 @@ class TenantSerializer(serializers.ModelSerializer):
                             >= time.fromisoformat(window["to"])
                         ):
                             raise ValueError()
+                if not isinstance(a.get("exclusions", []), list):
+                    raise ValueError()
                 for x in a.get("exclusions", []):
                     s, e = (
                         datetime.fromisoformat(x["start"]),

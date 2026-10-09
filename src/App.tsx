@@ -48,6 +48,7 @@ import { api, all, Row, Field, labels, fmt, DEMO_MODE } from "./api";
 import { Modal, RecordForm, ImportModal, Relation } from "./components";
 import Timetable from "./Timetable";
 import RoomOverview from "./RoomOverview";
+import ResourceOverview from "./ResourceOverview";
 import StudySetup from "./StudySetup";
 import StudentOverview from "./StudentOverview";
 import AssessmentBoard from "./AssessmentBoard";
@@ -64,6 +65,12 @@ const nav = [
     group: "Planung",
   },
   { id: "exams", label: "Prüfungen", icon: GraduationCap, group: "Planung" },
+  {
+    id: "teachers",
+    label: "Lehrendenübersicht",
+    icon: Users,
+    group: "Planung",
+  },
   { id: "map", label: "Räume", icon: Building2, group: "Verwaltung" },
   {
     id: "setup",
@@ -1032,7 +1039,7 @@ function Workspace() {
     };
   }, [planId, refresh]);
   const edit = (res: string, row?: Row, defaults: Row = {}) => {
-    if (page === "schedule" && res === "sessions") {
+    if (["schedule", "teachers", "map"].includes(page) && res === "sessions") {
       if (!canLeaveEditor()) return;
       editorState.current = { dirty: false, busy: false };
       setFreddySessionId(row?.id || null);
@@ -1827,9 +1834,18 @@ function Workspace() {
                 </div>
               </div>
             </>
+          ) : page === "teachers" ? (
+            <ResourceOverview
+              kind="teachers"
+              onChanged={reload}
+              zone={zone}
+              data={data}
+              revision={refresh}
+              query={search}
+              onEdit={edit}
+            />
           ) : page === "map" ? (
             <RoomOverview
-              key={selectedArea?.id}
               areaId={selectedArea?.id ?? null}
               onAreaChange={setAreaId}
               onContextChange={setRoomContext}
@@ -1837,6 +1853,7 @@ function Workspace() {
               zone={zone}
               query={search}
               onEdit={edit}
+              revision={refresh}
             />
           ) : page === "students" ? (
             <>

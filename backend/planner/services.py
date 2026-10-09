@@ -106,6 +106,7 @@ def session_row(session, cached_data=None):
             Person.objects.filter(id__in=assigned).values_list("name", flat=True)
         ),
         "locked": session.locked,
+        "cancelled": session.cancelled,
     }
     row["room_allocations"] = exam_allocation(row, rooms)
     return row
@@ -148,11 +149,13 @@ def latest_publications(institution):
 
 
 def external_rows(plan):
+    from .teacher_availability import overlay_cancellations
     return [
         row
         for publication in latest_publications(plan.institution)
         if publication.plan_id != plan.id
-        for row in publication.snapshot
+        for row in overlay_cancellations(publication.snapshot, plan.institution, publication.plan_id)
+        if not row.get("cancelled")
     ]
 
 
@@ -192,6 +195,8 @@ def block_rows(institution, period):
 
 
 def resource_keys(row):
+    if row.get("cancelled"):
+        return []
     return (
         [("room", n) for n in row.get("room_ids", [])]
         + [
@@ -205,6 +210,10 @@ def resource_keys(row):
 def available(person, start, end, institution):
     a = person.availability or {}
     s, e = local(start, institution), local(end, institution)
+    if any(s < dt(x["end"]) and dt(x["start"]) < e for x in a.get("exclusions", [])):
+        return False
+    if a.get("unrestricted"):
+        return True
     if s.date() != e.date():
         return False
     if "windows" in a:
@@ -276,6 +285,7 @@ def course_chunks(course):
 
 
 def validate_rows(plan, rows, coverage=False, focus_session=None):
+    rows = [row for row in rows if not row.get("cancelled")]
     institution, period = plan.institution, plan.period
     problems = []
     room_map = {r.id: r for r in Room.objects.filter(institution=institution)}
@@ -482,7 +492,7 @@ def validate_rows(plan, rows, coverage=False, focus_session=None):
 
 
 def public_row(row, show_teachers=False):
-    keys = ["name", "start", "end", "room_names", "group_names", "color"]
+    keys = ["name", "start", "end", "room_names", "group_names", "color", "cancelled"]
     result = {key: row.get(key) for key in keys}
     result["kind"] = "exam" if row.get("exam") else "teaching"
     if show_teachers:

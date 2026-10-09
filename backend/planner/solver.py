@@ -36,7 +36,7 @@ def solve(plan, kind, cancelled, seconds=None):
             origin.timestamp() + value * 60, ZoneInfo(institution.timezone)
         ).isoformat()
 
-    old_rows = plan_rows(plan)
+    old_rows = [row for row in plan_rows(plan) if not row.get("cancelled")]
     preserved = [
         r for r in old_rows if r["locked"] or (kind == "exams") != bool(r.get("exam"))
     ]

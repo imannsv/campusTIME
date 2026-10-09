@@ -114,6 +114,7 @@ def help_for(question, history=None, context=None):
             "map": "rooms",
             "exams": "assessments",
             "schedule": "schedule",
+            "teachers": "teachers",
             "students": "display",
             "displays": "display",
             "settings": "settings",
@@ -196,7 +197,7 @@ def context_for(institution, plan=None, cohort=None, view=None):
     if not facts["cohorts"]:
         notice("Noch kein Jahrgang angelegt.", "setup", action="add_cohort", step=4)
     unavailable = sum(
-        not person.availability.get(
+        not person.availability.get("unrestricted") and not person.availability.get(
             "windows", person.availability.get("weekdays", [0, 1, 2, 3, 4])
         )
         for person in m.Person.objects.filter(institution=institution, kind="teacher")
@@ -265,7 +266,7 @@ def context_for(institution, plan=None, cohort=None, view=None):
             if not teachers:
                 notice(f"{course.name}: Lehrende fehlen.", "data")
             if any(
-                not person.availability.get(
+                not person.availability.get("unrestricted") and not person.availability.get(
                     "windows", person.availability.get("weekdays", [0, 1, 2, 3, 4])
                 )
                 for person in teachers

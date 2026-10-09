@@ -196,5 +196,17 @@
     "resource": "periods",
     "targets": ["planungszeiträume", "zeiträume", "unterrichtskalender"],
     "guides": ["periods"]
+  },
+  {
+    "id": "teacher_overview",
+    "label": "Lehrendenübersicht öffnen",
+    "page": "teachers",
+    "targets": [
+      "lehrendenübersicht",
+      "lehrerübersicht",
+      "dozentenübersicht",
+      "lehrendenbelegung"
+    ],
+    "guides": ["teachers"]
   }
 ]

@@ -61,6 +61,7 @@ export const labels: Record<string, string> = {
   size: "Gruppengröße",
   kind: "Art",
   availability: "Verfügbarkeit",
+  cancelled: "Termin abgesagt",
   start: "Beginn",
   end: "Ende",
   excluded_dates: "Unterrichtsfreie Tage",

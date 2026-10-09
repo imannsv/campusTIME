@@ -364,6 +364,7 @@ class Session(models.Model):
     rooms = models.ManyToManyField(Room)
     teachers = models.ManyToManyField(Person, blank=True)
     locked = models.BooleanField(default=False)
+    cancelled = models.BooleanField(default=False)
 
     class Meta:
         constraints = [

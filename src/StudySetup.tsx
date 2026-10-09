@@ -349,9 +349,11 @@ export default function StudySetup({
               >
                 <strong>{person.name}</strong>
                 <span>
-                  {person.availability?.windows
-                    ? `${person.availability.windows.length} Zeitfenster`
-                    : "Wöchentliche Verfügbarkeit"}
+                  {person.availability?.unrestricted
+                    ? "Uneingeschränkt verfügbar"
+                    : person.availability?.windows
+                      ? `${person.availability.windows.length} Zeitfenster`
+                      : "Wöchentliche Verfügbarkeit"}
                 </span>
                 <span>Verfügbarkeit bearbeiten</span>
               </button>

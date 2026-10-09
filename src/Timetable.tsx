@@ -306,6 +306,7 @@ export default function Timetable({
                     row.room_names?.join(", "),
                     row.teacher_names?.join(", "),
                     row.locked ? "Termin fixiert" : "",
+                    row.cancelled ? "Abgesagt" : "",
                     row.blocked ? "Raum gesperrt · Änderung ausstehend" : "",
                   ]
                     .filter(Boolean)
@@ -315,7 +316,7 @@ export default function Timetable({
                       type="button"
                       key={row.id || `${row.start}-${i}`}
                       disabled={publicMode}
-                      className={`calendar-event ${row.color || "blue"} ${compact ? "compact" : brief ? "brief" : ""} ${!agenda && eventHeight < 64 ? "tiny" : ""} ${row.blocked ? "blocked" : ""}`}
+                      className={`calendar-event ${row.color || "blue"} ${compact ? "compact" : brief ? "brief" : ""} ${!agenda && eventHeight < 64 ? "tiny" : ""} ${row.blocked ? "blocked" : ""} ${row.cancelled ? "cancelled" : ""}`}
                       aria-label={details}
                       aria-pressed={
                         onSelect ? row.id === selectedId : undefined
@@ -348,7 +349,10 @@ export default function Timetable({
                         </span>
                         {row.locked && <LockKeyhole size={11} />}
                       </div>
-                      <strong>{row.name}</strong>
+                      <strong>
+                        {row.cancelled && "Abgesagt · "}
+                        {row.name}
+                      </strong>
                       {(agenda || !compact) && (
                         <span className="event-group">
                           <Users size={12} />
@@ -438,6 +442,9 @@ export default function Timetable({
               <p className="blocked-label">
                 Raum gesperrt · Änderung ausstehend
               </p>
+            )}
+            {preview.row.cancelled && (
+              <p className="cancelled-label">Abgesagt</p>
             )}
             {onSelect && (
               <div className="event-preview-hint">Anklicken zum Bearbeiten</div>
