@@ -853,6 +853,15 @@ def display_payload(request, token, overview=False):
 
 
 @api_view(["GET"])
+def resource_occupancy(request):
+    from .occupancy import overview
+
+    response = Response(overview(tenant(request), request.query_params))
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@api_view(["GET"])
 def room_occupancy(request, pk):
     institution = tenant(request)
     room = get_object_or_404(m.Room, institution=institution, pk=pk)

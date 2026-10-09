@@ -7,6 +7,72 @@ async function login(page: Page, path = "/wiki") {
   await expect(page.locator(".wiki-navigation")).toBeVisible();
 }
 
+test("resource timelines use the authenticated backend and save appointments in a popup", async ({
+  page,
+}) => {
+  await login(page);
+  const response = await page.request.get(
+    "/api/resource-occupancy/?start=2026-10-05&end=2026-10-11",
+  );
+  expect(response.status()).toBe(200);
+  const data = await response.json();
+  expect(data.rows.length).toBeGreaterThan(0);
+  expect(data.teachers.length).toBeGreaterThan(0);
+  expect(data.rows.every((row: any) => row.learner_ids === undefined)).toBe(
+    true,
+  );
+  await page.goto("/");
+  await page
+    .getByRole("navigation", { name: "Arbeitsbereiche" })
+    .getByRole("button", { name: "Lehrendenübersicht", exact: true })
+    .click();
+  const overview = page.getByRole("region", {
+    name: "Lehrendenübersicht",
+    exact: true,
+  });
+  await expect(overview.locator(".resource-day-header")).toHaveCount(7);
+  await overview
+    .getByRole("button", { name: "Datum auswählen", exact: true })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Kalender", exact: true })
+    .getByRole("button", { name: "Freitag, 09. Oktober 2026", exact: true })
+    .click();
+  const event = overview.locator(".resource-event").first();
+  await event.click();
+  const details = page.getByRole("dialog", {
+    name: "Termindetails",
+    exact: true,
+  });
+  await expect(details).toBeVisible();
+  await details
+    .getByRole("button", { name: "Termin bearbeiten", exact: true })
+    .click();
+  const form = page.getByRole("dialog", {
+    name: "Termin bearbeiten",
+    exact: true,
+  });
+  await expect(form).toBeVisible();
+  const fixed = form.getByLabel("Termin fixieren");
+  const previous = await fixed.isChecked();
+  await fixed.setChecked(!previous);
+  await form.getByRole("button", { name: "Speichern", exact: true }).click();
+  await expect(form).toHaveCount(0);
+  await expect(event).toBeVisible();
+  await event.click();
+  await details
+    .getByRole("button", { name: "Termin bearbeiten", exact: true })
+    .click();
+  await expect(fixed).toBeChecked({ checked: !previous });
+  await fixed.setChecked(previous);
+  await form.getByRole("button", { name: "Speichern", exact: true }).click();
+  const context = await page.request.get(
+    "/api/campusai/context/?page=teachers",
+  );
+  expect(context.status()).toBe(200);
+  expect((await context.json()).view.label).toBe("Lehrendenübersicht");
+});
+
 test("deep links require login, preserve destination, and show protected images", async ({
   page,
 }) => {
@@ -140,6 +206,8 @@ test("Freddy links to the same protected guide in a new tab", async ({
   await page.goto("/");
   await page.getByLabel("Passwort", { exact: true }).fill("WikiBuildOnly2026!");
   await page.getByRole("button", { name: "Anmelden", exact: true }).click();
+  // Wait for the initial plan selection before typing into its chat draft.
+  await expect(page.getByRole("button", { name: "Termin", exact: true })).toBeVisible();
   await page
     .getByRole("button", { name: "Freddy öffnen", exact: true })
     .click();

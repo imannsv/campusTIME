@@ -24,6 +24,7 @@ class Selection(serializers.Serializer):
         choices=[
             "setup",
             "schedule",
+            "teachers",
             "data",
             "exams",
             "map",

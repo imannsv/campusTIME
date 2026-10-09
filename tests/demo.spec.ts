@@ -6,6 +6,7 @@ import { assessmentFlow } from "./assessment-flow";
 import { campusAIFlow } from "./campus-ai-flow";
 import "./planning-workspace";
 import "./freddy-improvements";
+import "./resource-overviews";
 test.use({ actionTimeout: 10000 });
 
 test("Wiki bleibt in der öffentlichen Demo gesperrt, auch über direkte Artikellinks", async ({

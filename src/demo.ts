@@ -522,6 +522,116 @@ export async function demoApi(
   const [resource, key, operation] = url.pathname.split("/").filter(Boolean);
   const id = Number(key);
   const query = url.searchParams;
+  if (resource === "resource-occupancy" && method === "GET") {
+    const start =
+      query.get("start") || DateTime.now().setZone(ZONE).toISODate()!;
+    const end = query.get("end") || start;
+    const lower = DateTime.fromISO(start, { zone: ZONE }).startOf("day");
+    const upper = DateTime.fromISO(end, { zone: ZONE })
+      .startOf("day")
+      .plus({ days: 1 });
+    const source = query.get("source") || "planning";
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(start) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(end) ||
+      !lower.isValid ||
+      !upper.isValid ||
+      upper <= lower ||
+      upper.diff(lower, "days").days > 31
+    )
+      throw new Error("Bitte einen Zeitraum von 1 bis 31 Tagen wählen.");
+    if (!["planning", "published"].includes(source))
+      throw new Error("Unbekannter Planungsstand.");
+    const signature = (row: Row) =>
+      JSON.stringify([
+        Date.parse(row.start),
+        Date.parse(row.end),
+        row.name,
+        [...(row.room_ids || [])].sort((a, b) => a - b),
+        [...(row.teacher_ids || [])].sort((a, b) => a - b),
+        row.course || null,
+        row.exam || null,
+        [...(row.group_names || [])].sort(),
+      ]);
+    const published = state.publications.flatMap((publication) =>
+      publication.snapshot.map((row: Row) => ({
+        ...row,
+        plan_id: publication.plan_id,
+      })),
+    );
+    const candidates =
+      source === "published"
+        ? published
+        : state.data.plans.flatMap((plan) => rowsFor(state, plan.id));
+    const selectedRows = candidates
+      .filter((row) =>
+        overlap(row, { start: lower.toISO(), end: upper.toISO() }),
+      )
+      .map((row) => ({
+        ...row,
+        status:
+          source === "published" ||
+          published.some(
+            (other) =>
+              other.plan_id === row.plan_id &&
+              other.id === row.id &&
+              signature(other) === signature(row),
+          )
+            ? "published"
+            : "draft",
+      }));
+    const rows = [
+      ...selectedRows,
+      ...blocksFor(state, lower.toISO()!, upper.toISO()!).map((row) => ({
+        ...row,
+        room_names: row.room_ids.map(
+          (pk: number) => get(state, "rooms", pk).name,
+        ),
+        teacher_ids: [],
+        teacher_names: [],
+        group_names: [],
+        status: "blocked",
+        kind: "block",
+      })),
+    ]
+      .map((row) => ({
+        id: row.status === "blocked" ? null : row.id,
+        plan_id: row.plan_id || null,
+        plan_name:
+          state.data.plans.find((plan) => plan.id === row.plan_id)?.name || "",
+        name: row.name,
+        start: row.start,
+        end: row.end,
+        room_ids: row.room_ids || [],
+        room_names: row.room_names || [],
+        teacher_ids: row.teacher_ids || [],
+        teacher_names: row.teacher_names || [],
+        group_names: row.group_names || [],
+        color: row.color || "blue",
+        status: row.status,
+        kind: row.kind || (row.exam ? "exam" : "teaching"),
+      }))
+      .sort((a, b) => a.start.localeCompare(b.start));
+    return {
+      start,
+      end,
+      source,
+      rows,
+      teachers: state.data.people
+        .filter((person) => person.kind === "teacher")
+        .map(({ id, name, code }) => ({ id, name, code })),
+      rooms: state.data.rooms.map(
+        ({ id, name, code, floor, capacity, equipment }) => ({
+          id,
+          name,
+          code,
+          floor,
+          capacity,
+          equipment,
+        }),
+      ),
+    };
+  }
   if (resource === "campusai") {
     if (key === "status" && method === "GET") return demoAIStatus;
     const selection =

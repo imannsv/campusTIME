@@ -114,6 +114,7 @@ def help_for(question, history=None, context=None):
             "map": "rooms",
             "exams": "assessments",
             "schedule": "schedule",
+            "teachers": "teachers",
             "students": "display",
             "displays": "display",
             "settings": "settings",

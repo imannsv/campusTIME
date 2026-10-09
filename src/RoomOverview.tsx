@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { DateTime } from "luxon";
 import { api, fmt, Row } from "./api";
+import ResourceOverview from "./ResourceOverview";
 
 type Props = {
   areaId: number | null;
@@ -9,6 +10,7 @@ type Props = {
   data: Record<string, Row[]>;
   zone: string;
   query: string;
+  revision: number;
   onEdit: (resource: string, record?: Row, defaults?: Row) => void;
 };
 
@@ -20,7 +22,9 @@ export default function RoomOverview({
   query,
   onEdit,
   onContextChange,
+  revision,
 }: Props) {
+  const [view, setView] = useState("catalog");
   const [floorId, setFloorId] = useState<number | null>(null);
   const [roomId, setRoomId] = useState<number | null>(null);
   const [occupancy, setOccupancy] = useState<Row[]>([]);
@@ -33,6 +37,10 @@ export default function RoomOverview({
     .filter((item) => item.building === area?.id)
     .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name, "de"));
   const currentFloor = floors.find((item) => item.id === floorId);
+  useEffect(() => {
+    setFloorId(null);
+    setRoomId(null);
+  }, [area?.id]);
   useEffect(
     () =>
       onContextChange({
@@ -87,8 +95,27 @@ export default function RoomOverview({
 
   return (
     <section className="room-overview" aria-label="Raumverwaltung">
+      <div className="room-view-switch" role="group" aria-label="Raumansicht">
+        <button
+          aria-pressed={view === "catalog"}
+          onClick={() => setView("catalog")}
+        >
+          Raumverwaltung
+        </button>
+        <button
+          aria-pressed={view === "occupancy"}
+          onClick={() => setView("occupancy")}
+        >
+          Raumbelegung
+        </button>
+      </div>
       <div className="room-header">
-        <div className="room-actions" role="group" aria-label="Räume verwalten">
+        <div
+          className="room-actions"
+          role="group"
+          aria-label="Räume verwalten"
+          hidden={view !== "catalog"}
+        >
           <button
             className="button secondary"
             onClick={() => onEdit("buildings")}
@@ -176,148 +203,163 @@ export default function RoomOverview({
               </button>
             )}
           </div>
-          <div className="room-overview-layout">
-            <div className="room-catalog">
-              <label className="room-search">
-                <span>Raum suchen</span>
-                <input
-                  type="search"
-                  value={search}
-                  placeholder="Bezeichnung oder Ausstattung"
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-              </label>
-              <p className="room-result-count">
-                {rooms.length} {rooms.length === 1 ? "Raum" : "Räume"} ·{" "}
-                {currentFloor?.name || area.name}
-              </p>
-              {rooms.length ? (
-                <div className="room-tile-grid">
-                  {rooms.map((room) => (
-                    <button
-                      key={room.id}
-                      className={`room-tile ${selected?.id === room.id ? "selected" : ""}`}
-                      aria-label={room.name}
-                      aria-pressed={selected?.id === room.id}
-                      onClick={() => setRoomId(room.id)}
-                    >
-                      <span className="room-tile-floor">
-                        {floors.find((floor) => floor.id === room.floor)?.name}
-                      </span>
-                      <strong>{room.name}</strong>
-                      {room.code !== room.name && (
-                        <span className="room-tile-code">{room.code}</span>
-                      )}
-                      <span className="room-tile-capacity">
-                        {room.capacity == null
-                          ? "Kapazität offen"
-                          : `${room.capacity} Plätze`}
-                      </span>
-                      <span className="room-tile-equipment">
-                        {room.equipment?.length
-                          ? room.equipment.join(" · ")
-                          : "Keine Ausstattung hinterlegt"}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="room-empty">
-                  {query || search
-                    ? "Keine Räume für diese Suche gefunden."
-                    : !floors.length
-                      ? "Lege zuerst ein Stockwerk für diesen Bereich an."
-                      : "Hier sind noch keine Räume angelegt."}
-                </div>
-              )}
-            </div>
-            <aside className="room-detail-panel">
-              {selected ? (
-                <>
-                  <span className="small-label">Raumdetails</span>
-                  <h2>{selected.name}</h2>
-                  <p>
-                    {area.name} · {selectedFloor?.name}
-                  </p>
-                  <dl className="room-facts">
-                    <div>
-                      <dt>Raumbezeichnung</dt>
-                      <dd>{selected.code}</dd>
-                    </div>
-                    <div>
-                      <dt>Kapazität</dt>
-                      <dd>
-                        {selected.capacity == null
-                          ? "Noch nicht erfasst"
-                          : `${selected.capacity} Plätze`}
-                      </dd>
-                    </div>
-                  </dl>
-                  <div className="equipment-list">
-                    {selected.equipment?.map((item: string) => (
-                      <span key={item}>{item}</span>
+          {view === "occupancy" ? (
+            <ResourceOverview
+              kind="rooms"
+              zone={zone}
+              data={data}
+              revision={revision}
+              query={query}
+              roomIds={rooms.map((room) => room.id)}
+              onEdit={onEdit}
+            />
+          ) : (
+            <div className="room-overview-layout">
+              <div className="room-catalog">
+                <label className="room-search">
+                  <span>Raum suchen</span>
+                  <input
+                    type="search"
+                    value={search}
+                    placeholder="Bezeichnung oder Ausstattung"
+                    onChange={(event) => setSearch(event.target.value)}
+                  />
+                </label>
+                <p className="room-result-count">
+                  {rooms.length} {rooms.length === 1 ? "Raum" : "Räume"} ·{" "}
+                  {currentFloor?.name || area.name}
+                </p>
+                {rooms.length ? (
+                  <div className="room-tile-grid">
+                    {rooms.map((room) => (
+                      <button
+                        key={room.id}
+                        className={`room-tile ${selected?.id === room.id ? "selected" : ""}`}
+                        aria-label={room.name}
+                        aria-pressed={selected?.id === room.id}
+                        onClick={() => setRoomId(room.id)}
+                      >
+                        <span className="room-tile-floor">
+                          {
+                            floors.find((floor) => floor.id === room.floor)
+                              ?.name
+                          }
+                        </span>
+                        <strong>{room.name}</strong>
+                        {room.code !== room.name && (
+                          <span className="room-tile-code">{room.code}</span>
+                        )}
+                        <span className="room-tile-capacity">
+                          {room.capacity == null
+                            ? "Kapazität offen"
+                            : `${room.capacity} Plätze`}
+                        </span>
+                        <span className="room-tile-equipment">
+                          {room.equipment?.length
+                            ? room.equipment.join(" · ")
+                            : "Keine Ausstattung hinterlegt"}
+                        </span>
+                      </button>
                     ))}
                   </div>
-                  <div className="room-detail-actions">
-                    <button
-                      className="button secondary"
-                      onClick={() => onEdit("rooms", selected)}
-                    >
-                      Raum bearbeiten
-                    </button>
-                    <button
-                      className="button secondary"
-                      onClick={() =>
-                        onEdit("blocks", undefined, {
-                          rooms: [selected.id],
-                          start: DateTime.now()
-                            .setZone(zone)
-                            .startOf("hour")
-                            .toISO(),
-                          end: DateTime.now()
-                            .setZone(zone)
-                            .startOf("hour")
-                            .plus({ hours: 1 })
-                            .toISO(),
-                        })
-                      }
-                    >
-                      Raum blockieren
-                    </button>
+                ) : (
+                  <div className="room-empty">
+                    {query || search
+                      ? "Keine Räume für diese Suche gefunden."
+                      : !floors.length
+                        ? "Lege zuerst ein Stockwerk für diesen Bereich an."
+                        : "Hier sind noch keine Räume angelegt."}
                   </div>
-                  <h3>Veröffentlichte Belegung</h3>
-                  {loading ? (
-                    <p role="status">Belegung laden …</p>
-                  ) : error ? (
-                    <p className="error-box" role="alert">
-                      {error}
+                )}
+              </div>
+              <aside className="room-detail-panel">
+                {selected ? (
+                  <>
+                    <span className="small-label">Raumdetails</span>
+                    <h2>{selected.name}</h2>
+                    <p>
+                      {area.name} · {selectedFloor?.name}
                     </p>
-                  ) : occupancy.length ? (
-                    <div className="room-occupancy-list">
-                      {occupancy
-                        .slice()
-                        .sort((a, b) => a.start.localeCompare(b.start))
-                        .map((row, index) => (
-                          <div className="occupancy" key={index}>
-                            <span>
-                              {fmt(row.start, zone, "dd.MM.")} ·{" "}
-                              {fmt(row.start, zone)}–{fmt(row.end, zone)}
-                            </span>
-                            <strong>{row.name}</strong>
-                          </div>
-                        ))}
+                    <dl className="room-facts">
+                      <div>
+                        <dt>Raumbezeichnung</dt>
+                        <dd>{selected.code}</dd>
+                      </div>
+                      <div>
+                        <dt>Kapazität</dt>
+                        <dd>
+                          {selected.capacity == null
+                            ? "Noch nicht erfasst"
+                            : `${selected.capacity} Plätze`}
+                        </dd>
+                      </div>
+                    </dl>
+                    <div className="equipment-list">
+                      {selected.equipment?.map((item: string) => (
+                        <span key={item}>{item}</span>
+                      ))}
                     </div>
-                  ) : (
-                    <p>Keine veröffentlichte Belegung.</p>
-                  )}
-                </>
-              ) : (
-                <p className="room-selection-hint">
-                  Wähle einen Raum, um Details und Belegung zu sehen.
-                </p>
-              )}
-            </aside>
-          </div>
+                    <div className="room-detail-actions">
+                      <button
+                        className="button secondary"
+                        onClick={() => onEdit("rooms", selected)}
+                      >
+                        Raum bearbeiten
+                      </button>
+                      <button
+                        className="button secondary"
+                        onClick={() =>
+                          onEdit("blocks", undefined, {
+                            rooms: [selected.id],
+                            start: DateTime.now()
+                              .setZone(zone)
+                              .startOf("hour")
+                              .toISO(),
+                            end: DateTime.now()
+                              .setZone(zone)
+                              .startOf("hour")
+                              .plus({ hours: 1 })
+                              .toISO(),
+                          })
+                        }
+                      >
+                        Raum blockieren
+                      </button>
+                    </div>
+                    <h3>Veröffentlichte Belegung</h3>
+                    {loading ? (
+                      <p role="status">Belegung laden …</p>
+                    ) : error ? (
+                      <p className="error-box" role="alert">
+                        {error}
+                      </p>
+                    ) : occupancy.length ? (
+                      <div className="room-occupancy-list">
+                        {occupancy
+                          .slice()
+                          .sort((a, b) => a.start.localeCompare(b.start))
+                          .map((row, index) => (
+                            <div className="occupancy" key={index}>
+                              <span>
+                                {fmt(row.start, zone, "dd.MM.")} ·{" "}
+                                {fmt(row.start, zone)}–{fmt(row.end, zone)}
+                              </span>
+                              <strong>{row.name}</strong>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <p>Keine veröffentlichte Belegung.</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="room-selection-hint">
+                    Wähle einen Raum, um Details und Belegung zu sehen.
+                  </p>
+                )}
+              </aside>
+            </div>
+          )}
         </>
       ) : (
         <div className="room-empty">

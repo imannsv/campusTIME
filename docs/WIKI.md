@@ -38,6 +38,8 @@ node scripts/wiki-test-vite.mjs
 
 Anschließend `npm run wiki:screenshots`. Danach die beiden Server beenden. Das Skript ist absichtlich auf den separaten Port 5186 festgelegt.
 
+Die zwei Belegungsübersichten werden mit `node scripts/resource-screenshots.mjs` auf derselben temporären Einrichtung aufgenommen. Das Skript speichert `teachers-timeline.png` und `rooms-timeline.png` sowie mobile Prüfbilder unter `.playwright/resource-previews/`. Es nutzt ausschließlich Port 5186. Die neuen Ansichten werden zusätzlich in `tests/resource-overviews.ts` und mit dem authentifizierten Backend in `tests/wiki.spec.ts` geprüft.
+
 Prüfungen:
 
 ```powershell
