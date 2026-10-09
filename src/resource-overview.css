@@ -327,12 +327,6 @@
 .resource-event:hover {
   filter: brightness(0.97);
 }
-.resource-week .resource-timeline-heading {
-  height: 48px;
-}
-.resource-week .resource-day-cell {
-  background-image: none;
-}
 .resource-week .resource-event {
   height: 80px;
 }
@@ -459,7 +453,9 @@
   gap: 8px;
   margin-bottom: 24px;
 }
-.room-overview .room-actions[hidden] { display: none; }
+.room-overview .room-actions[hidden] {
+  display: none;
+}
 .room-view-switch button {
   min-height: 40px;
   border: 1px solid var(--line);

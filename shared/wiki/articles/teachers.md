@@ -15,7 +15,7 @@ Gemeinsam ausgewählte Lehrende werden gemeinsam eingeplant. Lehrendenteams je T
 ## Personen und Gruppen
 Unter **Stammdaten → Personen** verwaltest du weitere Personen. Ordne Lernende den richtigen Gruppen zu. Personenkennungen müssen stabil und innerhalb der Einrichtung eindeutig sein.
 ## Lehrendenübersicht
-1. Öffne **Planung → Lehrendenübersicht**. Lehrende stehen links, die Tage der aktuellen Woche laufen nebeneinander. Die Namen und Tagesüberschriften bleiben beim Scrollen sichtbar.
+1. Öffne **Planung → Lehrendenübersicht**. Lehrende stehen links, die Tage der aktuellen Woche laufen nebeneinander. Jeder Tag hat eine horizontale Uhrzeitachse: Aufeinanderfolgende Termine stehen in derselben Zeile hintereinander, nur zeitlich überlappende Termine stehen in getrennten Zeilen. Die Namen und Tagesüberschriften bleiben beim Scrollen sichtbar.
 2. Wähle **Heute**, **Morgen** oder **Diese Woche**. Über **Ansicht** kannst du auch einen beliebigen Tag als Woche ansehen. Die Pfeile wechseln entsprechend einen Tag oder eine Woche.
 3. Öffne den kleinen Kalender über die Datumsschaltfläche und wähle ein Datum. In der Wochenansicht wird dessen Woche angezeigt, in der Tagesansicht nur dieser Tag. Mit den Pfeiltasten wechselst du im Kalender die Tage; Enter wählt aus, Escape schließt.
 4. Suche nach einer Lehrperson oder aktiviere **Nur mit Belegung**. Die Übersicht berücksichtigt zugewiesene Lehrende aus allen Stundenplänen, auch gemeinsame Veranstaltungen und Prüfungsaufsichten.

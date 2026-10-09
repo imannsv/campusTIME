@@ -148,10 +148,12 @@ export default function ResourceOverview({
   const axes = Object.fromEntries(
     days.map((day) => [day, dayAxis(day, hours, zone)]),
   );
+  const axisWidth = Math.max(
+    800,
+    ...days.map((day) => (axes[day].duration / 60) * 80),
+  );
   const dayWidth =
-    mode === "week"
-      ? 240
-      : Math.max(availableWidth, 800, (hours.end - hours.start) * 80);
+    mode === "week" ? axisWidth : Math.max(availableWidth, axisWidth);
   const timelineWidth = days.length * dayWidth;
   const today = now.toISODate()!;
   const preset = (offset: number, nextMode: "week" | "day") => {
@@ -192,7 +194,7 @@ export default function ResourceOverview({
     if (focusedRange.current === key) return;
     focusedRange.current = key;
     scroller.current.scrollLeft =
-      mode === "week" ? Math.max(0, days.indexOf(date) - 1) * dayWidth : 0;
+      mode === "week" ? Math.max(0, days.indexOf(date)) * dayWidth : 0;
   }, [date, mode, source, !!currentResult, days, dayWidth]);
   return (
     <section
@@ -261,6 +263,7 @@ export default function ResourceOverview({
             <label className="resource-mode-label">
               Ansicht
               <select
+                aria-label="Ansicht"
                 value={mode}
                 onChange={(event) =>
                   setMode(event.target.value as "week" | "day")
@@ -383,7 +386,7 @@ export default function ResourceOverview({
                       style={{ width: dayWidth }}
                     >
                       <strong>{fmt(day, zone, "ccc, dd. MMM")}</strong>
-                      <div className="resource-hours" hidden={mode === "week"}>
+                      <div className="resource-hours">
                         {axes[day].ticks.map((time, index) => (
                           <span
                             key={index}
@@ -401,15 +404,6 @@ export default function ResourceOverview({
                 </div>
               </div>
               {displayed.map(({ resource, segments }) => {
-                if (mode === "week") {
-                  const counts: Record<string, number> = {};
-                  segments = segments.map((segment) => ({
-                    ...segment,
-                    lane:
-                      (counts[segment.day] = (counts[segment.day] || 0) + 1) -
-                      1,
-                  }));
-                }
                 const height = Math.max(
                   84,
                   (Math.max(-1, ...segments.map((segment) => segment.lane)) +
@@ -451,14 +445,8 @@ export default function ResourceOverview({
                                 key={`${segment.row.id}:${segment.row.start}:${index}`}
                                 className={`resource-event ${segment.row.status} ${segment.row.kind === "exam" ? "exam" : ""}`}
                                 style={{
-                                  left:
-                                    mode === "week"
-                                      ? 8
-                                      : `${((segment.start - axes[day].start) / axes[day].duration) * 100}%`,
-                                  width:
-                                    mode === "week"
-                                      ? dayWidth - 16
-                                      : `${((segment.end - segment.start) / axes[day].duration) * 100}%`,
+                                  left: `${((segment.start - axes[day].start) / axes[day].duration) * 100}%`,
+                                  width: `calc(${((segment.end - segment.start) / axes[day].duration) * 100}% - 2px)`,
                                   top:
                                     8 +
                                     segment.lane * (mode === "week" ? 88 : 68),
@@ -480,8 +468,7 @@ export default function ResourceOverview({
                                 </small>
                               </button>
                             ))}
-                          {mode === "day" &&
-                            day === today &&
+                          {day === today &&
                             now.hour * 60 + now.minute >= hours.start * 60 &&
                             now.hour * 60 + now.minute < hours.end * 60 && (
                               <div

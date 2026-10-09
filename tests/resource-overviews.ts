@@ -126,6 +126,17 @@ test("Lehrendenübersicht: Woche, Heute, Morgen, Kalender und Termindetails", as
   await expect(overview.locator(".resource-period-summary")).toContainText(
     "05. Okt",
   );
+  const weekRow = overview
+    .locator(".resource-timeline-row")
+    .filter({ hasText: "Testlehrende Lange Namen" });
+  await expect(weekRow.locator(".resource-event")).toHaveCount(4);
+  const weeklyTops = await weekRow
+    .locator('.resource-day-cell[aria-label*="09. Okt"] .resource-event')
+    .evaluateAll((elements) =>
+      elements.map((el) => (el as HTMLElement).style.top),
+    );
+  expect(weeklyTops[0]).not.toBe(weeklyTops[1]);
+  expect(weeklyTops[0]).toBe(weeklyTops[2]);
   await overview.getByRole("button", { name: "Heute", exact: true }).click();
   await expect(overview.locator(".resource-day-header")).toHaveCount(1);
   const teacherRow = overview
@@ -180,12 +191,70 @@ test("Lehrendenübersicht: Woche, Heute, Morgen, Kalender und Termindetails", as
   await expect(overview).toContainText("Keine Lehrenden gefunden.");
 });
 
+test("Anschlusstermine stehen auch in der Wochenansicht nebeneinander", async ({
+  page,
+}) => {
+  await fixture(page);
+  await page.evaluate(() => {
+    const key = "campustime-browser-demo-v1";
+    const state = JSON.parse(localStorage.getItem(key)!);
+    for (const [id, start, end] of [
+      [9001, 8, 11],
+      [9002, 11, 14],
+      [9004, 14, 17],
+    ]) {
+      const session = state.data.sessions.find((row: any) => row.id === id);
+      session.start = `2026-10-09T${String(start).padStart(2, "0")}:00:00+02:00`;
+      session.end = `2026-10-09T${String(end).padStart(2, "0")}:00:00+02:00`;
+    }
+    localStorage.setItem(key, JSON.stringify(state));
+  });
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Lehrendenübersicht", exact: true })
+    .click();
+  const overview = page.getByRole("region", {
+    name: "Lehrendenübersicht",
+    exact: true,
+  });
+  const row = overview
+    .locator(".resource-timeline-row")
+    .filter({ hasText: "Testlehrende Lange Namen" });
+  for (const mode of ["week", "day"]) {
+    await overview.getByLabel("Ansicht", { exact: true }).selectOption(mode);
+    const events = row.locator(
+      '.resource-day-cell[aria-label*="09. Okt"] .resource-event',
+    );
+    await expect(events).toHaveCount(3);
+    const boxes = await events.evaluateAll((elements) =>
+      elements.map((element) => {
+        const { x, y, width, height } = element.getBoundingClientRect();
+        return { x, y, width, height };
+      }),
+    );
+    for (let index = 1; index < boxes.length; index++) {
+      expect(boxes[index].y).toBeCloseTo(boxes[0].y, 0);
+      expect(boxes[index].x).toBeGreaterThan(boxes[index - 1].x);
+      expect(
+        Math.abs(
+          boxes[index].x - (boxes[index - 1].x + boxes[index - 1].width),
+        ),
+      ).toBeLessThan(5);
+    }
+    expect(boxes[0].width).toBeGreaterThanOrEqual(180);
+    expect(await row.evaluate((el) => el.clientHeight)).toBeLessThan(120);
+    await expect(overview.locator(".resource-hours").first()).toBeVisible();
+  }
+});
+
 test("Raumbelegung bleibt eine Tagesansicht und zeigt Blockierungen und Freigaben", async ({
   page,
 }) => {
   await fixture(page);
   await page.getByRole("button", { name: "Räume", exact: true }).click();
-  await page.getByRole("button", { name: "Raumbelegung", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Raumbelegung", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
   const overview = page.getByRole("region", {
     name: "Raumbelegung",
     exact: true,
@@ -242,6 +311,15 @@ test("Raumbelegung bleibt eine Tagesansicht und zeigt Blockierungen und Freigabe
   );
   await overview.getByRole("button", { name: "Heute", exact: true }).click();
   await expect(overview.locator(".resource-event")).toHaveCount(4);
+  await page
+    .getByRole("button", { name: "Raumverwaltung", exact: true })
+    .click();
+  await expect(page.locator(".room-tile").first()).toBeVisible();
+  await page
+    .getByRole("button", { name: "Lehrendenübersicht", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Räume", exact: true }).click();
+  await expect(overview).toBeVisible();
 });
 
 test("Belegung: Kalender per Tastatur und schmale Ansichten ohne Seitenüberlauf", async ({
@@ -286,20 +364,23 @@ test("Belegung: Kalender per Tastatur und schmale Ansichten ohne Seitenüberlauf
   await expect(
     page.getByRole("dialog", { name: "Kalender", exact: true }),
   ).toHaveCount(0);
-  for (const width of [390, 768, 1280, 1440, 1920, 720]) {
-    await page.setViewportSize({ width, height: 1000 });
-    await expect(overview).toBeVisible();
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
-    if (width < 1000) {
+  for (const mode of ["week", "day"]) {
+    await overview.getByLabel("Ansicht", { exact: true }).selectOption(mode);
+    for (const width of [390, 768, 1280, 1440, 1920, 720]) {
+      await page.setViewportSize({ width, height: 1000 });
+      await expect(overview).toBeVisible();
       expect(
-        await overview
-          .locator(".resource-timeline-scroll")
-          .evaluate((el) => el.scrollWidth > el.clientWidth),
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
       ).toBe(true);
+      if (mode === "week" || width < 1000) {
+        expect(
+          await overview
+            .locator(".resource-timeline-scroll")
+            .evaluate((el) => el.scrollWidth > el.clientWidth),
+        ).toBe(true);
+      }
     }
   }
 });

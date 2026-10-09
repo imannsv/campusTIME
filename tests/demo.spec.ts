@@ -123,6 +123,9 @@ test("Einrichtungsmenü wechselt Raumbereiche und legt neue Bereiche direkt an",
     .getByRole("button", { name: "Seminarzentrum", exact: true })
     .click();
   await expect(page.locator(".breadcrumb strong")).toHaveText("Räume");
+  await page
+    .getByRole("button", { name: "Raumverwaltung", exact: true })
+    .click();
   await expect(
     areas.getByRole("button", { name: "Seminarzentrum", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
@@ -140,6 +143,9 @@ test("Einrichtungsmenü wechselt Raumbereiche und legt neue Bereiche direkt an",
   ).toHaveAttribute("aria-pressed", "true");
   await options
     .getByRole("button", { name: "Hauptgebäude", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Raumverwaltung", exact: true })
     .click();
   await expect(page.locator(".room-result-count")).toContainText(
     "Hauptgebäude",
@@ -186,6 +192,9 @@ test("Einrichtungsmenü wechselt Raumbereiche und legt neue Bereiche direkt an",
   await card.click();
   await options
     .getByRole("button", { name: "Seminarzentrum", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Raumverwaltung", exact: true })
     .click();
   await expect(page.locator(".room-result-count")).toContainText(
     "Seminarzentrum",
@@ -509,6 +518,9 @@ test("Demo funktioniert ohne Backend, Raumänderungen bleiben im Browser", async
     .getByRole("button", { name: "Räume", exact: true })
     .click();
   await page
+    .getByRole("button", { name: "Raumverwaltung", exact: true })
+    .click();
+  await page
     .getByRole("button", { name: "Hörsaal H.101", exact: true })
     .click();
   await expect(page.getByText("Belegung laden …")).toHaveCount(0);
@@ -527,6 +539,9 @@ test("Demo funktioniert ohne Backend, Raumänderungen bleiben im Browser", async
   await page
     .getByRole("navigation")
     .getByRole("button", { name: "Räume", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Raumverwaltung", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: "Hörsaal H.101", exact: true }),
@@ -567,6 +582,9 @@ test("Demo funktioniert ohne Backend, Raumänderungen bleiben im Browser", async
   await page
     .getByRole("navigation")
     .getByRole("button", { name: "Räume", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Raumverwaltung", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: "Hörsaal H.101", exact: true }),

@@ -63,6 +63,9 @@ try {
     .first()
     .click();
   await nav("Räume");
+  await page
+    .getByRole("button", { name: "Raumverwaltung", exact: true })
+    .click();
   await capture("rooms", "start-02", "definitions");
   await step(2, "Lehrende");
   await page
@@ -101,11 +104,9 @@ try {
     path.join(directory, "start-06.png"),
     await page.screenshot({ animations: "disabled" }),
   );
-  await page
-    .getByLabel("Lehrplanversion", { exact: true })
-    .selectOption({
-      label: "Wirtschaftsinformatik · Beispiel 2027 · Freigegeben",
-    });
+  await page.getByLabel("Lehrplanversion", { exact: true }).selectOption({
+    label: "Wirtschaftsinformatik · Beispiel 2027 · Freigegeben",
+  });
   await page.getByText("Semesterübersicht", { exact: true }).click();
   await capture("schools");
   await step(5, "Jahrgänge");

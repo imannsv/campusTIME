@@ -24,7 +24,7 @@ export default function RoomOverview({
   onContextChange,
   revision,
 }: Props) {
-  const [view, setView] = useState("catalog");
+  const [view, setView] = useState("occupancy");
   const [floorId, setFloorId] = useState<number | null>(null);
   const [roomId, setRoomId] = useState<number | null>(null);
   const [occupancy, setOccupancy] = useState<Row[]>([]);
@@ -97,16 +97,16 @@ export default function RoomOverview({
     <section className="room-overview" aria-label="Raumverwaltung">
       <div className="room-view-switch" role="group" aria-label="Raumansicht">
         <button
-          aria-pressed={view === "catalog"}
-          onClick={() => setView("catalog")}
-        >
-          Raumverwaltung
-        </button>
-        <button
           aria-pressed={view === "occupancy"}
           onClick={() => setView("occupancy")}
         >
           Raumbelegung
+        </button>
+        <button
+          aria-pressed={view === "catalog"}
+          onClick={() => setView("catalog")}
+        >
+          Raumverwaltung
         </button>
       </div>
       <div className="room-header">
