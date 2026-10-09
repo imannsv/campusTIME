@@ -4,6 +4,8 @@
   "buildCommand": "npm run build:demo",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/wiki", "destination": "/index.html" },
+    { "source": "/wiki/:path*", "destination": "/index.html" },
     { "source": "/display/:path*", "destination": "/index.html" },
     { "source": "/overview/:path*", "destination": "/index.html" }
   ]

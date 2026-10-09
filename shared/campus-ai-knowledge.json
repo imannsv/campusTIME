@@ -14,6 +14,44 @@
     "answer": "Öffne Einrichtung & Studienstruktur. Der Ablauf ist: 1. Räume mit Kapazität und Ausstattung, 2. Lehrende mit abgestimmten Verfügbarkeiten, 3. Studiengang und Lehrplanversion, 4. Module und Lehrveranstaltungen, 5. Jahrgang mit Gruppen und Studierenden, 6. Semesterplan und Zeitraum. Erst danach werden konkrete Termine geplant und veröffentlicht."
   },
   {
+    "id": "definitions",
+    "title": "Begriffe und die beiden Arten von Bereichen",
+    "keywords": [
+      "begriffe",
+      "planungsbereich",
+      "raumbereich",
+      "lehrveranstaltung",
+      "fachsemester",
+      "studienstruktur"
+    ],
+    "page": "setup",
+    "answer": "Ein Studiengang enthält Dauer und CP-Ziel. Die Lehrplanversion enthält seine Module und semesterbezogenen Lehrveranstaltungen. Ein Modul ist eine fachliche Einheit mit CP und gegebenenfalls Teilmodulen. Die Lehrveranstaltung definiert das Unterrichtssoll eines Fachsemesters. Ein Jahrgang umfasst das Aufnahmejahr, den Studiengang, seine Lehrplanversion und Gruppen. Im Semesterplan entstehen daraus konkrete Veranstaltungen, für die Termine mit Räumen und Lehrenden geplant werden. Fachsemester bezeichnet die Position im Studium; Planungszeitraum die Kalenderdaten. Ein Planungsbereich ist organisatorisch; ein Raumbereich enthält räumlich Stockwerke und Räume."
+  },
+  {
+    "id": "schools",
+    "title": "Schulen und Bildungsgänge",
+    "keywords": [
+      "schule",
+      "schüler",
+      "klasse",
+      "schuljahr",
+      "bildungsgang"
+    ],
+    "page": "setup",
+    "answer": "Für Schulen sind Studien- und Bildungsgänge ohne Credit Points möglich. Gruppen dienen als Klassen oder Teilgruppen, Zeiträume als Schuljahr oder Halbjahr. Unterrichtsumfang, Räume, Lehrende, Belegungen und Sperren werden genauso erfasst. Die Oberfläche enthält derzeit auch Hochschulbegriffe wie Jahrgang und Fachsemester; ein vollständiger separater Schulmodus ist noch nicht vorhanden."
+  },
+  {
+    "id": "ui",
+    "title": "Oberfläche und Navigation",
+    "keywords": [
+      "navigation",
+      "seitenleiste",
+      "suche"
+    ],
+    "page": "schedule",
+    "answer": "Die Seitenleiste gruppiert **Planung**, **Verwaltung** und **Veröffentlichung**. Einstellungen und Wiki stehen unten. Das Logo bleibt auch in der eingeklappten Seitenleiste sichtbar; die Bereichssymbole erlauben weiterhin Navigation."
+  },
+  {
     "id": "rooms",
     "title": "Räume und Ausstattung",
     "keywords": [
@@ -43,6 +81,19 @@
     ],
     "page": "setup",
     "answer": "Öffne Einrichtung & Studienstruktur → Schritt 2: Lehrende. Über Lehrende hinzufügen erfasst die Verwaltung Personen und die mit ihnen abgestimmten Zeitfenster. Mehrere Zeitfenster je Tag sowie zusätzliche datierte Sperrzeiten sind möglich. Ohne Zeitfenster ist eine Person nicht verfügbar. Bei Veranstaltungen können mehrere Lehrende zugeordnet werden; ohne einzelne Lehrendenteams unterrichten sie gemeinsam."
+  },
+  {
+    "id": "blocks",
+    "title": "Raumsperren für Projekte oder Bauarbeiten",
+    "keywords": [
+      "sperr",
+      "block",
+      "bauarbeit",
+      "wartung",
+      "projekt"
+    ],
+    "page": "data",
+    "answer": "Unter Stammdaten → Raumblockierungen wählst du Räume sowie Beginn und Ende der Sperre. Damit lassen sich Bauarbeiten, Wartung und Projektbelegungen berücksichtigen. Vorhandene Termine werden dadurch nicht automatisch verschoben. Prüfe den betroffenen Stundenplan und plane konfliktbehaftete Termine neu."
   },
   {
     "id": "study",
@@ -107,21 +158,6 @@
     "answer": "In Schritt 6 legst du einen Semesterplan mit Jahrgang, Fachsemester und Kalenderzeitraum an. Veranstaltungen übernehmen kopiert das passende Unterrichtssoll; vorhandene Anpassungen bleiben erhalten. Unter Stundenplanung nutzt Automatisch planen Lehrende, Verfügbarkeiten, Räume, Ausstattung, Teilnehmer und Sperren. Ein Vorschlag muss geprüft, übernommen und veröffentlicht werden. Die Browser-Demo hat keine automatische Terminplanung. Die angezeigte Konfliktprüfung benennt Probleme und fehlendes Unterrichtssoll; sie ist kein Beweis, dass überhaupt keine Lösung existiert."
   },
   {
-    "id": "assessments",
-    "title": "Prüfungen und Abgabefristen",
-    "keywords": [
-      "prüf",
-      "klausur",
-      "nachschreib",
-      "hausarbeit",
-      "abgabe",
-      "frist",
-      "portfolio"
-    ],
-    "page": "exams",
-    "answer": "Unter Prüfungen wählst du den Semesterplan und Prüfungsanforderungen übernehmen. Vorgaben werden im letzten zum Modul gehörenden Fachsemester vorgeschlagen; bestehende Vorlagen bleiben erhalten. Prüfung anlegen übernimmt Art, Dauer und Hinweise. Prüfe Teilnehmer, Zeitraum und Aufsichten. Wahlpflichtprüfungen verwenden erfasste Belegungen. Hausarbeiten stehen unter Abgaben & Fristen und erhalten dort Datum und Uhrzeit ohne Raumtermin. Fristen sind derzeit nur intern sichtbar. Nachschreiber werden separat mit eigener Teilnehmerliste angelegt."
-  },
-  {
     "id": "electives",
     "title": "Wahlpflicht und gemeinsame Veranstaltungen",
     "keywords": [
@@ -134,46 +170,6 @@
     ],
     "page": "data",
     "answer": "Je Lehrveranstaltung bestimmst du, ob sie gemeinsam für den Jahrgang oder separat je Gruppe durchgeführt wird. Die Semesterübernahme erzeugt entsprechende Veranstaltungen. In den konkreten Veranstaltungen kannst du mehrere Gruppen, Lehrende und tatsächliche Wahlpflichtbelegungen zuordnen. Bei Wahlpflicht zählen ausdrücklich ausgewählte Lernende statt pauschal der ganze Jahrgang. Die Gruppenliste allein ersetzt keine Wahlpflichtbelegung."
-  },
-  {
-    "id": "display",
-    "title": "Veröffentlichung und Studierendenübersicht",
-    "keywords": [
-      "öffentlich",
-      "veröffentlich",
-      "anzeige",
-      "heute",
-      "morgen",
-      "scroll",
-      "übersicht",
-      "filter",
-      "teilen"
-    ],
-    "page": "displays",
-    "answer": "Nach Prüfung und Veröffentlichung legst du unter Öffentliche Anzeige eine Anzeige mit ausgewählten Plänen an. Jeder Anzeigelink bleibt fest auf Woche, Heute oder Morgen eingestellt. Scrollen lässt sich konfigurieren. Die separate Studierendenübersicht bietet Jahrgangs-, Gruppen- und Kursfilter und einen teilbaren Link. Sie zeigt veröffentlichte Termine und lädt Änderungen nach. In der Vercel-Demo liegen Änderungen nur im jeweiligen Browserprofil."
-  },
-  {
-    "id": "blocks",
-    "title": "Raumsperren für Projekte oder Bauarbeiten",
-    "keywords": ["sperr", "block", "bauarbeit", "wartung", "projekt"],
-    "page": "data",
-    "answer": "Unter Stammdaten → Raumblockierungen wählst du Räume sowie Beginn und Ende der Sperre. Damit lassen sich Bauarbeiten, Wartung und Projektbelegungen berücksichtigen. Vorhandene Termine werden dadurch nicht automatisch verschoben. Prüfe den betroffenen Stundenplan und plane konfliktbehaftete Termine neu."
-  },
-  {
-    "id": "imports",
-    "title": "Dateiimporte und Kennungen",
-    "keywords": [
-      "import",
-      "csv",
-      "xlsx",
-      "excel",
-      "kennung",
-      "code",
-      "datei",
-      "vorlage"
-    ],
-    "page": "data",
-    "answer": "Unter Stammdaten wählst du die Datenart und Importieren. Lade dort die CSV-Vorlage und nutze ihre Spalten. Unterstützt werden UTF-8-CSV und XLSX bis 10 MB und 30.000 Zeilen. Erst prüfen, dann übernehmen; bei Fehlern wird nichts übernommen. code ist die stabile Kennung innerhalb der Einrichtung: wiederholte Importe aktualisieren gleiche Kennungen. Beziehungen nutzen Kennungen, Mehrfachzuordnungen trennt |. Abhängigkeiten zuerst: Bereiche → Stockwerke → Räume, Studiengänge → Jahrgänge → Gruppen → Personen, Zeiträume und Planungsbereiche → Pläne → Veranstaltungen. Eine Vorschau verfällt nach einer Stunde oder einer Datenänderung. In der Browser-Demo sind Dateiimporte nicht verfügbar."
   },
   {
     "id": "manual",
@@ -189,21 +185,6 @@
     ],
     "page": "schedule",
     "answer": "Unter Stundenplanung wählst du den Plan. Über Termin legst du einen Termin an; ein Klick auf einen Kalendereintrag öffnet die Bearbeitung. Beginn, Ende, Räume und Lehrende müssen zur Veranstaltung passen. Fixiert schützt einen Termin bei der automatischen Neuplanung. Gespeicherte Änderungen betreffen zunächst den Entwurf. Die öffentliche Anzeige bekommt Terminänderungen erst nach erneuter Veröffentlichung. Stammdaten bearbeitest du durch Öffnen des entsprechenden Eintrags. Verknüpfte Daten können eine Löschung verhindern; prüfe zuerst ihre Verwendung, statt wahllos zu löschen. Freddy öffnet Ansichten und Formulare, speichert oder löscht aber keine Daten selbst."
-  },
-  {
-    "id": "publication",
-    "title": "Entwurf, Vorschlag und Veröffentlichung",
-    "keywords": [
-      "entwurf",
-      "vorschlag",
-      "freigabe",
-      "veröffentlichen",
-      "veröffentlichung",
-      "aktualisieren",
-      "nicht sichtbar"
-    ],
-    "page": "schedule",
-    "answer": "Der Entwurf ist der intern bearbeitete Plan. Die automatische Planung erzeugt einen Vorschlag; Vorschlag übernehmen ersetzt den Entwurf unter Erhalt fixierter Termine. Eine Veröffentlichung prüft Ressourcen, Unterrichtssoll und andere veröffentlichte Pläne erneut und erzeugt eine freigegebene Version. Bei offenen Konflikten ist sie gesperrt. Datenänderungen seit einer Berechnung verhindern die Übernahme eines veralteten Vorschlags. Anzeigen und Studierendenübersicht zeigen veröffentlichte Versionen und aktualisieren sich alle zehn Sekunden. Änderungen am Entwurf benötigen eine erneute Veröffentlichung. Raumblockierungen markieren betroffene veröffentlichte Termine als gesperrt."
   },
   {
     "id": "periods",
@@ -225,18 +206,80 @@
     "answer": "Unter Stammdaten → Planungszeiträume erfasst du Beginn und Ende, Unterrichtstage, Tageszeiten, Zeitraster und unterrichtsfreie Daten. Der Semesterplan verwendet diesen Kalender. Eine Unterrichtseinheit hat die in Einstellungen festgelegte Minutenzahl. In Veranstaltungen ist das Soll pro Woche oder als Gesamtumfang angegeben; die Termindauer legt die Aufteilung fest. A-/B-Wochen und aufeinanderfolgende Mehrtagesblöcke sind möglich. Für Mehrtagesblöcke werden Gesamtumfang und Blocktage benötigt. CP sind keine Unterrichtseinheiten."
   },
   {
-    "id": "definitions",
-    "title": "Begriffe und die beiden Arten von Bereichen",
+    "id": "assessments",
+    "title": "Prüfungen und Abgabefristen",
     "keywords": [
-      "begriffe",
-      "planungsbereich",
-      "raumbereich",
-      "lehrveranstaltung",
-      "fachsemester",
-      "studienstruktur"
+      "prüf",
+      "klausur",
+      "nachschreib",
+      "hausarbeit",
+      "abgabe",
+      "frist",
+      "portfolio"
     ],
-    "page": "setup",
-    "answer": "Ein Studiengang enthält Dauer und CP-Ziel. Die Lehrplanversion enthält seine Module und semesterbezogenen Lehrveranstaltungen. Ein Modul ist eine fachliche Einheit mit CP und gegebenenfalls Teilmodulen. Die Lehrveranstaltung definiert das Unterrichtssoll eines Fachsemesters. Ein Jahrgang umfasst das Aufnahmejahr, den Studiengang, seine Lehrplanversion und Gruppen. Im Semesterplan entstehen daraus konkrete Veranstaltungen, für die Termine mit Räumen und Lehrenden geplant werden. Fachsemester bezeichnet die Position im Studium; Planungszeitraum die Kalenderdaten. Ein Planungsbereich ist organisatorisch; ein Raumbereich enthält räumlich Stockwerke und Räume."
+    "page": "exams",
+    "answer": "Unter Prüfungen wählst du den Semesterplan und Prüfungsanforderungen übernehmen. Vorgaben werden im letzten zum Modul gehörenden Fachsemester vorgeschlagen; bestehende Vorlagen bleiben erhalten. Prüfung anlegen übernimmt Art, Dauer und Hinweise. Prüfe Teilnehmer, Zeitraum und Aufsichten. Wahlpflichtprüfungen verwenden erfasste Belegungen. Hausarbeiten stehen unter Abgaben & Fristen und erhalten dort Datum und Uhrzeit ohne Raumtermin. Fristen sind derzeit nur intern sichtbar. Nachschreiber werden separat mit eigener Teilnehmerliste angelegt."
+  },
+  {
+    "id": "display",
+    "title": "Veröffentlichung und Studierendenübersicht",
+    "keywords": [
+      "öffentlich",
+      "veröffentlich",
+      "anzeige",
+      "heute",
+      "morgen",
+      "scroll",
+      "übersicht",
+      "filter",
+      "teilen"
+    ],
+    "page": "displays",
+    "answer": "Nach Prüfung und Veröffentlichung legst du unter Öffentliche Anzeige eine Anzeige mit ausgewählten Plänen an. Jeder Anzeigelink bleibt fest auf Woche, Heute oder Morgen eingestellt. Scrollen lässt sich konfigurieren. Die separate Studierendenübersicht bietet Jahrgangs-, Gruppen- und Kursfilter und einen teilbaren Link. Sie zeigt veröffentlichte Termine und lädt Änderungen nach. In der Vercel-Demo liegen Änderungen nur im jeweiligen Browserprofil."
+  },
+  {
+    "id": "students",
+    "title": "Studierendenübersicht und Kursfilter",
+    "keywords": [
+      "studierendenübersicht",
+      "kursfilter",
+      "studenten",
+      "schüler",
+      "persönlicher plan"
+    ],
+    "page": "students",
+    "answer": "Die Studierendenübersicht zeigt veröffentlichte Stundenpläne mit Filtern für Jahrgang, Gruppe und Kurs. Teile ihren öffentlichen Link; Lernende brauchen dafür keinen Verwaltungszugang. Entwurfsänderungen werden erst nach erneuter Veröffentlichung sichtbar. Persönliche Lernendenkonten sind noch nicht vorhanden."
+  },
+  {
+    "id": "publication",
+    "title": "Entwurf, Vorschlag und Veröffentlichung",
+    "keywords": [
+      "entwurf",
+      "vorschlag",
+      "freigabe",
+      "veröffentlichen",
+      "veröffentlichung",
+      "aktualisieren",
+      "nicht sichtbar"
+    ],
+    "page": "schedule",
+    "answer": "Der Entwurf ist der intern bearbeitete Plan. Die automatische Planung erzeugt einen Vorschlag; Vorschlag übernehmen ersetzt den Entwurf unter Erhalt fixierter Termine. Eine Veröffentlichung prüft Ressourcen, Unterrichtssoll und andere veröffentlichte Pläne erneut und erzeugt eine freigegebene Version. Bei offenen Konflikten ist sie gesperrt. Datenänderungen seit einer Berechnung verhindern die Übernahme eines veralteten Vorschlags. Anzeigen und Studierendenübersicht zeigen veröffentlichte Versionen und aktualisieren sich alle zehn Sekunden. Änderungen am Entwurf benötigen eine erneute Veröffentlichung. Raumblockierungen markieren betroffene veröffentlichte Termine als gesperrt."
+  },
+  {
+    "id": "imports",
+    "title": "Dateiimporte und Kennungen",
+    "keywords": [
+      "import",
+      "csv",
+      "xlsx",
+      "excel",
+      "kennung",
+      "code",
+      "datei",
+      "vorlage"
+    ],
+    "page": "data",
+    "answer": "Unter Stammdaten wählst du die Datenart und Importieren. Lade dort die CSV-Vorlage und nutze ihre Spalten. Unterstützt werden UTF-8-CSV und XLSX bis 10 MB und 30.000 Zeilen. Erst prüfen, dann übernehmen; bei Fehlern wird nichts übernommen. code ist die stabile Kennung innerhalb der Einrichtung: wiederholte Importe aktualisieren gleiche Kennungen. Beziehungen nutzen Kennungen, Mehrfachzuordnungen trennt |. Abhängigkeiten zuerst: Bereiche → Stockwerke → Räume, Studiengänge → Jahrgänge → Gruppen → Personen, Zeiträume und Planungsbereiche → Pläne → Veranstaltungen. Eine Vorschau verfällt nach einer Stunde oder einer Datenänderung. In der Browser-Demo sind Dateiimporte nicht verfügbar."
   },
   {
     "id": "settings",
@@ -260,10 +303,40 @@
     "answer": "Einstellungen enthalten Einrichtungsdaten, Zeitzone, Unterrichtseinheiten und Prüfungsgrenzen. Die Browser-Demo speichert Änderungen nur im jeweiligen Browser und bietet weder automatische Terminplanung noch Dateiimporte oder ein lokales Sprachmodell. Die lokale Anwendung kann Ollama nutzen; es entstehen dafür keine Modell-API-Kosten. Persönliche Lernendenkonten, eine eigene Handy-App, Fremdsystemanbindungen und automatische Online-Abrechnung sind spätere Erweiterungen. Hosting, kundeneigene Domains und Anmeldesysteme sind kein bereits fertiger Verwaltungsdialog. Freddy erklärt die vorhandenen Funktionen, stellt bei fehlenden Angaben Rückfragen und schlägt nächste Schritte vor. Nur eindeutige Navigationsbefehle werden automatisch ausgeführt; empfohlene Schritte öffnest du über Schaltflächen, Datensätze speicherst du selbst."
   },
   {
-    "id": "schools",
-    "title": "Schulen und Bildungsgänge",
-    "keywords": ["schule", "schüler", "klasse", "schuljahr", "bildungsgang"],
-    "page": "setup",
-    "answer": "Für Schulen sind Studien- und Bildungsgänge ohne Credit Points möglich. Gruppen dienen als Klassen oder Teilgruppen, Zeiträume als Schuljahr oder Halbjahr. Unterrichtsumfang, Räume, Lehrende, Belegungen und Sperren werden genauso erfasst. Die Oberfläche enthält derzeit auch Hochschulbegriffe wie Jahrgang und Fachsemester; ein vollständiger separater Schulmodus ist noch nicht vorhanden."
+    "id": "freddy",
+    "title": "Freddy nutzen",
+    "keywords": [
+      "freddy",
+      "campusai",
+      "assistent",
+      "ki"
+    ],
+    "page": "schedule",
+    "answer": "Klicke unten rechts auf Freddys Avatar. Der Verlauf bleibt beim Minimieren erhalten. Stelle eine konkrete Frage zur Funktion oder zur aktuellen Ansicht, zum Beispiel „Wie lege ich einen Jahrgang an?“ oder „Welche Hinweise gibt es in diesem Plan?“."
+  },
+  {
+    "id": "accounts",
+    "title": "Zugänge, Rollen und Anmeldung",
+    "keywords": [
+      "anmeldung",
+      "passwort",
+      "rechte",
+      "zugang"
+    ],
+    "page": "settings",
+    "answer": "Dein Zugang wird von der Einrichtung bzw. dem Betreiber bereitgestellt. Melde dich mit Benutzername und Passwort an. Teile ein Verwaltungskonto nicht mit Lernenden; öffentliche Anzeigen und Studierendenübersichten haben ihre eigenen Links."
+  },
+  {
+    "id": "troubleshooting",
+    "title": "Probleme beheben",
+    "keywords": [
+      "problem",
+      "fehler",
+      "dienst",
+      "konflikt",
+      "leer"
+    ],
+    "page": "schedule",
+    "answer": "Prüfe, ob der Fehler auch nach Neuladen besteht. In der Vollversion muss das Backend erreichbar sein; eine sichtbare Webseite allein bestätigt das nicht. Informiere den Betreiber mit Zeitpunkt, betroffener Ansicht und dem Wortlaut der Meldung. Sende keine Passwörter."
   }
 ]

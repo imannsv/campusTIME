@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useRef, useState, FormEvent } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  FormEvent,
+} from "react";
 import { DateTime } from "luxon";
 import {
   CalendarDays,
@@ -45,14 +53,9 @@ import StudentOverview from "./StudentOverview";
 import AssessmentBoard from "./AssessmentBoard";
 import CampusAI from "./CampusAI";
 import { campusActions } from "./campus-ai-actions";
+import { Brand, Login, SessionState, notifyAuthChange } from "./Auth";
+const Wiki = lazy(() => import("./Wiki"));
 
-type SessionState = {
-  authenticated: boolean;
-  user: string;
-  role: string;
-  institution: Row;
-  map_style: string;
-};
 const nav = [
   {
     id: "schedule",
@@ -117,26 +120,6 @@ const compactResources = [
   "curricula",
 ];
 
-function Brand() {
-  return (
-    <div
-      className="brand"
-      role="img"
-      aria-label="CampusZeit"
-      title="CampusZeit"
-    >
-      <span className="brand-symbol">
-        <i />
-        <i />
-        <i />
-        <i />
-      </span>
-      <span>
-        campuszeit<span className="brand-dot">.</span>
-      </span>
-    </div>
-  );
-}
 function DemoNotice({ beforeReset }: { beforeReset?: () => boolean }) {
   const [error, setError] = useState("");
   if (!DEMO_MODE) return null;
@@ -161,91 +144,6 @@ function DemoNotice({ beforeReset }: { beforeReset?: () => boolean }) {
       </button>
       {error && <span role="alert">{error}</span>}
     </div>
-  );
-}
-function Login({ onLogin }: { onLogin: (s: SessionState) => void }) {
-  const [user, setUser] = useState("verwaltung"),
-    [password, setPassword] = useState(""),
-    [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError("");
-    try {
-      onLogin(await api("auth/login/", "POST", { username: user, password }));
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <main className="login-layout">
-      <section className="login-story">
-        <Brand />
-        <div>
-          <div className="login-preview">
-            <div>
-              <span>Montag</span>
-              <strong>05. Oktober</strong>
-            </div>
-            <div className="preview-event">
-              <small>08:30 – 10:00</small>
-              <b>Mathematik I</b>
-              <span>dWI25 A1 & A2 · Hörsaal H.101</span>
-            </div>
-            <div className="preview-event mint">
-              <small>10:30 – 12:00</small>
-              <b>Datenbanken</b>
-              <span>dWI25 A1 · Labor H.103</span>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section className="login-form-area">
-        <form onSubmit={submit}>
-          <span className="login-icon">
-            <LockKeyhole size={25} />
-          </span>
-          <h2>Anmelden</h2>
-          <p>Melde dich mit deinem Verwaltungszugang an.</p>
-          <label>
-            Benutzername
-            <input
-              autoComplete="username"
-              value={user}
-              onChange={(e) => setUser(e.target.value)}
-              required
-            />
-          </label>
-          <label>
-            Passwort
-            <input
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </label>
-          {error && (
-            <div className="error-box" role="alert">
-              {error}
-            </div>
-          )}
-          <button className="button primary" disabled={busy}>
-            {busy ? (
-              <LoaderCircle className="spin" size={18} />
-            ) : (
-              <ArrowRight size={18} />
-            )}
-            Anmelden
-          </button>
-          <small>Dein Zugang wird von der Einrichtung bereitgestellt.</small>
-        </form>
-      </section>
-    </main>
   );
 }
 
@@ -882,6 +780,12 @@ function SolverModal({
 }
 
 export default function App() {
+  if (/^\/wiki(?:\/|$)/.test(window.location.pathname))
+    return (
+      <Suspense fallback={<p role="status">Wiki laden …</p>}>
+        <Wiki />
+      </Suspense>
+    );
   const overviewMatch = window.location.pathname.match(/^\/overview\/([\w-]+)/);
   if (overviewMatch)
     return (
@@ -991,6 +895,7 @@ function Workspace() {
     setLoggingOut(true);
     try {
       await api("auth/logout/", "POST", {});
+      notifyAuthChange();
       setSession({ ...session, authenticated: false });
       setBoot(null);
       setData({});
@@ -1418,6 +1323,17 @@ function Workspace() {
           ))}
         </nav>
         <div className="sidebar-spacer" />
+        <a
+          className="settings-nav wiki-nav"
+          href="/wiki"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Wiki & Hilfe"
+          title="Wiki & Hilfe (neuer Tab)"
+        >
+          <FileText size={19} />
+          <span className="nav-label">Wiki & Hilfe</span>
+        </a>
         <button
           className={"settings-nav " + (page === "settings" ? "active" : "")}
           aria-label="Einstellungen"

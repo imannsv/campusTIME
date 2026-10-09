@@ -1,15 +1,18 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
-export default defineConfig({
-  plugins: [react()],
-  build: { assetsDir: "static" },
-  server: {
-    host: "127.0.0.1",
-    port: 5173,
-    strictPort: true,
-    proxy: {
-      "/api": "http://127.0.0.1:8000",
-      "/admin": "http://127.0.0.1:8000",
+export default defineConfig(({ mode }) => {
+  const environment = loadEnv(mode, ".", "CAMPUS_");
+  return {
+    plugins: [react()],
+    build: { assetsDir: "static" },
+    server: {
+      host: "127.0.0.1",
+      port: 5173,
+      strictPort: true,
+      proxy: {
+        "/api": environment.CAMPUS_API_URL || "http://127.0.0.1:8000",
+        "/admin": environment.CAMPUS_API_URL || "http://127.0.0.1:8000",
+      },
     },
-  },
+  };
 });

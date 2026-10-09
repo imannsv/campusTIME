@@ -932,6 +932,9 @@ small {
 .settings-nav {
   margin-bottom: 14px;
 }
+.wiki-nav {
+  text-decoration: none;
+}
 .user-profile {
   display: flex;
   align-items: center;
