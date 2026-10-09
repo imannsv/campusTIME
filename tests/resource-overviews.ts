@@ -322,6 +322,43 @@ test("Raumbelegung bleibt eine Tagesansicht und zeigt Blockierungen und Freigabe
   await expect(overview).toBeVisible();
 });
 
+test("Raumkatalogsuche schränkt die separate Belegungsansicht nicht ein", async ({
+  page,
+}) => {
+  await fixture(page);
+  await page.getByRole("button", { name: "Räume", exact: true }).click();
+  const overview = page.getByRole("region", {
+    name: "Raumbelegung",
+    exact: true,
+  });
+  const initialCount = await overview.locator(".resource-timeline-row").count();
+  expect(initialCount).toBeGreaterThan(1);
+  await page
+    .getByRole("button", { name: "Raumverwaltung", exact: true })
+    .click();
+  await page
+    .getByPlaceholder("Bezeichnung oder Ausstattung", { exact: true })
+    .fill("Testräumlichkeit");
+  await expect(page.locator(".room-tile")).toHaveCount(1);
+  await page.getByRole("button", { name: "Raumbelegung", exact: true }).click();
+  await expect(
+    overview.getByLabel("Belegung: Raum suchen", { exact: true }),
+  ).toHaveValue("");
+  await expect(overview.locator(".resource-timeline-row")).toHaveCount(
+    initialCount,
+  );
+  await overview
+    .getByLabel("Belegung: Raum suchen", { exact: true })
+    .fill("Testräumlichkeit");
+  await expect(overview.locator(".resource-timeline-row")).toHaveCount(1);
+  await page
+    .getByRole("button", { name: "Raumverwaltung", exact: true })
+    .click();
+  await expect(
+    page.getByPlaceholder("Bezeichnung oder Ausstattung", { exact: true }),
+  ).toHaveValue("Testräumlichkeit");
+});
+
 test("Belegung: Kalender per Tastatur und schmale Ansichten ohne Seitenüberlauf", async ({
   page,
 }) => {

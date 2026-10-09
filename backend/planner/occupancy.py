@@ -20,7 +20,7 @@ def date_range(params, institution):
         if any(not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) for value in values):
             raise ValueError
         start, end = [date.fromisoformat(value) for value in values]
-        if end < start or (end - start).days > 30:
+        if end == date.max or end < start or (end - start).days > 30:
             raise ValueError
     except (ValueError, TypeError):
         raise serializers.ValidationError(

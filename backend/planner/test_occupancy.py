@@ -197,3 +197,11 @@ class ResourceOccupancyTests(TestCase):
         for params in [{"start": "2026-02-30"}, {"start": "bad"}, {"end": "2026-10-08"}, {"end": "2026-11-09"}, {"source": "unknown"}]:
             self.assertEqual(self.get(**params).status_code, 400, params)
         self.assertEqual(self.get(end="2026-11-08").status_code, 200)
+
+    def test_maximum_date_returns_validation_error(self):
+        for params in [
+            {"start": "9999-12-31"},
+            {"start": "9999-12-30", "end": "9999-12-31"},
+        ]:
+            with self.subTest(params=params):
+                self.assertEqual(self.get(**params).status_code, 400)

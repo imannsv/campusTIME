@@ -49,9 +49,10 @@ export default function RoomOverview({
       }),
     [area?.id, currentFloor?.id, onContextChange],
   );
-  const rooms = (data.rooms || [])
+  const scopedRooms = (data.rooms || [])
     .filter((room) => floors.some((floor) => floor.id === room.floor))
-    .filter((room) => !currentFloor || room.floor === currentFloor.id)
+    .filter((room) => !currentFloor || room.floor === currentFloor.id);
+  const rooms = scopedRooms
     .filter((room) =>
       `${room.name} ${room.code} ${(room.equipment || []).join(" ")}`
         .toLocaleLowerCase("de")
@@ -210,7 +211,7 @@ export default function RoomOverview({
               data={data}
               revision={revision}
               query={query}
-              roomIds={rooms.map((room) => room.id)}
+              roomIds={scopedRooms.map((room) => room.id)}
               onEdit={onEdit}
             />
           ) : (
