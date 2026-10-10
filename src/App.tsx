@@ -1328,31 +1328,37 @@ function Workspace() {
                 ))}
             </div>
           ))}
+          <div
+            className="nav-group"
+            role="group"
+            aria-label="Hilfe & Einstellungen"
+          >
+            <span className="nav-caption">Hilfe & Einstellungen</span>
+            <a
+              className="settings-nav wiki-nav"
+              href="/wiki"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Wiki & Hilfe"
+              title="Wiki & Hilfe (neuer Tab)"
+            >
+              <FileText size={20} />
+              <span className="nav-label">Wiki & Hilfe</span>
+            </a>
+            <button
+              className={page === "settings" ? "active" : ""}
+              aria-label="Einstellungen"
+              title="Einstellungen"
+              aria-current={page === "settings" ? "page" : undefined}
+              onClick={() => {
+                if (go("settings")) setSettings(session.institution);
+              }}
+            >
+              <Settings size={20} />
+              <span className="nav-label">Einstellungen</span>
+            </button>
+          </div>
         </nav>
-        <div className="sidebar-spacer" />
-        <a
-          className="settings-nav wiki-nav"
-          href="/wiki"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Wiki & Hilfe"
-          title="Wiki & Hilfe (neuer Tab)"
-        >
-          <FileText size={19} />
-          <span className="nav-label">Wiki & Hilfe</span>
-        </a>
-        <button
-          className={"settings-nav " + (page === "settings" ? "active" : "")}
-          aria-label="Einstellungen"
-          title="Einstellungen"
-          onClick={() => {
-            go("settings");
-            setSettings(session.institution);
-          }}
-        >
-          <Settings size={19} />
-          <span className="nav-label">Einstellungen</span>
-        </button>
         <div className="user-profile">
           <span className="avatar" title={session.user}>
             {session.user
