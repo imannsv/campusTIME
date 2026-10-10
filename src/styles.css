@@ -883,13 +883,16 @@ small {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  flex: 1;
   min-height: 0;
   overflow-y: auto;
+  margin-bottom: 16px;
 }
 .nav-group {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  flex-shrink: 0;
 }
 .nav-group .nav-caption {
   display: block;
@@ -909,12 +912,26 @@ small {
   font-size: 12px;
   font-weight: 500;
   border-radius: 7px;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.sidebar nav button:hover,
+.sidebar nav button:focus-visible,
+.sidebar nav .wiki-nav:hover,
+.sidebar nav .wiki-nav:focus-visible {
+  background: #f1f5fa;
+  color: #214b76;
 }
 .sidebar nav button.active,
 .settings-nav.active {
   background: #eaf1f8;
   color: #214b76;
   font-weight: 650;
+}
+.sidebar nav button.active:hover,
+.sidebar nav button.active:focus-visible {
+  background: #e1ebf5;
 }
 .sidebar nav button.active:before {
   content: "";
@@ -925,18 +942,15 @@ small {
   background: #214b76;
   border-radius: 0 3px 3px 0;
 }
-.sidebar-spacer {
-  flex: 1;
-  min-height: 18px;
-}
 .settings-nav {
-  margin-bottom: 14px;
+  margin-bottom: 0;
 }
 .wiki-nav {
   text-decoration: none;
 }
 .user-profile {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 9px;
   border-top: 1px solid var(--line);
