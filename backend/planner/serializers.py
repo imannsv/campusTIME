@@ -31,6 +31,22 @@ MODEL_RESOURCES = {value: key for key, value in RESOURCES.items()}
 
 
 class TenantSerializer(serializers.ModelSerializer):
+    def to_internal_value(self, data):
+        if (
+            self.Meta.model == m.Person
+            and "name" not in data
+            and any(key in data for key in ("first_name", "last_name"))
+        ):
+            parts = [
+                data.get(key, getattr(self.instance, key, ""))
+                for key in ("first_name", "last_name")
+            ]
+            if all(isinstance(part, str) for part in parts):
+                name = " ".join(part.strip() for part in parts if part.strip())
+                if name:
+                    data = {**data, "name": name}
+        return super().to_internal_value(data)
+
     def get_fields(self):
         fields = super().get_fields()
         institution = self.context.get("institution")
@@ -190,6 +206,16 @@ class TenantSerializer(serializers.ModelSerializer):
         if model == m.Person:
             if (
                 self.instance
+                and value("kind") != self.instance.kind
+                and m.StudentAccess.objects.filter(person=self.instance).exists()
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "kind": "Die Personenart ist mit einem persönlichen App-Zugang verbunden und kann nicht geändert werden."
+                    }
+                )
+            if (
+                self.instance
                 and attrs.get("kind", self.instance.kind) != self.instance.kind
                 and (
                     self.instance.study_teaching_units.exists()
@@ -204,7 +230,11 @@ class TenantSerializer(serializers.ModelSerializer):
             if not isinstance(a, dict):
                 raise serializers.ValidationError("Verfügbarkeit muss ein Objekt sein.")
             if "unrestricted" in a and type(a["unrestricted"]) is not bool:
-                raise serializers.ValidationError({"availability": "Uneingeschränkte Verfügbarkeit muss wahr oder falsch sein."})
+                raise serializers.ValidationError(
+                    {
+                        "availability": "Uneingeschränkte Verfügbarkeit muss wahr oder falsch sein."
+                    }
+                )
             try:
                 from datetime import datetime, time
 
@@ -358,6 +388,8 @@ def schema():
                 kind = "date"
             elif isinstance(field, models.TimeField):
                 kind = "time"
+            elif isinstance(field, models.EmailField):
+                kind = "email"
             elif isinstance(
                 field, (models.IntegerField, models.FloatField, models.DecimalField)
             ):

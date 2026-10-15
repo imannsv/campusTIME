@@ -30,14 +30,28 @@ def push_configured():
 
 
 def audience(notice):
-    scope = Q(access__institution_id=notice.institution_id)
+    scope = Q(
+        access__institution_id=notice.institution_id, access__must_change_password=False
+    )
     if notice.group_id:
-        scope &= Q(access__group_id=notice.group_id) | Q(
-            access__cohort_id=notice.group.cohort_id
+        scope &= (
+            Q(access__group_id=notice.group_id)
+            | Q(access__cohort_id=notice.group.cohort_id)
+            | Q(
+                access__person__kind="learner",
+                access__person__institution_id=notice.institution_id,
+                access__person__groups__id=notice.group_id,
+            )
         )
     elif notice.cohort_id:
-        scope &= Q(access__cohort_id=notice.cohort_id) | Q(
-            access__group__cohort_id=notice.cohort_id
+        scope &= (
+            Q(access__cohort_id=notice.cohort_id)
+            | Q(access__group__cohort_id=notice.cohort_id)
+            | Q(
+                access__person__kind="learner",
+                access__person__institution_id=notice.institution_id,
+                access__person__groups__cohort_id=notice.cohort_id,
+            )
         )
     return scope
 
@@ -50,7 +64,7 @@ def queue_notice_push(notice):
         access__active=True,
         expires__gt=timezone.now(),
         push_token__isnull=False,
-    )
+    ).distinct()
     m.StudentPushDelivery.objects.bulk_create(
         [
             m.StudentPushDelivery(

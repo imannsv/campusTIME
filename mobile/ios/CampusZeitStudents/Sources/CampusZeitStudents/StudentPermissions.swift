@@ -26,6 +26,10 @@
     private var nextPushAttempt = Date.distantPast
 
     func configurePush(_ credential: DeviceCredential) {
+      guard credential.login.canAccessContent else {
+        clearNotifications()
+        return
+      }
       let scope = noticeScope(credential)
       guard currentScope != scope else { return }
       currentScope = scope
@@ -54,7 +58,8 @@
     }
 
     func syncPush() async {
-      guard let saved = pushCredential, saved.login.expires > Date(), !syncingPush,
+      guard let saved = pushCredential, saved.login.canAccessContent,
+        saved.login.expires > Date(), !syncingPush,
         Date() >= nextPushAttempt
       else { return }
       let scope = noticeScope(saved)
@@ -82,6 +87,10 @@
         nextPushAttempt = Date(timeIntervalSinceNow: 300)
         UserDefaults.standard.set(pushBinding, forKey: "campuszeit.push.binding." + scope)
         pushStatus = "Aktiv"
+      } catch StudentError.passwordChangeRequired {
+        guard currentScope == scope else { return }
+        clearNotifications()
+        pushStatus = "Zuerst das vorläufige Passwort ändern"
       } catch StudentError.pushUnavailable {
         guard currentScope == scope else { return }
         pushBinding = nil
@@ -158,6 +167,7 @@
     }
 
     func receive(_ notices: [StudentNotice], credential: DeviceCredential) async {
+      guard credential.login.canAccessContent else { return }
       configurePush(credential)
       let scope = noticeScope(credential)
       let key = "campuszeit.notices.seen." + scope

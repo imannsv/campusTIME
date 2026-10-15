@@ -10,9 +10,11 @@ import {
   Plus,
   Search,
   Users,
+  KeyRound,
 } from "lucide-react";
-import { api, Row } from "./api";
+import { api, DEMO_MODE, Row } from "./api";
 import { Modal, Relation } from "./components";
+import PersonalAccess from "./PersonalAccess";
 import PlanningSelection, { type PlanningScope } from "./PlanningSelection";
 import "./learners.css";
 
@@ -31,6 +33,9 @@ export function LearnerForm({
 }) {
   const initial = {
     name: record?.name || "",
+    first_name: record?.first_name || "",
+    last_name: record?.last_name || "",
+    email: record?.email || "",
     code: record?.code || defaults.code || "",
     groups: record?.groups || defaults.groups || [],
   };
@@ -47,6 +52,7 @@ export function LearnerForm({
     ),
   );
   const [busy, setBusy] = useState(false);
+  const [accessOpen, setAccessOpen] = useState(false);
   const [error, setError] = useState("");
   const dirty = JSON.stringify(initial) !== JSON.stringify(values);
   useEffect(() => {
@@ -76,6 +82,9 @@ export function LearnerForm({
         {
           kind: "learner",
           name: values.name.trim(),
+          first_name: values.first_name.trim(),
+          last_name: values.last_name.trim(),
+          email: values.email.trim(),
           code: values.code.trim() || record?.code || autoCode,
           groups: values.groups,
         },
@@ -87,6 +96,10 @@ export function LearnerForm({
       setBusy(false);
     }
   }
+  if (accessOpen && record)
+    return (
+      <PersonalAccess person={record} onClose={() => setAccessOpen(false)} />
+    );
   return (
     <Modal
       title={record ? "Person bearbeiten" : "Person hinzufügen"}
@@ -106,9 +119,31 @@ export function LearnerForm({
         )}
         <fieldset className="record-fields" disabled={busy}>
           <div className="form-grid">
+            {(["first_name", "last_name"] as const).map((field) => (
+              <label key={field}>
+                <span>{field === "first_name" ? "Vorname" : "Nachname"}</span>
+                <input
+                  maxLength={100}
+                  autoComplete="off"
+                  value={values[field]}
+                  onChange={(event) =>
+                    setValues((current) => {
+                      const next = { ...current, [field]: event.target.value };
+                      return {
+                        ...next,
+                        name: [next.first_name, next.last_name]
+                          .filter(Boolean)
+                          .join(" ")
+                          .trim(),
+                      };
+                    })
+                  }
+                />
+              </label>
+            ))}
             <label className="full">
               <span>
-                Name <b className="required">*</b>
+                Anzeigename <b className="required">*</b>
               </span>
               <input
                 aria-label="Name"
@@ -120,6 +155,27 @@ export function LearnerForm({
                   setValues((v) => ({ ...v, name: e.target.value }))
                 }
               />
+            </label>
+            <label className="full">
+              <span>E-Mail (optional)</span>
+              <input
+                aria-label="E-Mail (optional)"
+                aria-describedby="learner-email-hint"
+                type="email"
+                maxLength={254}
+                autoComplete="off"
+                value={values.email}
+                onChange={(event) =>
+                  setValues((current) => ({
+                    ...current,
+                    email: event.target.value,
+                  }))
+                }
+              />
+              <small id="learner-email-hint">
+                Nur in der Verwaltung sichtbar. Es werden keine E-Mails
+                versendet.
+              </small>
             </label>
             <label className="full">
               <span>Kennung (optional)</span>
@@ -185,6 +241,24 @@ export function LearnerForm({
           </div>
         </fieldset>
         <footer>
+          {record && (
+            <button
+              type="button"
+              className="button secondary"
+              disabled={busy || dirty || DEMO_MODE}
+              title={
+                DEMO_MODE
+                  ? "Persönliche Zugänge sind in der Demo nicht verfügbar."
+                  : dirty
+                    ? "Änderungen zuerst speichern."
+                    : undefined
+              }
+              onClick={() => setAccessOpen(true)}
+            >
+              <KeyRound size={16} /> Persönlicher Zugang
+            </button>
+          )}
+          <div className="spacer" />
           <button
             className="button secondary"
             type="button"
@@ -379,7 +453,7 @@ export default function LearnerAdmin({
         <>
           <div className="learner-filters">
             <label>
-              <span>Name oder Kennung</span>
+              <span>Name, Kennung oder E-Mail</span>
               <div className="learner-search">
                 <Search size={17} />
                 <input
@@ -489,6 +563,7 @@ export default function LearnerAdmin({
                     <div className="learner-identity">
                       <h3>{person.name}</h3>
                       <span>{person.code}</span>
+                      {person.email && <small>{person.email}</small>}
                       {programs.length > 0 && (
                         <small>
                           {programs.map((item) => item.name).join(" · ")}

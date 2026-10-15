@@ -193,6 +193,9 @@ class Group(TenantModel):
 
 
 class Person(TenantModel):
+    first_name = models.CharField(max_length=100, blank=True, default="")
+    last_name = models.CharField(max_length=100, blank=True, default="")
+    email = models.EmailField(blank=True, default="")
     kind = models.CharField(
         max_length=20,
         choices=[("learner", "Lernende"), ("teacher", "Lehrende")],
@@ -453,7 +456,15 @@ class StudentAccess(models.Model):
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE)
     group = models.ForeignKey(Group, null=True, blank=True, on_delete=models.PROTECT)
     cohort = models.ForeignKey(Cohort, null=True, blank=True, on_delete=models.PROTECT)
-    code = models.CharField(max_length=24, unique=True)
+    person = models.OneToOneField(
+        Person,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="app_access",
+    )
+    code = models.CharField(max_length=80, unique=True)
+    must_change_password = models.BooleanField(default=False)
     password_hash = models.CharField(max_length=256)
     qr_hash = models.CharField(max_length=64)
     server = models.URLField(max_length=500, blank=True, default="")
@@ -468,8 +479,15 @@ class StudentAccess(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=(
-                    models.Q(group__isnull=False, cohort__isnull=True)
-                    | models.Q(group__isnull=True, cohort__isnull=False)
+                    models.Q(
+                        group__isnull=False, cohort__isnull=True, person__isnull=True
+                    )
+                    | models.Q(
+                        group__isnull=True, cohort__isnull=False, person__isnull=True
+                    )
+                    | models.Q(
+                        group__isnull=True, cohort__isnull=True, person__isnull=False
+                    )
                 ),
                 name="student_access_one_scope",
             )
@@ -522,5 +540,7 @@ class StudentPushDelivery(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["notice", "device"], name="student_push_once")
+            models.UniqueConstraint(
+                fields=["notice", "device"], name="student_push_once"
+            )
         ]

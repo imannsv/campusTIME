@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   Clock3,
   Users,
+  UsersRound,
   Building2,
   LogOut,
   Menu,
@@ -93,7 +94,7 @@ const nav = [
   {
     id: "groups",
     label: "Gruppen & Jahrgänge",
-    icon: Layers,
+    icon: UsersRound,
     group: "Verwaltung",
   },
   {

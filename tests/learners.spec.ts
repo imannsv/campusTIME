@@ -305,3 +305,226 @@ test("learner forms keep typing focus and remain usable on a narrow dark screen"
     animations: "disabled",
   });
 });
+
+test("structured identity and personal access preserve edits and reveal passwords only once", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  await login(page);
+  const stamp = Date.now();
+  const email = `alex.${stamp}@example.org`;
+  const code = `PERSONAL-${stamp}`;
+  await page
+    .getByRole("button", { name: "Person hinzufügen", exact: true })
+    .click();
+  let edit = page.getByRole("dialog", {
+    name: "Person hinzufügen",
+    exact: true,
+  });
+  await edit.getByLabel("Vorname", { exact: true }).fill("Alex");
+  await edit.getByLabel("Nachname", { exact: true }).fill(`Muster ${stamp}`);
+  await expect(edit.getByLabel("Name", { exact: true })).toHaveValue(
+    `Alex Muster ${stamp}`,
+  );
+  await edit.getByLabel("E-Mail (optional)", { exact: true }).fill(email);
+  await edit.getByLabel("Kennung (optional)", { exact: true }).fill(code);
+  const save = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/people/") &&
+      response.request().method() === "POST",
+  );
+  await edit.getByRole("button", { name: "Speichern", exact: true }).click();
+  const person = await (await save).json();
+  expect(person.first_name).toBe("Alex");
+  expect(person.last_name).toBe(`Muster ${stamp}`);
+  expect(person.email).toBe(email);
+  await page.getByLabel("Personen suchen", { exact: true }).fill(email);
+  const row = page.locator(".learner-row").filter({ hasText: code });
+  await expect(row).toContainText(email);
+  await row.getByRole("button", { name: "Bearbeiten", exact: true }).click();
+  edit = page.getByRole("dialog", { name: "Person bearbeiten", exact: true });
+  const openAccess = edit.getByRole("button", {
+    name: "Persönlicher Zugang",
+    exact: true,
+  });
+  await edit.getByLabel("Name", { exact: true }).fill("Andere Anzeige");
+  await expect(openAccess).toBeDisabled();
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await edit.getByRole("button", { name: "Abbrechen", exact: true }).click();
+  await expect(edit.getByLabel("Name", { exact: true })).toHaveValue(
+    "Andere Anzeige",
+  );
+  await edit.getByLabel("Name", { exact: true }).fill(person.name);
+  await openAccess.click();
+  const access = page.getByRole("dialog", {
+    name: "Persönlicher Zugang",
+    exact: true,
+  });
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await access
+    .getByLabel("Benutzername vorschlagen aus")
+    .selectOption("identifier");
+  const suggestions = await (
+    await page.request.get(`/api/people/${person.id}/access/`)
+  ).json();
+  await expect(access.getByLabel("Benutzername", { exact: true })).toHaveValue(
+    suggestions.suggestions.identifier,
+  );
+  const username = `alex.${stamp}`;
+  await access.getByLabel("Benutzername", { exact: true }).fill(username);
+  await access.getByLabel("Serveradresse").fill("https://campus.example.org");
+  const create = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/people/${person.id}/access/`) &&
+      response.request().method() === "POST",
+  );
+  await access
+    .getByRole("button", { name: "Zugang erstellen", exact: true })
+    .click();
+  const created = await (await create).json();
+  expect(created.password).toBeTruthy();
+  expect(created.username).toBe(username);
+  const credentials = access.getByLabel("Zugangsdaten zum Weitergeben");
+  await expect.poll(() => credentials.inputValue()).toContain(created.password);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect
+    .poll(() =>
+      page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+    )
+    .toBe(true);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: undefined,
+    });
+    document.execCommand = () => false;
+  });
+  await access.getByRole("button", { name: "Zugangsdaten kopieren" }).click();
+  await expect(
+    access.getByRole("status").filter({ hasText: "manuell kopieren" }),
+  ).toBeVisible();
+  await access.getByRole("button", { name: "Zurück", exact: true }).click();
+  await expect(edit).toBeVisible();
+  await openAccess.click();
+  await expect(access.getByLabel("Benutzername", { exact: true })).toHaveValue(
+    username,
+  );
+  await expect(access.getByLabel("Zugangsdaten zum Weitergeben")).toHaveCount(
+    0,
+  );
+  const stored = await (
+    await page.request.get(`/api/people/${person.id}/access/`)
+  ).json();
+  expect(stored.password).toBeUndefined();
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await access
+    .getByRole("button", { name: "Passwort zurücksetzen", exact: true })
+    .click();
+  await expect(access.getByLabel("Zugangsdaten zum Weitergeben")).toHaveCount(
+    0,
+  );
+  page.once("dialog", (dialog) => dialog.accept());
+  const reset = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/people/${person.id}/access/`) &&
+      response.request().method() === "POST",
+  );
+  await access
+    .getByRole("button", { name: "Passwort zurücksetzen", exact: true })
+    .click();
+  const changed = await (await reset).json();
+  expect(changed.username).toBe(username);
+  expect(changed.password).not.toBe(created.password);
+  await expect.poll(() => credentials.inputValue()).toContain(changed.password);
+  page.once("dialog", (dialog) => dialog.accept());
+  await access
+    .getByRole("button", { name: "Zugang sperren", exact: true })
+    .click();
+  await expect(access.getByRole("status")).toContainText("Zugang gesperrt");
+  await expect(credentials).toHaveCount(0);
+  await access.getByRole("button", { name: "Zurück", exact: true }).click();
+  await edit.getByRole("button", { name: "Abbrechen", exact: true }).click();
+});
+
+test("legacy teacher names remain intact and personal access is reachable in setup and overview", async ({
+  page,
+}) => {
+  await login(page);
+  const stamp = Date.now();
+  const csrf =
+    (await page.context().cookies()).find(
+      (cookie) => cookie.name === "csrftoken",
+    )?.value || "";
+  const teacherResponse = await page.request.post("/api/people/", {
+    headers: { "X-CSRFToken": csrf },
+    data: {
+      name: `Dr. Legacy ${stamp}`,
+      code: `TEACHER-${stamp}`,
+      kind: "teacher",
+    },
+  });
+  expect(teacherResponse.ok()).toBe(true);
+  const teacher = await teacherResponse.json();
+  await page
+    .getByRole("navigation", { name: "Arbeitsbereiche" })
+    .getByRole("button", { name: "Einrichtung & Studienstruktur", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Schritt 2: Lehrende", exact: true })
+    .click();
+  await page.getByRole("button").filter({ hasText: teacher.name }).click();
+  const edit = page.getByRole("dialog", {
+    name: "Eintrag bearbeiten",
+    exact: true,
+  });
+  await expect(edit.getByLabel("Name", { exact: true })).toHaveValue(
+    teacher.name,
+  );
+  await expect(edit.getByLabel("Vorname", { exact: true })).toHaveValue("");
+  await expect(edit.getByLabel("Nachname", { exact: true })).toHaveValue("");
+  await edit.getByLabel("Vorname", { exact: true }).fill("Mara");
+  await edit.getByLabel("Nachname", { exact: true }).fill(`Lehre ${stamp}`);
+  await expect(edit.getByLabel("Name", { exact: true })).toHaveValue(
+    `Mara Lehre ${stamp}`,
+  );
+  await expect(
+    edit.getByRole("button", { name: "Persönlicher Zugang", exact: true }),
+  ).toBeDisabled();
+  await edit.getByRole("button", { name: "Speichern", exact: true }).click();
+  await page
+    .getByRole("button")
+    .filter({ hasText: `Mara Lehre ${stamp}` })
+    .click();
+  await edit
+    .getByRole("button", { name: "Persönlicher Zugang", exact: true })
+    .click();
+  const access = page.getByRole("dialog", {
+    name: "Persönlicher Zugang",
+    exact: true,
+  });
+  await expect(
+    access.getByRole("button", { name: "Zugang erstellen", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await access.getByRole("button", { name: "Zurück", exact: true }).click();
+  await edit.getByRole("button", { name: "Abbrechen", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "Arbeitsbereiche" })
+    .getByRole("button", { name: "Lehrendenübersicht", exact: true })
+    .click();
+  await page
+    .getByRole("button", {
+      name: `Mara Lehre ${stamp}: Verfügbarkeit bearbeiten`,
+      exact: true,
+    })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Verfügbarkeit bearbeiten", exact: true })
+    .getByRole("button", { name: "Persönlicher Zugang", exact: true })
+    .click();
+  await expect(
+    access.getByRole("button", { name: "Zugang erstellen", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+});

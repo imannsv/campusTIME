@@ -102,6 +102,8 @@ Prüfe die angezeigten Strukturhinweise, CP-Ziel, Semesterzuordnung und Unterric
 
 Lege einen Jahrgang mit Aufnahmejahr und freigegebener Lehrplanversion an. Erfasse Gruppen oder Klassen. Öffne Studierendenliste verwalten und pflege die tatsächlichen Personen beziehungsweise ihre Zuordnungen.
 
+Für das schnelle Ergänzen steht außerdem **Verwaltung → [Gruppen & Jahrgänge](/wiki/group-admin)** bereit. Die kurzen Formulare schlagen eine Kennung vor; **Gruppe hinzufügen** direkt am Jahrgang übernimmt die Zuordnung. Unter **[Schüler & Studierende](/wiki/learners)** erfasst du Personen und ordnest sie den Gruppen zu. Dort stehen Kacheln und Liste zur Wahl. Lehrplan, Studienverlauf und Semesterübernahme bleiben Teil dieses Einrichtungsablaufs.
+
 **Schritt abgeschlossen:** Der Jahrgang hat seine Struktur und die für Kapazitätsprüfungen benötigten Gruppen und Personen.
 
 **Häufiger Fehler:** Prüfe doppelte Personen und Gruppengrößen. Eine gemeinsame Veranstaltung braucht alle beteiligten Gruppen.

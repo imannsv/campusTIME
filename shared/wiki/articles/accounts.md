@@ -10,3 +10,7 @@ Verwaltung und Planungsverantwortliche sind die bestehenden Kundenrollen. Beide 
 Verwende **Abmelden** im Benutzerbereich. Die Wiki prüft dieselbe Sitzung; nach Abmeldung werden dort Artikel und Bilder nicht weiter angezeigt. Bei ungespeicherten Änderungen zuerst speichern oder bewusst abbrechen.
 ## Wenn die Anmeldung scheitert
 Prüfe Benutzername und Passwort. Ohne Einrichtungszuordnung ist ein Konto nicht als Kundenkonto nutzbar. Wende dich an den Betreiber, wenn dein Zugang fehlt oder gesperrt ist. Es wird keine derzeit nicht vorhandene Selbstregistrierung oder Passwort-zurücksetzen-Funktion zugesichert.
+
+## Persönliche App-Zugänge
+
+Persönliche App-Zugänge für Lernende und Lehrende sind von Verwaltungsrechten getrennt. Die Verwaltung erstellt sie bei einer gespeicherten Person über Persönlicher Zugang. Startpasswörter erscheinen nur einmal; der erste Login verlangt ein eigenes Passwort. Ein vergessenes persönliches App-Passwort setzt die Verwaltung zurück; es gibt keinen E-Mail-Reset. Sie berechtigen nur zum Lesen der zugeordneten veröffentlichten Daten in der App. Vorname, Nachname und E-Mail sind optional; bestehende Personennamen bleiben erhalten. Details unter [Studierenden-App](/wiki/student-app).

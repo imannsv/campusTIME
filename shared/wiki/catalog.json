@@ -14,14 +14,17 @@
     "section": "Erste Schritte",
     "parentId": null,
     "summary": "Das Dashboard steht zuerst in der Sidebar unter Überblick. Es zeigt die aktuelle Tagesplanung aller Pläne, laufende Termine und Ausfälle, echte Struktur- und Planungshinweise, den Prüfungsausblick für sieben Kalendertage, Kennzahlen der Einrichtung, Schnellzugriffe und letzte Änderungen. Personen umfasst Lernende und Lehrende. Tagesdaten und Hinweise aktualisieren sich alle 30 Sekunden; Fehler sind ausdrücklich gekennzeichnet. Entwurf und Freigabe bleiben unterscheidbar.",
-    "updatedAt": "2026-10-14",
+    "updatedAt": "2026-10-15",
     "related": [
       "schedule",
       "assessments",
       "setup",
-      "learners"
+      "learners",
+      "group-admin"
     ],
-    "images": []
+    "images": [
+      "dashboard.png"
+    ]
   },
   {
     "id": "learners",
@@ -34,19 +37,26 @@
       "studierendenliste",
       "matrikelnummer",
       "gruppenzuordnung",
-      "personen hinzufügen"
+      "personen hinzufügen",
+      "persönlicher Zugang",
+      "Startpasswort",
+      "Passwort ändern"
     ],
     "page": "learners",
     "section": "Räume und Personen",
     "parentId": null,
-    "summary": "Öffne Schüler & Studierende in der Verwaltung. Person hinzufügen erfasst Name und optional eine eindeutige Kennung; ohne Eingabe wird eine Kennung automatisch vergeben. Wähle einen Jahrgang, um die Gruppen-/Klassenauswahl einzugrenzen, und füge eine oder mehrere Gruppen hinzu. Bearbeiten ändert Name, Kennung und Zuordnungen; eine Gruppenmarke anklicken entfernt die Zuordnung. Suche, Jahrgang und Gruppe filtern die Personenübersicht, Ohne Zuordnung zeigt Personen ohne Gruppe. Der Jahrgang ergibt sich aus den zugeordneten Gruppen. Studierendenliste verwalten in der Einrichtung öffnet dieselbe Ansicht mit Gruppenfilter. Diese Personen sind Verwaltungsdatensätze; der App-Zugang bleibt der bestehende Gruppen-QR. Gruppengrößen und bereits veröffentlichte Pläne werden nicht automatisch überschrieben. Über Kacheln / Liste wechselst du zwischen der Jahrgangs-/Studiengangs-/Gruppenübersicht wie in der Stundenplanung und der bisherigen Personenliste. Gruppenkacheln öffnen die passend gefilterte Liste; Alle Personen und Ohne Zuordnung bleiben erreichbar. Die Darstellungswahl wird im Browser gemerkt.",
-    "updatedAt": "2026-10-14",
+    "summary": "Öffne Schüler & Studierende in der Verwaltung. Person hinzufügen erfasst Name und optional eine eindeutige Kennung; ohne Eingabe wird eine Kennung automatisch vergeben. Wähle einen Jahrgang, um die Gruppen-/Klassenauswahl einzugrenzen, und füge eine oder mehrere Gruppen hinzu. Bearbeiten ändert Name, Kennung und Zuordnungen; eine Gruppenmarke anklicken entfernt die Zuordnung. Suche, Jahrgang und Gruppe filtern die Personenübersicht, Ohne Zuordnung zeigt Personen ohne Gruppe. Der Jahrgang ergibt sich aus den zugeordneten Gruppen. Studierendenliste verwalten in der Einrichtung öffnet dieselbe Ansicht mit Gruppenfilter. Ein Personendatensatz legt nicht automatisch einen Login an. Gruppengrößen und bereits veröffentlichte Pläne werden nicht automatisch überschrieben. Über Kacheln / Liste wechselst du zwischen der Jahrgangs-/Studiengangs-/Gruppenübersicht wie in der Stundenplanung und der bisherigen Personenliste. Gruppenkacheln öffnen die passend gefilterte Liste; Alle Personen und Ohne Zuordnung bleiben erreichbar. Die Darstellungswahl wird im Browser gemerkt. Vorname, Nachname und E-Mail sind optional. Nach dem Speichern öffnet Bearbeiten → Persönlicher Zugang die Zugangsverwaltung für Administratoren: Benutzername aus Name oder Kennung, einmaliges Startpasswort, verpflichtender Passwortwechsel bei der ersten App-Anmeldung. Zurücksetzen beendet alle Sitzungen; Sperren beendet den Zugang. Lernende sehen aktuelle Gruppen und ausdrücklich zugeordnete veröffentlichte Termine. Gruppen-QR bleibt erhalten. Es werden keine E-Mails versendet.",
+    "updatedAt": "2026-10-15",
     "related": [
+      "group-admin",
       "setup",
       "student-app",
       "imports"
     ],
-    "images": []
+    "images": [
+      "learners-tiles.png",
+      "learners-list.png"
+    ]
   },
   {
     "id": "group-admin",
@@ -71,7 +81,9 @@
       "setup",
       "student-app"
     ],
-    "images": []
+    "images": [
+      "group-admin.png"
+    ]
   },
   {
     "id": "setup",
@@ -87,12 +99,14 @@
     "page": "setup",
     "section": "Erste Schritte",
     "parentId": null,
-    "summary": "Öffne Einrichtung & Studienstruktur. Der Ablauf ist: 1. Räume mit Kapazität und Ausstattung, 2. Lehrende mit abgestimmten Verfügbarkeiten, 3. Studiengang und Lehrplanversion, 4. Module und Lehrveranstaltungen, 5. Jahrgang mit Gruppen und Studierenden, 6. Semesterplan und Zeitraum. Erst danach werden konkrete Termine geplant und veröffentlicht.",
-    "updatedAt": "2026-10-10",
+    "summary": "Öffne Einrichtung & Studienstruktur. Der Ablauf ist: 1. Räume mit Kapazität und Ausstattung, 2. Lehrende mit abgestimmten Verfügbarkeiten, 3. Studiengang und Lehrplanversion, 4. Module und Lehrveranstaltungen, 5. Jahrgang mit Gruppen und Studierenden, 6. Semesterplan und Zeitraum. Erst danach werden konkrete Termine geplant und veröffentlicht. Für das schnelle Ergänzen gibt es Verwaltung → Gruppen & Jahrgänge mit vorgeschlagener Kennung und vorausgewähltem Jahrgang. Schüler & Studierende verwaltet Personen und Zuordnungen in Liste oder Kacheln. Lehrplan und Semesterverteilung bleiben im Einrichtungsablauf.",
+    "updatedAt": "2026-10-15",
     "related": [
       "rooms",
       "study",
-      "schedule"
+      "schedule",
+      "group-admin",
+      "learners"
     ],
     "images": [
       "start-01.png",
@@ -165,11 +179,15 @@
       "seitenleiste",
       "suche"
     ],
-    "summary": "Die Seitenleiste gruppiert **Planung**, **Verwaltung** und **Veröffentlichung**. Einstellungen und Wiki stehen unten. Das Logo bleibt auch in der eingeklappten Seitenleiste sichtbar; die Bereichssymbole erlauben weiterhin Navigation.",
-    "updatedAt": "2026-10-08",
+    "summary": "Das Dashboard steht zuerst unter Überblick. Planung enthält Stundenplanung, Prüfungen und Lehrendenübersicht. Unter Verwaltung stehen Räume, Gruppen & Jahrgänge, Schüler & Studierende, Einrichtung & Studienstruktur und Stammdaten. Veröffentlichung enthält öffentliche Anzeige, Studierendenübersicht und Studierenden-App. Wiki und Einstellungen stehen unter Hilfe & Einstellungen. Gruppen & Jahrgänge bietet kurze Formulare und direkte Gruppenzuordnung; Schüler & Studierende bietet Kacheln und Liste. Die Kopfsuche filtert die aktuelle Ansicht, Strg+K oder Cmd+K fokussiert sie. Hell, Dunkel und System gelten browserbezogen auch für andere CampusZeit-Tabs; die native App hat eine eigene Darstellung im Profil.",
+    "updatedAt": "2026-10-15",
     "related": [
       "setup",
-      "definitions"
+      "definitions",
+      "dashboard",
+      "group-admin",
+      "learners",
+      "settings"
     ],
     "images": [
       "ui.png"
@@ -224,15 +242,21 @@
       "lehrerübersicht",
       "belegung",
       "heute",
-      "morgen"
+      "morgen",
+      "persönlicher Zugang",
+      "Startpasswort",
+      "Passwort ändern"
     ],
     "page": "setup",
     "section": "Räume und Personen",
     "parentId": null,
-    "summary": "Öffne Einrichtung & Studienstruktur → Schritt 2: Lehrende. Über Lehrende hinzufügen erfasst die Verwaltung Personen und die mit ihnen abgestimmten Zeitfenster. Mehrere Zeitfenster je Tag sowie zusätzliche datierte Sperrzeiten sind möglich. Ohne Zeitfenster ist eine Person nicht verfügbar, außer bei uneingeschränkter Verfügbarkeit. Bei Veranstaltungen können mehrere Lehrende zugeordnet werden; ohne einzelne Lehrendenteams unterrichten sie gemeinsam. Unter Planung zeigt die Lehrendenübersicht alle zugewiesenen Termine und Prüfungsaufsichten mit Tagen nebeneinander. Diese Woche, Heute, Morgen und der kleine Kalender wählen den Zeitraum. Aktuelle Planung enthält Entwürfe, Nur freigegebene Pläne den zuletzt veröffentlichten Stand. Ein Klick öffnet Termindetails als Popup; in der aktuellen Planung kann der Termin bearbeitet werden. Leere Zeilen bedeuten keine Termine und ersetzen keine Verfügbarkeitsprüfung. Jeder Tag hat eine horizontale Uhrzeitachse. Anschlusstermine stehen nebeneinander in derselben Zeile; nur tatsächliche Überschneidungen nutzen getrennte Zeilen. Direkt in der Lehrendenübersicht lassen sich Verfügbarkeit und einzelne Blockzeiten bearbeiten. Zeitlich uneingeschränkt verfügbar hebt wöchentliche Fenster auf, aber keine Blockzeiten. Überlappende Termine werden dauerhaft abgesagt, rot durchgestrichen erhalten und auch in veröffentlichten Ansichten sofort als abgesagt gezeigt. Das Entfernen einer Blockzeit aktiviert abgesagte Termine nicht automatisch. Termin bearbeiten und Termin abgesagt deaktivieren ermöglicht eine geprüfte Reaktivierung. Benachrichtigungen sind erst für später vorgesehen.",
-    "updatedAt": "2026-10-09",
+    "summary": "Öffne Einrichtung & Studienstruktur → Schritt 2: Lehrende. Über Lehrende hinzufügen erfasst die Verwaltung Personen und die mit ihnen abgestimmten Zeitfenster. Mehrere Zeitfenster je Tag sowie zusätzliche datierte Sperrzeiten sind möglich. Ohne Zeitfenster ist eine Person nicht verfügbar, außer bei uneingeschränkter Verfügbarkeit. Bei Veranstaltungen können mehrere Lehrende zugeordnet werden; ohne einzelne Lehrendenteams unterrichten sie gemeinsam. Unter Planung zeigt die Lehrendenübersicht alle zugewiesenen Termine und Prüfungsaufsichten mit Tagen nebeneinander. Diese Woche, Heute, Morgen und der kleine Kalender wählen den Zeitraum. Aktuelle Planung enthält Entwürfe, Nur freigegebene Pläne den zuletzt veröffentlichten Stand. Ein Klick öffnet Termindetails als Popup; in der aktuellen Planung kann der Termin bearbeitet werden. Leere Zeilen bedeuten keine Termine und ersetzen keine Verfügbarkeitsprüfung. Jeder Tag hat eine horizontale Uhrzeitachse. Anschlusstermine stehen nebeneinander in derselben Zeile; nur tatsächliche Überschneidungen nutzen getrennte Zeilen. Direkt in der Lehrendenübersicht lassen sich Verfügbarkeit und einzelne Blockzeiten bearbeiten. Zeitlich uneingeschränkt verfügbar hebt wöchentliche Fenster auf, aber keine Blockzeiten. Überlappende Termine werden dauerhaft abgesagt, rot durchgestrichen erhalten und auch in veröffentlichten Ansichten sofort als abgesagt gezeigt. Das Entfernen einer Blockzeit aktiviert abgesagte Termine nicht automatisch. Termin bearbeiten und Termin abgesagt deaktivieren ermöglicht eine geprüfte Reaktivierung. Absagen bereits veröffentlichter Termine erzeugen automatisch Ausfallmitteilungen für die betroffenen Gruppen, auch bei Lehrenden-Blockzeiten. Persönliche Sperrgründe werden nicht übertragen. Eigene Lehrenden-Benachrichtigungen sind damit nicht verbunden. Push bei geschlossener App benötigt einen zusätzlich eingerichteten Apple-Push-Dienst. Vorname, Nachname und E-Mail können optional eingetragen werden. Nach dem Speichern kann die Verwaltung über Persönlicher Zugang im Personenformular oder unter Lehrendenübersicht → Verfügbarkeit einen App-Zugang erstellen, zurücksetzen oder sperren. Das Startpasswort erscheint einmalig; bei der ersten Anmeldung ist ein eigenes Passwort erforderlich. Lehrende sehen nur ihre eigenen veröffentlichten Termine und allgemeine Einrichtungshinweise. Keine Verwaltungsrechte oder E-Mail-Zustellung.",
+    "updatedAt": "2026-10-15",
     "related": [
-      "setup"
+      "setup",
+      "student-app",
+      "learners",
+      "group-admin"
     ],
     "images": [
       "teachers.png",
@@ -303,10 +327,12 @@
     "page": "setup",
     "section": "Studienstruktur und Jahrgänge",
     "parentId": null,
-    "summary": "Öffne Einrichtung & Studienstruktur → Schritt 5: Jahrgänge. Lege einen Jahrgang mit Aufnahmejahr und freigegebener Lehrplanversion an. Ergänze Gruppen wie A1 und A2 und ihre tatsächlichen Studierendenlisten. Über Studierendenliste verwalten lassen sich Personen einer Gruppe pflegen. Gruppengröße und erfasste Personen sollten zusammenpassen. Die Semesterübernahme erzeugt je nach Lehrveranstaltung gemeinsame oder getrennte Gruppenkurse.",
-    "updatedAt": "2026-10-08",
+    "summary": "Jahrgänge und Gruppen lassen sich unter Verwaltung → Gruppen & Jahrgänge über kurze Formulare anlegen; die Kennung wird vorgeschlagen und eine Lehrplanversion ist optional. Gruppe hinzufügen direkt am Jahrgang übernimmt dessen Zuordnung. Für lehrplanbasierte Semesterübernahme ist eine passende freigegebene Version nötig. Einrichtung & Studienstruktur → Schritt 5: Jahrgänge bleibt für Lehrplanzuordnung, Studienverlauf und Semesterbelastung zuständig. Personen und Zuordnungen pflegst du über Studierendenliste verwalten oder Schüler & Studierende. Die eingetragene Gruppengröße legt keine Personen an. Semesterübernahme erzeugt je nach Lehrveranstaltung gemeinsame oder getrennte Gruppenkurse.",
+    "updatedAt": "2026-10-15",
     "related": [
-      "setup"
+      "setup",
+      "group-admin",
+      "learners"
     ],
     "images": [
       "cohort.png"
@@ -580,15 +606,19 @@
       "dunkel",
       "hell",
       "darstellung",
-      "system"
+      "system",
+      "persönlicher Zugang",
+      "Startpasswort",
+      "Passwort ändern"
     ],
     "page": "settings",
     "section": "Verwaltung und Hilfe",
     "parentId": null,
-    "summary": "Darstellung: Hell, Dunkel oder System. Die Auswahl wird sofort auf diesem Gerät gespeichert und gilt auch in Wiki und Studierendenübersicht. Einstellungen enthalten Einrichtungsdaten, Zeitzone, Unterrichtseinheiten und Prüfungsgrenzen. Die Browser-Demo speichert Änderungen nur im jeweiligen Browser und bietet weder automatische Terminplanung noch Dateiimporte oder ein lokales Sprachmodell. Die lokale Anwendung kann Ollama nutzen; es entstehen dafür keine Modell-API-Kosten. Persönliche Lernendenkonten, eine eigene Handy-App, Fremdsystemanbindungen und automatische Online-Abrechnung sind spätere Erweiterungen. Hosting, kundeneigene Domains und Anmeldesysteme sind kein bereits fertiger Verwaltungsdialog. Freddy erklärt die vorhandenen Funktionen, stellt bei fehlenden Angaben Rückfragen und schlägt nächste Schritte vor. Nur eindeutige Navigationsbefehle werden automatisch ausgeführt; empfohlene Schritte öffnest du über Schaltflächen, Datensätze speicherst du selbst.",
-    "updatedAt": "2026-10-10",
+    "summary": "Darstellung: Hell, Dunkel oder System. Die Auswahl wird sofort auf diesem Gerät gespeichert und gilt auch in Wiki und Studierendenübersicht. Einstellungen enthalten Einrichtungsdaten, Zeitzone, Unterrichtseinheiten und Prüfungsgrenzen. Die Browser-Demo speichert Änderungen nur im jeweiligen Browser und bietet weder automatische Terminplanung noch Dateiimporte oder ein lokales Sprachmodell. Die lokale Anwendung kann Ollama nutzen; es entstehen dafür keine Modell-API-Kosten. Die native Studierenden-App mit Gruppen-/Jahrgangszugang, Offline-Speicherung und Hell-/Dunkel-Darstellung ist vorhanden. Persönliche Lernendenkonten, Fremdsystemanbindungen und automatische Online-Abrechnung sind weiterhin nicht vorhanden. Push bei geschlossener App benötigt eine passende Signierung und einen vom Betreiber eingerichteten Apple-Push-Dienst; die Gerätefreigabe allein genügt nicht. Der Status steht im App-Profil unter App-Freigaben → Push-Zustellung. Hosting, kundeneigene Domains und Anmeldesysteme sind kein bereits fertiger Verwaltungsdialog. Freddy erklärt die vorhandenen Funktionen, stellt bei fehlenden Angaben Rückfragen und schlägt nächste Schritte vor. Nur eindeutige Navigationsbefehle werden automatisch ausgeführt; empfohlene Schritte öffnest du über Schaltflächen, Datensätze speicherst du selbst. Persönliche App-Zugänge werden bei gespeicherten Lernenden oder Lehrenden über Persönlicher Zugang durch die Verwaltung angelegt. Beim ersten Login ist ein eigenes Passwort erforderlich. Gemeinsame Gruppen-QR-Zugänge bleiben bestehen.",
+    "updatedAt": "2026-10-15",
     "related": [
-      "setup"
+      "setup",
+      "student-app"
     ],
     "images": [
       "settings.png"
@@ -626,10 +656,13 @@
       "anmeldung",
       "passwort",
       "rechte",
-      "zugang"
+      "zugang",
+      "persönlicher Zugang",
+      "Startpasswort",
+      "Passwort ändern"
     ],
-    "summary": "Dein Zugang wird von der Einrichtung bzw. dem Betreiber bereitgestellt. Melde dich mit Benutzername und Passwort an. Teile ein Verwaltungskonto nicht mit Lernenden; öffentliche Anzeigen und Studierendenübersichten haben ihre eigenen Links.",
-    "updatedAt": "2026-10-08",
+    "summary": "Dein Zugang wird von der Einrichtung bzw. dem Betreiber bereitgestellt. Melde dich mit Benutzername und Passwort an. Teile ein Verwaltungskonto nicht mit Lernenden; öffentliche Anzeigen und Studierendenübersichten haben ihre eigenen Links. Persönliche App-Zugänge für Lernende und Lehrende sind von Verwaltungsrechten getrennt. Die Verwaltung erstellt sie bei einer gespeicherten Person über Persönlicher Zugang. Startpasswörter erscheinen nur einmal; der erste Login verlangt ein eigenes Passwort. Ein vergessenes persönliches App-Passwort setzt die Verwaltung zurück; es gibt keinen E-Mail-Reset.",
+    "updatedAt": "2026-10-15",
     "related": [
       "setup",
       "definitions"
@@ -655,14 +688,29 @@
       "download",
       "ausfall",
       "absage",
-      "blockzeit"
+      "blockzeit",
+      "ipad",
+      "push",
+      "benachrichtigung",
+      "kamera",
+      "dark mode",
+      "hell",
+      "dunkel",
+      "zwischenablage",
+      "persönlicher Zugang",
+      "Startpasswort",
+      "Passwort ändern"
     ],
-    "summary": "Öffne Studierenden-App. Erstelle einen Zugang für eine Gruppe oder einen Jahrgang und gib die erreichbare HTTPS-Serveradresse an. Der QR-Code ist über Zugang anzeigen später erneut abrufbar; bei älteren Zugängen muss einmal die erreichbare Serveradresse ergänzt werden. Das Passwort wird nur bei Erstellung angezeigt. Bereits verteilte QR-Codes und Gerätesitzungen bleiben erhalten. Teile Zugänge ausschließlich mit dieser Zielgruppe. Die App zeigt freigegebene Stundenpläne, Prüfungen und veröffentlichte Mitteilungen. Sperren beendet alle verbundenen Gerätesitzungen. Der iPhone-Release-Build, die lokale Testsignierung und Installation bestehen; die Anmeldung wurde auf dem iPhone geöffnet. Der vollständige Gerätetest steht noch aus. Android folgt später. Die iPhone-App lädt und speichert beim Öffnen, während der Nutzung und bei von iOS erlaubten Hintergrundabrufen automatisch die aktuelle und nächsten 17 Wochen, Prüfungen und Mitteilungen für offline, auch nach Neustart. Ein Download-Button ist nicht nötig; Profil → Offline verfügbar zeigt den Speicherstand. Nicht gespeicherte Wochen werden gekennzeichnet. Abmelden entfernt den Stand; neue Änderungen erfordern Verbindung zum Server. Absagen bereits veröffentlichter Termine erzeugen automatisch Ausfallmitteilungen für die veröffentlichten Gruppen, auch durch Lehrenden-Blockzeiten. Die Nachricht enthält veröffentlichte Termindaten. Wiederholtes Speichern erzeugt keine Duplikate; eine aufgehobene Absage zieht die Nachricht zurück. Keine nachträglichen Meldungen alter Absagen und keine sofortige Push-Zustellung bei geschlossener App.",
-    "updatedAt": "2026-10-14",
+    "summary": "Unter Veröffentlichung → Studierenden-App erstellst du gemeinsame Zugänge für Gruppen oder Jahrgänge mit erreichbarer HTTPS-Serveradresse. Zugang anzeigen öffnet QR-Code, Serveradresse und Code später erneut; das Passwort erscheint nur bei Erstellung. Bei älteren Zugängen ergänze einmalig die Serveradresse. Bestehende QR-Codes und Sitzungen bleiben erhalten. Bei fehlender oder verweigerter Zwischenablage bleibt manuelles Kopieren oder QR-Download möglich. HTTP ist nur für eindeutige lokale Testadressen zulässig; localhost und 127.0.0.1 verweisen auf das jeweilige Gerät. Die native App bietet Start, Stundenplan, Prüfungen, Mitteilungen und Profil. Im Stundenplan-Menü gibt es Tag, 2 Tage, 3 Tage und Woche; Wischen wechselt den Zeitraum. Samstag erscheint in der Woche nur bei Belegung, das Raster beginnt beim frühesten Termin; rote Zeitlinie beziehungsweise Zeithinweis zeigt die aktuelle Zeit. Prüfungen haben einen Kalender-Countdown. Profil → Darstellung bietet System, Hell und Dunkel; App-Freigaben bündelt Kamera, Benachrichtigungen und Push-Zustellung. Daten werden automatisch beim Öffnen, während der Nutzung und bei von iOS erlaubten Hintergrundabrufen gespeichert: aktuelle und nächste 17 Wochen, maximal 30 besuchte Wochen. Kein Download-Knopf nötig. Offline zeigt den letzten gespeicherten Stand; Änderungen brauchen Verbindung. Abmelden löscht den Stand. Absagen veröffentlichter Termine erzeugen gruppenbezogene Ausfallmitteilungen, auch durch Lehrenden-Blockzeiten; Rücknahmen ziehen sie zurück. Ohne eingerichteten Apple-Push-Dienst erfolgen lokale Banner erst beim Abruf; erster Bestand und Wiederholungen erzeugen keine doppelten Banner. APNs ist vorbereitet und standardmäßig deaktiviert. Gerätefreigabe allein ermöglicht keine Push-Zustellung. Neue Funktionen erfordern ein Update der installierten Testfassung; Android folgt später. Persönliche Zugänge für Lernende und Lehrende erstellt die Verwaltung nach dem Speichern bei der Person über Persönlicher Zugang. Benutzername aus Name oder Kennung, einmaliges Startpasswort und erreichbare Serveradresse werden manuell weitergegeben. Ein eigenes Passwort ist vor Datenabruf, Push-Anmeldung und Offline-Wiederherstellung verpflichtend. Profil → Passwort ändern ermöglicht spätere Änderungen. Lernende sehen aktuelle Gruppen und ausdrücklich zugeordnete veröffentlichte Termine, Lehrende nur eigene veröffentlichte Termine und allgemeine Hinweise. Zurücksetzen und Sperren widerrufen alle Sitzungen. Gruppen-QR-Zugänge bleiben zusätzlich erhalten.",
+    "updatedAt": "2026-10-15",
     "related": [
       "students",
       "publication",
-      "accounts"
+      "accounts",
+      "group-admin",
+      "learners",
+      "troubleshooting",
+      "settings"
     ],
     "images": [
       "student-app.png"
@@ -679,13 +727,24 @@
       "fehler",
       "dienst",
       "konflikt",
-      "leer"
+      "leer",
+      "qr",
+      "kopieren",
+      "zwischenablage",
+      "push",
+      "banner",
+      "offline",
+      "serveradresse",
+      "gruppenzuordnung"
     ],
-    "summary": "Prüfe, ob der Fehler auch nach Neuladen besteht. In der Vollversion muss das Backend erreichbar sein; eine sichtbare Webseite allein bestätigt das nicht. Informiere den Betreiber mit Zeitpunkt, betroffener Ansicht und dem Wortlaut der Meldung. Sende keine Passwörter.",
-    "updatedAt": "2026-10-08",
+    "summary": "Bei Problemen prüfe Neuladen, Backendverbindung, gewählten Plan, Woche und Filter. Neue Gruppen und Jahrgänge legst du unter Verwaltung → Gruppen & Jahrgänge an; ein Jahrgang braucht einen Studien-/Bildungsgang, eine Gruppe einen Jahrgang. Schüler & Studierende bietet Liste und Kacheln; Ohne Zuordnung findet Personen ohne Gruppe. Zugang anzeigen stellt den Gruppen-QR erneut bereit. Bei Clipboard-Fehlern Angaben manuell kopieren oder QR speichern. Auf iPhone und iPad ist localhost das Gerät selbst; der lokale Testserver benötigt seine aktuelle erreichbare Netzwerkadresse und Netzwerkfreigabe. Ein Banner erst beim Öffnen bestätigt den Abruf, nicht Push bei geschlossener App. Dafür muss der Betreiber Apple-Push und Signierung zusätzlich einrichten. Profil → App-Freigaben zeigt Benachrichtigungen und Push-Zustellung, Offline verfügbar den gespeicherten Stand. Nur geladene Wochen sind offline verfügbar; neue Änderungen brauchen Verbindung. Bei einem vorübergehenden Serverausfall nicht zuerst abmelden, weil dadurch der Offline-Stand gelöscht wird. Sende dem Betreiber keine Passwörter oder QR-Zugangsschlüssel.",
+    "updatedAt": "2026-10-15",
     "related": [
       "setup",
-      "definitions"
+      "definitions",
+      "group-admin",
+      "learners",
+      "student-app"
     ],
     "images": [
       "troubleshooting.png"

@@ -1,0 +1,29 @@
+.personal-access > p {
+  margin: 0 0 16px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.personal-credentials {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-width: 0;
+}
+.personal-credentials p {
+  line-height: 1.5;
+}
+.personal-credentials textarea {
+  width: 100%;
+  resize: vertical;
+  overflow-wrap: anywhere;
+}
+.personal-credentials label {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.person-record-form footer,
+.learner-form footer,
+.personal-access footer {
+  flex-wrap: wrap;
+}

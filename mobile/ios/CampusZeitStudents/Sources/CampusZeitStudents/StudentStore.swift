@@ -19,12 +19,15 @@
     var scheduleView = StudentScheduleView.week
     var examRows: [StudentEvent] { upcomingRows.filter { $0.kind == "exam" } }
     var metadata: StudentFeed? { archive?.metadata }
+    var requiresPasswordChange: Bool { credential?.login.passwordChangeRequired == true }
+    var canAccessContent: Bool { credential?.login.canAccessContent == true }
     var calendar: Calendar { institutionCalendar(credential?.login.timezone ?? "Europe/Berlin") }
     var selectedWeekSavedAt: Date? {
       archive?.weeks.first { $0.start <= selectedDate && selectedDate < $0.end }?.savedAt
     }
     var todaySaved: Bool { archive?.feed(for: calendar.startOfDay(for: Date())) != nil }
     private(set) var credentialRestoreDeferred = false
+    private var restorationBlocked = false
     let permissions: StudentPermissions
     private static let cacheURL = FileManager.default.urls(
       for: .applicationSupportDirectory, in: .userDomainMask
@@ -41,6 +44,7 @@
     }
 
     func restoreCredentialIfNeeded() {
+      guard !restorationBlocked, !requiresPasswordChange else { return }
       guard credential == nil || archive == nil else { return }
       credentialRestoreDeferred = false
       do {
@@ -64,6 +68,12 @@
         try? StudentOfflineArchive.clear(at: Self.cacheURL)
         return
       }
+      guard saved.login.canAccessContent else {
+        clearContent()
+        permissions.clearNotifications()
+        try? StudentOfflineArchive.clear(at: Self.cacheURL)
+        return
+      }
       do {
         archive = try StudentOfflineArchive.load(
           from: Self.cacheURL, session: cacheSession(saved), expires: saved.login.expires)
@@ -81,6 +91,7 @@
     }
 
     func selectSavedWeek() {
+      guard canAccessContent else { return }
       feed = archive?.feed(for: selectedDate)
       upcomingRows = archive?.events(from: calendar.startOfDay(for: Date())) ?? []
       if let stamp = selectedWeekSavedAt, let last = archive?.savedAt, stamp < last {
@@ -112,6 +123,7 @@
         }
         permissions.clearNotifications()
         credentialRestoreDeferred = false
+        restorationBlocked = false
         archive = nil
         feed = nil
         upcomingRows = []
@@ -120,10 +132,73 @@
         connectionUnavailable = false
         selectedDate = Date()
         credential = saved
+        guard saved.login.canAccessContent else { return }
         permissions.configurePush(saved)
         await permissions.refreshStatus()
         await permissions.syncPush()
       } catch is CancellationError {} catch { self.error = error.localizedDescription }
+    }
+
+    private func clearContent() {
+      archive = nil
+      feed = nil
+      upcomingRows = []
+      usingSavedData = false
+      connectionUnavailable = false
+      cacheError = nil
+    }
+
+    func changePassword(currentPassword: String, newPassword: String) async -> Bool {
+      guard let saved = credential, saved.login.isPersonal, !busy else { return false }
+      busy = true
+      error = nil
+      defer { busy = false }
+      let api = StudentAPI(server: saved.server)
+      do {
+        // Clear the old session's archive before its token can be revoked.
+        try StudentOfflineArchive.clear(at: Self.cacheURL)
+        clearContent()
+        let reply = try await api.changePassword(token: saved.login.token,
+          currentPassword: currentPassword, newPassword: newPassword)
+        let replacement = DeviceCredential(server: saved.server, login: reply)
+        permissions.clearNotifications()
+        do {
+          try DeviceKeychain.save(replacement)
+        } catch {
+          restorationBlocked = true
+          credential = nil
+          try? DeviceKeychain.clear()
+          try? await api.logout(token: reply.token)
+          self.error = "Das Passwort wurde geändert, aber der neue Zugang konnte nicht sicher gespeichert werden. Bitte mit dem neuen Passwort erneut anmelden."
+          return false
+        }
+        credential = replacement
+        credentialRestoreDeferred = false
+        guard reply.canAccessContent else { return false }
+        permissions.configurePush(replacement)
+        await permissions.refreshStatus()
+        await permissions.syncPush()
+        Task { await refresh() }
+        return true
+      } catch StudentError.expired {
+        expire()
+      } catch is CancellationError {} catch {
+        self.error = error.localizedDescription
+      }
+      return false
+    }
+
+    private func requirePasswordChange(_ saved: DeviceCredential) {
+      var gated = saved
+      gated.login.passwordChangeRequired = true
+      credential = gated
+      clearContent()
+      permissions.clearNotifications()
+      error = StudentError.passwordChangeRequired.localizedDescription
+      do { try DeviceKeychain.save(gated) } catch { self.error = error.localizedDescription }
+      do { try StudentOfflineArchive.clear(at: Self.cacheURL) } catch {
+        self.error = error.localizedDescription
+      }
     }
 
     private func expire() {
@@ -143,7 +218,9 @@
 
     @discardableResult
     func refresh(background: Bool = false) async -> Bool {
-      guard let saved = credential, !busy, !Task.isCancelled else { return false }
+      guard let saved = credential, saved.login.canAccessContent, !busy, !Task.isCancelled else {
+        return false
+      }
       guard saved.login.expires > Date() else {
         expire()
         return false
@@ -211,6 +288,8 @@
         return cacheError == nil && !Task.isCancelled
       } catch StudentError.expired {
         if credential?.login.token == saved.login.token { expire() }
+      } catch StudentError.passwordChangeRequired {
+        if credential?.login.token == saved.login.token { requirePasswordChange(saved) }
       } catch is CancellationError {} catch {
         if credential?.login.token == saved.login.token {
           usingSavedData = archive != nil

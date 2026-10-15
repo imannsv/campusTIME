@@ -30,4 +30,6 @@ Studienstrukturen bestimmen, was ein Jahrgang durchläuft. Semesterpläne bestim
 
 **Gruppenzugang**: Gemeinsamer Lesezugang zur Studierenden-App für genau eine Gruppe oder einen Jahrgang. Die Verwaltung stellt ihn bereit und kann ihn sperren oder erneuern.
 
+**Persönlicher App-Zugang**: Lesezugang für eine lernende oder lehrende Person mit eigenem Benutzernamen und Passwort. Die Verwaltung stellt ein einmaliges Startpasswort bereit; vor dem ersten Datenzugriff muss es geändert werden. Der Zugang vergibt keine Verwaltungsrechte.
+
 **Mitteilung**: Von der Verwaltung veröffentlichte Information für die Einrichtung, eine Gruppe oder einen Jahrgang.

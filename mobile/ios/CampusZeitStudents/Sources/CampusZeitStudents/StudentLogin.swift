@@ -76,9 +76,10 @@
                     .accessibilityLabel(
                       "Serveradresse")
                 }
-                Section("Gruppenzugang") {
-                  TextField("Zugangscode", text: $code).textInputAutocapitalization(.never)
-                    .autocorrectionDisabled().accessibilityLabel("Zugangscode")
+                Section("Zugang") {
+                  TextField("Benutzername oder Zugangscode", text: $code)
+                    .textInputAutocapitalization(.never).textContentType(.username)
+                    .autocorrectionDisabled().accessibilityLabel("Benutzername oder Zugangscode")
                   SecureField("Passwort", text: $password).textContentType(.password)
                 }
                 Section {

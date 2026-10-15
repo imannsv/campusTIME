@@ -6,8 +6,9 @@ import {
   type FormEvent,
 } from "react";
 import { DateTime } from "luxon";
-import { api, type Row } from "./api";
+import { api, DEMO_MODE, type Row } from "./api";
 import { AvailabilityEditor, Modal } from "./components";
+import PersonalAccess from "./PersonalAccess";
 
 export default function TeacherAvailabilityDialog({
   teacher,
@@ -31,6 +32,7 @@ export default function TeacherAvailabilityDialog({
   const [affected, setAffected] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [accessOpen, setAccessOpen] = useState(false);
   const dirty = useRef(false);
   const saving = useRef(false);
   const close = useCallback(() => {
@@ -112,6 +114,10 @@ export default function TeacherAvailabilityDialog({
       setBusy(false);
     }
   }
+  if (accessOpen && person)
+    return (
+      <PersonalAccess person={person} onClose={() => setAccessOpen(false)} />
+    );
   return (
     <Modal
       title={
@@ -177,6 +183,21 @@ export default function TeacherAvailabilityDialog({
           </>
         )}
         <div className="resource-detail-actions">
+          <button
+            type="button"
+            className="button secondary"
+            disabled={busy || !person || dirty.current || DEMO_MODE}
+            title={
+              DEMO_MODE
+                ? "Persönliche Zugänge sind in der Demo nicht verfügbar."
+                : dirty.current
+                  ? "Änderungen zuerst speichern."
+                  : undefined
+            }
+            onClick={() => setAccessOpen(true)}
+          >
+            Persönlicher Zugang
+          </button>
           <button
             type="button"
             className="button secondary"

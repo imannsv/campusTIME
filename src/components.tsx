@@ -15,9 +15,11 @@ import {
   Upload,
   Check,
   LoaderCircle,
+  KeyRound,
 } from "lucide-react";
-import { api, Field, Row, labels, localInput } from "./api";
+import { api, DEMO_MODE, Field, Row, labels, localInput } from "./api";
 import { timedAssessment } from "./assessment";
+import PersonalAccess from "./PersonalAccess";
 
 export function Modal({
   title,
@@ -773,6 +775,7 @@ export function RecordForm({
   const [values, setValues] = useState(initial),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const [accessOpen, setAccessOpen] = useState(false);
   const original = useRef(initial);
   const dirty = JSON.stringify(values) !== JSON.stringify(original.current);
   useEffect(() => {
@@ -780,7 +783,9 @@ export function RecordForm({
   }, [dirty, busy, onStateChange]);
   useEffect(() => {
     if (
-      (presentation !== "panel" && resource !== "sessions" && !onStateChange) ||
+      (presentation !== "panel" &&
+        !["sessions", "people"].includes(resource) &&
+        !onStateChange) ||
       (!dirty && !busy)
     )
       return;
@@ -795,6 +800,17 @@ export function RecordForm({
     setValues((v) => ({
       ...v,
       [key]: value,
+      ...(resource === "people" && ["first_name", "last_name"].includes(key)
+        ? {
+            name: [
+              key === "first_name" ? value : v.first_name,
+              key === "last_name" ? value : v.last_name,
+            ]
+              .filter(Boolean)
+              .join(" ")
+              .trim(),
+          }
+        : {}),
       ...(key === "program" && resource === "cohorts"
         ? { study_version: null }
         : {}),
@@ -857,6 +873,16 @@ export function RecordForm({
     }
   }
   const Container = presentation === "panel" ? RecordPanel : Modal;
+  function close() {
+    if (busy) return;
+    if (
+      resource === "people" &&
+      dirty &&
+      !window.confirm("Ungespeicherte Änderungen verwerfen?")
+    )
+      return;
+    onClose();
+  }
   const sessionOrder = [
     "course",
     "name",
@@ -881,6 +907,10 @@ export function RecordForm({
           return order(a.name) - order(b.name);
         })
       : fields;
+  if (accessOpen && record)
+    return (
+      <PersonalAccess person={record} onClose={() => setAccessOpen(false)} />
+    );
   return (
     <Container
       title={
@@ -900,11 +930,15 @@ export function RecordForm({
             ? "Prüfungsvorlage übernehmen. Teilnehmer, Zeitraum und Aufsichten prüfen."
             : "Änderungen werden im Entwurf gespeichert."
       }
-      onClose={onClose}
+      onClose={close}
       wide={resource === "courses" || resource === "exams"}
       busy={busy}
     >
-      <form onSubmit={submit} className="record-form" aria-busy={busy}>
+      <form
+        onSubmit={submit}
+        className={`record-form${resource === "people" ? " person-record-form" : ""}`}
+        aria-busy={busy}
+      >
         {defaults._draft_warnings?.length > 0 && (
           <div className="info-note">
             <p>{defaults._draft_warnings.join(" ")}</p>
@@ -947,7 +981,9 @@ export function RecordForm({
                   }
                 >
                   <span>
-                    {labels[f.name] || f.name}
+                    {resource === "people" && f.name === "name"
+                      ? "Anzeigename"
+                      : labels[f.name] || f.name}
                     {(f.required ||
                       f.name === "assessment_duration_minutes") && (
                       <b className="required"> *</b>
@@ -1128,6 +1164,7 @@ export function RecordForm({
                     </>
                   ) : (
                     <input
+                      aria-label={labels[f.name] || f.name}
                       required={f.required}
                       type={f.type}
                       placeholder={
@@ -1177,6 +1214,23 @@ export function RecordForm({
             </button>
           )}
           <div className="spacer" />
+          {resource === "people" && record && (
+            <button
+              type="button"
+              className="button secondary"
+              disabled={busy || dirty || DEMO_MODE}
+              title={
+                DEMO_MODE
+                  ? "Persönliche Zugänge sind in der Demo nicht verfügbar."
+                  : dirty
+                    ? "Änderungen zuerst speichern."
+                    : undefined
+              }
+              onClick={() => setAccessOpen(true)}
+            >
+              <KeyRound size={16} /> Persönlicher Zugang
+            </button>
+          )}
           {onAssist && (
             <button
               type="button"
@@ -1195,7 +1249,7 @@ export function RecordForm({
           <button
             type="button"
             className="button secondary"
-            onClick={onClose}
+            onClick={close}
             disabled={busy}
           >
             Abbrechen

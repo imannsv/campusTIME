@@ -5,7 +5,7 @@ import Foundation
 #endif
 
 public enum StudentError: LocalizedError {
-  case invalidServer, invalidQR, expired, pushUnavailable
+  case invalidServer, invalidQR, expired, pushUnavailable, passwordChangeRequired
   case service(String)
   public var errorDescription: String? {
     switch self {
@@ -14,6 +14,7 @@ public enum StudentError: LocalizedError {
     case .invalidQR: "Dieser QR-Code ist kein gültiger CampusZeit-Gruppenzugang."
     case .expired: "Dein Zugang ist abgelaufen oder gesperrt. Bitte erneut anmelden."
     case .pushUnavailable: "Push ist auf diesem Server noch nicht eingerichtet."
+    case .passwordChangeRequired: "Bitte ändere zuerst dein vorläufiges Passwort."
     case .service(let message): message
     }
   }
@@ -65,11 +66,29 @@ public struct LoginReply: Codable, Sendable {
   public let scope: String
   public let scopeKind: String
   public let timezone: String
+  public var passwordChangeRequired: Bool
+  public var isPersonal: Bool { scopeKind == "person" }
+  public var canAccessContent: Bool { !passwordChangeRequired }
+
+  enum CodingKeys: String, CodingKey {
+    case token, expires, institution, scope, scopeKind, timezone, passwordChangeRequired
+  }
+
+  public init(from decoder: Decoder) throws {
+    let values = try decoder.container(keyedBy: CodingKeys.self)
+    token = try values.decode(String.self, forKey: .token)
+    expires = try values.decode(Date.self, forKey: .expires)
+    institution = try values.decode(String.self, forKey: .institution)
+    scope = try values.decode(String.self, forKey: .scope)
+    scopeKind = try values.decode(String.self, forKey: .scopeKind)
+    timezone = try values.decode(String.self, forKey: .timezone)
+    passwordChangeRequired = try values.decodeIfPresent(Bool.self, forKey: .passwordChangeRequired) ?? false
+  }
 }
 
 public struct DeviceCredential: Codable, Sendable {
   public let server: URL
-  public let login: LoginReply
+  public var login: LoginReply
   public init(server: URL, login: LoginReply) {
     self.server = server
     self.login = login
@@ -153,7 +172,14 @@ final class RedirectGuard: NSObject, URLSessionTaskDelegate {
 
 public struct StudentAPI: Sendable {
   public let server: URL
-  public init(server: URL) { self.server = server }
+  private let configuration: URLSessionConfiguration
+  public init(server: URL) {
+    self.init(server: server, configuration: .ephemeral)
+  }
+  init(server: URL, configuration: URLSessionConfiguration) {
+    self.server = server
+    self.configuration = configuration
+  }
 
   private func request(
     _ path: String, method: String = "GET", body: [String: String]? = nil,
@@ -172,7 +198,7 @@ public struct StudentAPI: Sendable {
       request.setValue("application/json", forHTTPHeaderField: "Content-Type")
       request.httpBody = try JSONSerialization.data(withJSONObject: body)
     }
-    let config = URLSessionConfiguration.ephemeral
+    let config = configuration.copy() as! URLSessionConfiguration
     config.httpCookieStorage = nil
     let session = URLSession(configuration: config, delegate: RedirectGuard(), delegateQueue: nil)
     defer { session.finishTasksAndInvalidate() }
@@ -192,6 +218,9 @@ public struct StudentAPI: Sendable {
     }
     guard (200...299).contains(response.statusCode) else {
       let detail = (try? JSONSerialization.jsonObject(with: data)) as? [String: String]
+      if response.statusCode == 403, detail?["code"] == "password_change_required" {
+        throw StudentError.passwordChangeRequired
+      }
       throw StudentError.service(
         detail?["detail"] ?? "Die Anfrage ist fehlgeschlagen (\(response.statusCode)).")
     }
@@ -213,6 +242,13 @@ public struct StudentAPI: Sendable {
   }
   public func logout(token: String) async throws {
     _ = try await request("logout/", method: "POST", token: token)
+  }
+  public func changePassword(token: String, currentPassword: String, newPassword: String) async throws
+    -> LoginReply
+  {
+    try feedDecoder().decode(LoginReply.self,
+      from: await request("password/", method: "POST",
+        body: ["current_password": currentPassword, "new_password": newPassword], token: token))
   }
   public func registerPush(token: String, deviceToken: String, environment: String, topic: String)
     async throws -> StudentPushRegistration

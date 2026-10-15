@@ -20,16 +20,24 @@ try {
     .click();
   await page.getByRole("button", { name: "Termin", exact: true }).waitFor();
   const capture = async (...names) => {
+    await page.waitForLoadState("networkidle");
     await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(500);
     const main = page.locator("main.main-content");
     await main
       .evaluate((el) => (el.scrollTop = 0), { timeout: 1000 })
       .catch(() => {});
     await page.evaluate(() => window.scrollTo(0, 0));
     const bytes = await page.screenshot({ animations: "disabled" });
-    for (const name of names)
-      await fs.writeFile(path.join(directory, name + ".png"), bytes);
+    for (const name of names) {
+      const target = path.join(directory, name + ".png");
+      const temporary = target + ".tmp";
+      try {
+        await fs.writeFile(temporary, bytes);
+        await fs.rename(temporary, target);
+      } finally {
+        await fs.rm(temporary, { force: true });
+      }
+    }
     console.log(names.join(", "));
   };
   const nav = async (name) => {
@@ -50,6 +58,22 @@ try {
       .getByRole("button", { name: "Abbrechen", exact: true })
       .click();
   };
+  await nav("Dashboard");
+  await capture("dashboard");
+  await nav("Gruppen & Jahrgänge");
+  await capture("group-admin");
+  await nav("Schüler & Studierende");
+  await page.locator(".learner-row").first().waitFor();
+  await capture("learners-list");
+  await page.getByRole("button", { name: "Kacheln", exact: true }).click();
+  await capture("learners-tiles");
+  await nav("Studierenden-App");
+  await capture("student-app");
+  await nav("Stundenplanung");
+  await page
+    .getByRole("button", { name: "Gesamtübersicht öffnen", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Termin", exact: true }).waitFor();
   await capture("schedule", "start-10", "periods", "ui");
   await page.getByRole("button", { name: "Termin", exact: true }).click();
   await page.getByRole("dialog").waitFor();

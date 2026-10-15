@@ -4,10 +4,15 @@
 
 ## Lehrende hinzufügen
 1. Öffne **Einrichtung & Studienstruktur → Schritt 2: Lehrende**.
-2. Wähle **Lehrende hinzufügen**. Erfasse Kennung und Namen.
+2. Wähle **Lehrende hinzufügen**. Erfasse Kennung und Namen. Optional kannst du Vorname, Nachname und E-Mail getrennt eintragen; bestehende Namen bleiben erhalten.
 3. Trage die abgestimmten Verfügbarkeitsfenster je Wochentag ein. Mehrere Fenster an einem Tag sind möglich.
 4. Ergänze datierte Sperrzeiten für Urlaub, Hauptberuf oder andere Abwesenheit. Speichere.
 5. Ordne Lehrende den konkreten Veranstaltungen des Semesterplans zu.
+## Persönlicher App-Zugang
+Nach dem Speichern öffnet **Persönlicher Zugang** im Personenformular die Zugangsverwaltung. Der Einstieg ist auch über **Lehrendenübersicht → Verfügbarkeit** erreichbar. Ungespeicherte Änderungen müssen zuvor gespeichert oder verworfen werden. Nur die Verwaltung darf Zugänge erstellen, zurücksetzen und sperren.
+
+Wähle einen Benutzernamen aus Vor-/Nachname oder Kennung, prüfe die erreichbare Serveradresse und erstelle den Zugang. Das Startpasswort wird nur einmal angezeigt und nicht per E-Mail verschickt. Lehrende müssen bei der ersten App-Anmeldung ein eigenes Passwort setzen. Sie sehen ausschließlich ihre eigenen veröffentlichten Termine sowie allgemeine Mitteilungen der Einrichtung; Entwürfe und Verwaltungsrechte sind nicht enthalten. Unter **Profil** können sie das Passwort später erneut ändern. Zurücksetzen oder Sperren meldet alle Geräte dieses Zugangs ab.
+
 ## Zeitfenster richtig verstehen
 Bei eingeschränkter Verfügbarkeit muss ein Termin vollständig in erlaubten Zeitfenstern liegen. Ein Termin von 09:00–12:15 passt nicht in ein Fenster von 09:00–12:00. Ohne Zeitfenster ist die Person nicht verfügbar, außer bei aktivierter uneingeschränkter Verfügbarkeit. Die Verwaltung pflegt die Zeiten nach Abstimmung mit den Lehrenden.
 ## Verfügbarkeit und einzelne Blockzeiten in der Übersicht
@@ -17,12 +22,12 @@ Bei eingeschränkter Verfügbarkeit muss ein Termin vollständig in erlaubten Ze
 4. Speichere. Alle zeitlich überlappenden Termine mit dieser Person im tatsächlichen Lehrenden- oder Aufsichtsteam werden dauerhaft **abgesagt**, einschließlich gemeinsam unterrichteter Termine. Der ganze Termin bleibt erhalten, rot markiert und durchgestrichen. Bereits veröffentlichte Anzeigen und Studierendenübersichten zeigen die Absage beim nächsten automatischen Abruf; eine erneute Veröffentlichung ist dafür nicht nötig.
 5. Unter **Verfügbarkeit** kannst du Blockzeiten ändern und entfernen. Bereits abgesagte Termine werden dadurch nicht automatisch wieder aktiv. Öffne **Termin bearbeiten** und deaktiviere **Termin abgesagt**, wenn ein Ersatzteam oder ein neuer Zeitpunkt feststeht. Die regulären Planungsprüfungen gelten wieder.
 
-Abgesagte Termine belegen keine Räume oder Personen für die automatische Planung und zählen nicht zum erfüllten Unterrichtssoll. Eine erneute automatische Planung erhält die abgesagten Termine als Historie. Benachrichtigungen an Lehrende und Lernende sind für eine spätere Erweiterung vorgesehen; aktuell wird keine Nachricht versendet.
+Abgesagte Termine belegen keine Räume oder Personen für die automatische Planung und zählen nicht zum erfüllten Unterrichtssoll. Eine erneute automatische Planung erhält die abgesagten Termine als Historie. Bei bereits veröffentlichten Terminen erzeugt die Absage automatisch eine [Ausfallmitteilung für die betroffenen Gruppen](/wiki/student-app). Das gilt auch für Absagen durch Lehrenden-Blockzeiten. Persönliche Sperrgründe werden nicht übertragen. Eigene Benachrichtigungen an Lehrende sind damit nicht verbunden; Push bei geschlossener App benötigt den zusätzlich eingerichteten Apple-Push-Dienst.
 
 ## Gemeinsame Lehrendenteams
 Gemeinsam ausgewählte Lehrende werden gemeinsam eingeplant. Lehrendenteams je Termin erlauben eine chronologische Aufteilung. Die genaue Nutzung erklärt [Wahlpflicht und gemeinsame Veranstaltungen](/wiki/electives).
 ## Personen und Gruppen
-Unter **Stammdaten → Personen** verwaltest du weitere Personen. Ordne Lernende den richtigen Gruppen zu. Personenkennungen müssen stabil und innerhalb der Einrichtung eindeutig sein.
+Lernende verwaltest du unter **Verwaltung → [Schüler & Studierende](/wiki/learners)** mit Kacheln oder Liste. Gruppen und Jahrgänge legst du unter **[Gruppen & Jahrgänge](/wiki/group-admin)** an. Lehrende bleiben in ihrer eigenen Verwaltung; die allgemeine Personenverwaltung unter **Stammdaten → Personen** steht ebenfalls zur Verfügung. Personenkennungen müssen stabil und innerhalb der Einrichtung eindeutig sein.
 ## Lehrendenübersicht
 1. Öffne **Planung → Lehrendenübersicht**. Lehrende stehen links, die Tage der aktuellen Woche laufen nebeneinander. Jeder Tag hat eine horizontale Uhrzeitachse: Aufeinanderfolgende Termine stehen in derselben Zeile hintereinander, nur zeitlich überlappende Termine stehen in getrennten Zeilen. Die Namen und Tagesüberschriften bleiben beim Scrollen sichtbar.
 2. Wähle **Heute**, **Morgen** oder **Diese Woche**. Über **Ansicht** kannst du auch einen beliebigen Tag als Woche ansehen. Die Pfeile wechseln entsprechend einen Tag oder eine Woche.

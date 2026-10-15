@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path, re_path
 from django.views.generic import TemplateView
-from planner import campus_ai_api, student_app, views, wiki
+from planner import campus_ai_api, personal_access, student_app, views, wiki
 from planner.serializers import RESOURCES
 from rest_framework.routers import DefaultRouter
 
@@ -20,10 +20,15 @@ urlpatterns = [
     path("api/health/", views.health),
     path("api/student-app/v1/login/", student_app.login),
     path("api/student-app/v1/logout/", student_app.logout),
+    path("api/student-app/v1/password/", personal_access.change_password),
+    path("api/people/<int:pk>/access/", personal_access.person_access),
     path("api/student-app/v1/feed/", student_app.feed),
     path("api/student-app/v1/push/", student_app.push_registration),
     path("api/student-app/accesses/", student_app.accesses),
-    path("api/student-app/accesses/<uuid:pk>/credentials/", student_app.access_credentials),
+    path(
+        "api/student-app/accesses/<uuid:pk>/credentials/",
+        student_app.access_credentials,
+    ),
     path("api/student-app/accesses/<uuid:pk>/disable/", student_app.disable_access),
     path("api/student-app/notices/", student_app.notices),
     path("api/student-app/notices/<int:pk>/withdraw/", student_app.withdraw_notice),

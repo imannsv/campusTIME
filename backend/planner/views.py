@@ -179,6 +179,9 @@ class ResourceViewSet(viewsets.ModelViewSet):
             lookup = Q(name__icontains=query["search"])
             if hasattr(model, "code"):
                 lookup |= Q(code__icontains=query["search"])
+            if model is m.Person:
+                for field in ("first_name", "last_name", "email"):
+                    lookup |= Q(**{f"{field}__icontains": query["search"]})
             qs = qs.filter(lookup)
         for field in [
             "plan",

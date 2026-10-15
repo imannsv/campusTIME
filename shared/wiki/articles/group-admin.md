@@ -1,5 +1,7 @@
 Unter **Verwaltung → Gruppen & Jahrgänge** legst du Jahrgänge und die zugehörigen Gruppen oder Klassen direkt an. Die Übersicht zeigt Aufnahmejahr, Studien- beziehungsweise Bildungsgang und die Gruppen jedes Jahrgangs. Suche sowie Filter für Aufnahmejahr und Studien-/Bildungsgang grenzen sie ein.
 
+![Jahrgänge und zugehörige Gruppen mit direkten Aktionen in einer fiktiven Einrichtung](/api/wiki/assets/group-admin.png)
+
 ## Jahrgang hinzufügen
 
 1. Wähle **Jahrgang hinzufügen**.
@@ -12,6 +14,8 @@ Falls noch kein Studien- oder Bildungsgang existiert, bietet die Seite zuerst de
 ## Gruppe oder Klasse hinzufügen
 
 Wähle **Gruppe hinzufügen** direkt beim gewünschten Jahrgang. Dieser ist dann vorausgewählt. Trage den Namen und die Gruppengröße ein; eine Kennung wird vorgeschlagen. Der obere Button kann Gruppen auch unabhängig von einer Jahrgangskarte anlegen; dann wählst du den Jahrgang im Formular aus.
+
+Ist durch die Filter genau ein Jahrgang sichtbar, übernimmt auch der obere Button diesen Jahrgang. Filter ändern nur die Übersicht. Sie löschen keine Daten und begrenzen nicht die gespeicherten Gruppen.
 
 Eine Gruppe benötigt immer einen Jahrgang. Lege bei einer leeren Einrichtung daher zuerst einen Studien-/Bildungsgang und einen Jahrgang an. Gruppen und Jahrgänge müssen jeweils eine innerhalb der Einrichtung eindeutige Kennung besitzen.
 

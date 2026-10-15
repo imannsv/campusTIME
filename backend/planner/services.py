@@ -38,6 +38,7 @@ def entity_data(entity):
         ids, count, groups = attendance(entity)
         return {
             "learner_ids": sorted(ids),
+            "explicit_learner_ids": sorted(p.id for p in entity.learners.all()),
             "count": count,
             "group_resources": sorted(groups),
             "group_names": [g.name for g in entity.groups.all()],

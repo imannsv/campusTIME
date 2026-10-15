@@ -51,6 +51,7 @@
 
     func scheduleRefresh() {
       BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: Self.refreshID)
+      guard !store.requiresPasswordChange else { return }
       guard
         store.credentialRestoreDeferred
           || (store.credential?.login.expires ?? .distantPast) > Date()

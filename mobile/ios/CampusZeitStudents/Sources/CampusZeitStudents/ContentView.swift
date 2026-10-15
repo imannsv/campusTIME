@@ -19,12 +19,15 @@
     @State private var selectedEvent: StudentEvent?
     @State private var daySummary: ScheduleDaySummary?
     @State private var calendarOpen = false
+    @State private var passwordChangeOpen = false
 
     let scheduleBackgroundRefresh: () -> Void
 
     var body: some View {
       Group {
-        if store.credential != nil {
+        if store.requiresPasswordChange {
+          StudentPasswordChange(store: store, mandatory: true)
+        } else if store.canAccessContent {
           TabView(selection: $tab) {
             home.tabItem { Label("Start", systemImage: "building.2") }.tag(0)
             schedule.tabItem { Label("Stundenplan", systemImage: "calendar") }.tag(1)
@@ -64,7 +67,12 @@
         }
         scheduleBackgroundRefresh()
       }
-      .sheet(isPresented: $permissions.setupOpen) { permissionSetup }
+      .sheet(isPresented: Binding(
+        get: { permissions.setupOpen && !store.requiresPasswordChange },
+        set: { permissions.setupOpen = $0 })) { permissionSetup }
+      .sheet(isPresented: $passwordChangeOpen) {
+        StudentPasswordChange(store: store, mandatory: false)
+      }
       .onChange(of: permissions.openInbox) { _, open in
         if open {
           tab = 3
@@ -111,10 +119,20 @@
         noticeSearch = ""
         calendarOpen = false
         daySummary = nil
+        passwordChangeOpen = false
         scheduleBackgroundRefresh()
       }
-      .task(id: store.credential?.login.token) {
-        guard store.credential != nil else { return }
+      .onChange(of: store.requiresPasswordChange) { _, required in
+        if required {
+          selectedEvent = nil
+          daySummary = nil
+          calendarOpen = false
+          passwordChangeOpen = false
+        }
+        scheduleBackgroundRefresh()
+      }
+      .task(id: store.canAccessContent ? store.credential?.login.token : nil) {
+        guard store.canAccessContent else { return }
         if scenePhase == .active { await store.refresh() }
         while !Task.isCancelled {
           do { try await Task.sleep(for: .seconds(60)) } catch { return }
@@ -541,7 +559,7 @@
                   homeLink("Meine Prüfungen", symbol: "graduationcap", destination: 2)
                   homeLink("Mitteilungen", symbol: "envelope", destination: 3)
                 }
-                Text("\(store.credential?.login.scope ?? "") · Gruppenzugang")
+                Text("\(store.credential?.login.scope ?? "") · \(store.credential?.login.isPersonal == true ? "Persönlicher Zugang" : "Gruppenzugang")")
                   .font(.subheadline).foregroundStyle(campusMuted)
               }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
             }.refreshable { await store.refresh() }
@@ -698,15 +716,24 @@
           Form {
             Section {
               HStack(spacing: 16) {
-                Image(systemName: "person.2").font(.title2).foregroundStyle(campusBlue)
+                Image(systemName: store.credential?.login.isPersonal == true ? "person" : "person.2")
+                  .font(.title2).foregroundStyle(campusBlue)
                   .frame(width: 52, height: 52).background(campusCanvas, in: Circle())
                 VStack(alignment: .leading, spacing: 6) {
                   Text(store.credential?.login.scope ?? "").font(.title3.weight(.semibold))
                   Text(store.credential?.login.institution ?? "").font(.subheadline)
                     .foregroundStyle(campusMuted)
-                  Text("Gemeinsamer Gruppenzugang").font(.caption).foregroundStyle(campusBlue)
+                  Text(store.credential?.login.isPersonal == true
+                    ? "Persönlicher Zugang" : "Gemeinsamer Gruppenzugang")
+                    .font(.caption).foregroundStyle(campusBlue)
                 }
               }.padding(.vertical, 8)
+              if store.credential?.login.isPersonal == true {
+                Button("Passwort ändern", systemImage: "key") {
+                  store.error = nil
+                  passwordChangeOpen = true
+                }.disabled(store.busy)
+              }
             }
             Section("Darstellung") {
               Picker("Erscheinungsbild", selection: $appearance) {
@@ -796,9 +823,9 @@
               NavigationLink("Hilfe", destination: StudentHelpView())
               NavigationLink("Open-Source-Lizenzen", destination: StudentLicensesView())
               Text("Stundenplan, Prüfungen und Mitteilungen deiner Verwaltung.")
-              Text(
-                "Dieser Zugang wird gemeinsam von der Gruppe genutzt. Persönliche Noten und Teilnehmerlisten werden nicht angezeigt."
-              )
+              Text(store.credential?.login.isPersonal == true
+                ? "Dieser Zugang ist persönlich. Persönliche Noten und Teilnehmerlisten werden nicht angezeigt."
+                : "Dieser Zugang wird gemeinsam von der Gruppe genutzt. Persönliche Noten und Teilnehmerlisten werden nicht angezeigt.")
               .font(.subheadline).foregroundStyle(campusMuted)
             }
             Section {

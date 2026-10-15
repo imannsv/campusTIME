@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GraduationCap, Layers, Pencil, Plus, Users } from "lucide-react";
+import { GraduationCap, UsersRound, Pencil, Plus, Users } from "lucide-react";
 import type { Row } from "./api";
 import "./groups.css";
 
@@ -63,7 +63,7 @@ export default function GroupAdmin({
       <header className="page-actions">
         <div>
           <span className="group-eyebrow">
-            <Layers size={16} aria-hidden="true" /> Verwaltung
+            <UsersRound size={16} aria-hidden="true" /> Verwaltung
           </span>
           <h1>Gruppen & Jahrgänge</h1>
           <p className="resource-description">

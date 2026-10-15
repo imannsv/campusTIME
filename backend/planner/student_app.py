@@ -28,7 +28,7 @@ from rest_framework.decorators import (
     permission_classes,
     throttle_classes,
 )
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import SimpleRateThrottle
@@ -46,6 +46,8 @@ def digest(value):
 
 
 def valid_qr_key(access, key):
+    if access.person_id:
+        return False
     if secrets.compare_digest(access.qr_hash, digest(key)):
         return True
     try:
@@ -70,7 +72,10 @@ class DeviceAuthentication(BaseAuthentication):
             raise AuthenticationFailed("Ungültiger Zugang.") from exc
         session = (
             m.StudentDeviceSession.objects.select_related(
-                "access__institution", "access__group", "access__cohort"
+                "access__institution",
+                "access__group",
+                "access__cohort",
+                "access__person",
             )
             .filter(
                 token_hash=digest(token),
@@ -81,6 +86,11 @@ class DeviceAuthentication(BaseAuthentication):
         )
         if not session:
             raise AuthenticationFailed("Der Zugang ist abgelaufen oder gesperrt.")
+        if (
+            session.access.person_id
+            and session.access.person.institution_id != session.access.institution_id
+        ):
+            raise AuthenticationFailed("Ungültiger Zugang.")
         return session.access, session
 
 
@@ -97,7 +107,7 @@ class LoginThrottle(SimpleRateThrottle):
 
 
 class LoginInput(serializers.Serializer):
-    code = serializers.CharField(max_length=24, required=False)
+    code = serializers.CharField(max_length=80, required=False)
     password = serializers.CharField(
         max_length=256, required=False, trim_whitespace=False
     )
@@ -115,13 +125,43 @@ class LoginInput(serializers.Serializer):
 
 
 def profile(access):
-    scope = access.group if access.group_id else access.cohort
+    scope = (
+        access.person
+        if access.person_id
+        else access.group
+        if access.group_id
+        else access.cohort
+    )
     return {
         "institution": access.institution.name,
         "scope": scope.name,
-        "scope_kind": "group" if access.group_id else "cohort",
+        "scope_kind": "person"
+        if access.person_id
+        else "group"
+        if access.group_id
+        else "cohort",
+        "password_change_required": access.must_change_password,
         "timezone": access.institution.timezone,
     }
+
+
+def issue_session(access):
+    token = secrets.token_urlsafe(32)
+    expires = timezone.now() + timedelta(days=90)
+    m.StudentDeviceSession.objects.create(
+        access=access, token_hash=digest(token), expires=expires
+    )
+    return {"token": token, "expires": expires, **profile(access)}
+
+
+def require_password_ready(access):
+    if access.must_change_password:
+        raise PermissionDenied(
+            {
+                "detail": "Bitte zuerst dein Startpasswort ändern.",
+                "code": "password_change_required",
+            }
+        )
 
 
 @api_view(["POST"])
@@ -158,12 +198,7 @@ def login(request):
             )
         # Old device sessions are expired, not retained indefinitely.
         m.StudentDeviceSession.objects.filter(expires__lte=timezone.now()).delete()
-        token = secrets.token_urlsafe(32)
-        expires = timezone.now() + timedelta(days=90)
-        m.StudentDeviceSession.objects.create(
-            access=access, token_hash=digest(token), expires=expires
-        )
-        return Response({"token": token, "expires": expires, **profile(access)})
+        return Response(issue_session(access))
 
 
 @api_view(["POST"])
@@ -183,6 +218,7 @@ class PushInput(serializers.Serializer):
 @api_view(["POST", "DELETE"])
 @authentication_classes([DeviceAuthentication])
 def push_registration(request):
+    require_password_ready(request.user)
     with transaction.atomic():
         device = get_object_or_404(
             m.StudentDeviceSession.objects.select_for_update(), pk=request.auth.pk
@@ -229,6 +265,7 @@ def push_registration(request):
 @authentication_classes([DeviceAuthentication])
 def feed(request):
     access = request.user
+    require_password_ready(access)
     institution = access.institution
     zone = ZoneInfo(institution.timezone)
     try:
@@ -250,11 +287,41 @@ def feed(request):
         else {"cohort": str(access.cohort_id)}
     )
     rows = []
+    personal_groups = (
+        set(
+            access.person.groups.filter(
+                institution=institution, cohort__institution=institution
+            ).values_list("id", flat=True)
+        )
+        if access.person_id and access.person.kind == "learner"
+        else set()
+    )
     for publication in latest_publications(institution):
         scoped = enrich_snapshot(publication.snapshot, institution.id)
         for row in overlay_cancellations(scoped, institution, publication.plan_id):
             if (
-                matches_scope(row, scope)
+                (
+                    (not access.person_id and matches_scope(row, scope))
+                    or (
+                        access.person_id
+                        and access.person.kind == "teacher"
+                        and access.person_id in row.get("teacher_ids", [])
+                    )
+                    or (
+                        access.person_id
+                        and access.person.kind == "learner"
+                        and (
+                            access.person_id in row.get(
+                                "explicit_learner_ids",
+                                row.get("learner_ids", []) if row.get("exam") else [],
+                            )
+                            or any(
+                                group["id"] in personal_groups
+                                for group in row["overview_scope"]["groups"]
+                            )
+                        )
+                    )
+                )
                 and dt(row["start"]) < last
                 and dt(row["end"]) > first
             ):
@@ -265,7 +332,13 @@ def feed(request):
                     }
                 )
     notice_scope = Q(group__isnull=True, cohort__isnull=True)
-    if access.group_id:
+    if access.person_id:
+        notice_scope |= Q(group_id__in=personal_groups) | Q(
+            cohort_id__in=m.Group.objects.filter(id__in=personal_groups).values(
+                "cohort_id"
+            )
+        )
+    elif access.group_id:
         notice_scope |= Q(group_id=access.group_id) | Q(
             cohort_id=access.group.cohort_id
         )
@@ -273,9 +346,11 @@ def feed(request):
         notice_scope |= Q(cohort_id=access.cohort_id) | Q(
             group__cohort_id=access.cohort_id
         )
-    notices = m.StudentNotice.objects.filter(
-        institution=institution, active=True
-    ).filter(notice_scope)
+    notices = (
+        m.StudentNotice.objects.filter(institution=institution, active=True)
+        .filter(notice_scope)
+        .distinct()
+    )
     return Response(
         {
             **profile(access),
@@ -315,14 +390,11 @@ class ScopeInput(serializers.Serializer):
         return attrs
 
 
-class AccessInput(ScopeInput):
+class ServerInput(serializers.Serializer):
     server = serializers.URLField(max_length=500)
 
-    def validate(self, attrs):
-        attrs = super().validate(attrs)
-        if not attrs.get("group") and not attrs.get("cohort"):
-            raise serializers.ValidationError("Gruppe oder Jahrgang fehlt.")
-        parsed = urlsplit(attrs["server"])
+    def validate_server(self, value):
+        parsed = urlsplit(value)
         if (
             parsed.scheme not in ("https", "http")
             or parsed.username
@@ -352,6 +424,14 @@ class AccessInput(ScopeInput):
             raise serializers.ValidationError(
                 "Für öffentlich erreichbare Server ist HTTPS erforderlich."
             )
+        return value.rstrip("/")
+
+
+class AccessInput(ScopeInput, ServerInput):
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        if not attrs.get("group") and not attrs.get("cohort"):
+            raise serializers.ValidationError("Gruppe oder Jahrgang fehlt.")
         return attrs
 
 
@@ -416,7 +496,9 @@ def accesses(request):
         return Response(
             [
                 access_row(access)
-                for access in m.StudentAccess.objects.filter(institution=institution)
+                for access in m.StudentAccess.objects.filter(
+                    institution=institution, person__isnull=True
+                )
                 .select_related("group", "cohort")
                 .order_by("-created")
             ]
@@ -449,6 +531,7 @@ def access_credentials(request, pk):
             pk=pk,
             institution=institution,
             active=True,
+            person__isnull=True,
         )
         if request.method == "POST":
             payload = AccessInput(
@@ -473,7 +556,9 @@ def access_credentials(request, pk):
 def disable_access(request, pk):
     with transaction.atomic():
         institution = lock_tenant(request)
-        access = get_object_or_404(m.StudentAccess, pk=pk, institution=institution)
+        access = get_object_or_404(
+            m.StudentAccess, pk=pk, institution=institution, person__isnull=True
+        )
         access.active = False
         access.save(update_fields=["active"])
         access.studentdevicesession_set.all().delete()

@@ -1,5 +1,7 @@
 Das **Dashboard** steht als erster Punkt in der Seitenleiste unter **Überblick**. Es bündelt die Tagesplanung und die wichtigsten Wege durch die Verwaltung.
 
+![Dashboard mit Tagesagenda, Planungshinweisen und Kennzahlen einer fiktiven Einrichtung](/api/wiki/assets/dashboard.png)
+
 ## Heute auf dem Campus
 
 Die Tagesagenda zeigt Unterricht und Prüfungen aller Pläne deiner Einrichtung in der eingestellten Zeitzone. Grundlage ist die aktuelle Planung, einschließlich Entwürfen. **Freigegeben**, **Entwurf**, **Läuft gerade** und **Entfällt** kennzeichnen die Termine. Abgesagte Termine erscheinen durchgestrichen und zählen als Ausfälle statt als aktive Termine. Raumblockierungen und Lehrenden-Sperrzeiten sind keine Unterrichtstermine und werden hier nicht mitgezählt.
